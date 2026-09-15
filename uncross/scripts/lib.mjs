@@ -187,7 +187,12 @@ export async function sendV0(connection, payer, signers, ixs, { cuLimit = 400_00
       instructions: all,
     }).compileToV0Message();
     const tx = new VersionedTransaction(msg);
-    tx.sign([payer, ...signers.filter((s) => !s.publicKey.equals(payer.publicKey))]);
+    // Sign only with keys this message actually requires: an optional signer
+    // (e.g. a mint authority whose mint instruction was skipped) makes
+    // web3.js throw "Cannot sign with non signer key".
+    const required = msg.staticAccountKeys.slice(0, msg.header.numRequiredSignatures);
+    tx.sign([payer, ...signers].filter((s, i, all) =>
+      required.some((k) => k.equals(s.publicKey)) && all.findIndex((x) => x.publicKey.equals(s.publicKey)) === i));
     return { tx, blockhash, lastValidBlockHeight };
   };
   const { tx } = await build();
