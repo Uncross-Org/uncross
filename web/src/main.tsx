@@ -5,10 +5,10 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { CLUSTERS, clusterFromUrl } from "./config";
+import { CLUSTER } from "./config";
 import "./styles.css";
 
-const cluster = CLUSTERS[clusterFromUrl()];
+const cluster = CLUSTER;
 
 // Wallet Standard auto-detection: Phantom, Solflare, Backpack etc. register
 // themselves, so no per-wallet adapters are needed.

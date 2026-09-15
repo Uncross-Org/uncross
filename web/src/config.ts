@@ -1,9 +1,10 @@
-// Single source of truth for clusters, tickers and endpoints.
-// Cluster is chosen with ?cluster=devnet|mainnet (default devnet).
+// Single source of truth for the network, tickers and endpoints.
+// Uncross runs on Solana devnet. The only mainnet access is a read-only fetch
+// of the Pyth reference price (MAINNET_READ_RPCS, via the /api/rpc proxy).
 // RPC endpoints can be overridden at build time with VITE_DEVNET_RPC /
-// VITE_MAINNET_RPC (e.g. a keyed provider for production).
+// VITE_MAINNET_RPC.
 
-export type ClusterName = "devnet" | "mainnet";
+export type ClusterName = "devnet";
 export type TickerSymbol = "AAPLx" | "IBMx";
 
 export const PROGRAM_ID = "Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP";
@@ -89,27 +90,12 @@ export const CLUSTERS: Record<ClusterName, ClusterConfig> = {
       IBMx: { symbol: "IBMx", name: "IBM", underlying: "IBM", mint: "9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp", ...IBM_PYTH },
     },
   },
-  mainnet: {
-    name: "mainnet",
-    label: "Mainnet",
-    rpc: MAINNET_RPC,
-    quoteMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    quoteSymbol: "USDC",
-    explorerSuffix: "",
-    tickers: {
-      AAPLx: { symbol: "AAPLx", name: "Apple", underlying: "AAPL", mint: "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp", ...AAPL_PYTH },
-      IBMx: { symbol: "IBMx", name: "IBM", underlying: "IBM", mint: "XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr", ...IBM_PYTH },
-    },
-  },
 };
 
-export const TICKERS: TickerSymbol[] = ["AAPLx", "IBMx"];
+/** The network auctions run and settle on. */
+export const CLUSTER: ClusterConfig = CLUSTERS.devnet;
 
-export function clusterFromUrl(): ClusterName {
-  if (typeof window === "undefined") return "devnet";
-  const c = new URLSearchParams(window.location.search).get("cluster");
-  return c === "mainnet" || c === "mainnet-beta" ? "mainnet" : "devnet";
-}
+export const TICKERS: TickerSymbol[] = ["AAPLx", "IBMx"];
 
 export function tickerFromUrl(): TickerSymbol {
   if (typeof window === "undefined") return "AAPLx";

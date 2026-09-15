@@ -91,6 +91,12 @@ Sources: [Jupiter Token API v2](https://lite-api.jup.ag/tokens/v2/search), [Jupi
 
 **Depth/update-quality for thin names is unverified**, not confirmed absent — Pyth's own marketing materials only showcase megacap coverage (TSLA, COIN, PLTR, NVDA, AAPL). This is a real gap in this research pass, flagged rather than papered over.
 
+> **Correction (Phase 2, measured):** the claim below that equity feeds stop
+> moving at the 4pm ET close is wrong for Solana. The on-chain AAPL
+> `PriceUpdateV2` account kept publishing every few seconds, price moving,
+> past 5pm ET on 15 September (extended-hours prices), and it carries no
+> trading-status field at all. See `docs/phase2.md`.
+
 **Update behaviour after close — this is the important finding.** Standard equity feeds do **not** keep moving after 4pm ET / weekends by default. Each feed carries `status` (`Trading | Halted | Auction | Unknown`) and `market_hours` (`is_open`, `next_open`, `next_close`, per-symbol trading-hours string). Per [Pyth's Market Hours docs](https://docs.pyth.network/price-feeds/core/market-hours): "Only prices with `status=trading` should be used. If status is `Halted`, `Auction`, or `Unknown`, the price can be an arbitrary value." Per [Pyth Best Practices](https://docs.pyth.network/price-feeds/core/best-practices): "Market hours...can cause price feeds to freeze while trading remains active... integrators should avoid accidentally using a stale price." This directly confirms the phase0.md hypothesis (thesis point: 63% of tokenized-equity volume happens outside US hours while the reference price is frozen) — **this is the mechanism-design opening**, not a blocker.
 
 24/7 continuous equity pricing exists as a **paid product**: Pyth Pro advertises "24/5 pricing for 50+ U.S. equities" — a commercial add-on, not the free on-chain pull oracle. See [Pyth "Overnight Equities Explained"](https://www.pyth.network/blog/overnight-equities-explained).

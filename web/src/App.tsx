@@ -32,7 +32,6 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const { theme, toggle } = useTheme();
   const [ticker, setTicker] = useState<TickerSymbol>(tickerFromUrl);
   const tk = cluster.tickers[ticker];
-  const isMainnet = cluster.name === "mainnet";
   const mint = useMemo(() => (tk.mint ? new PublicKey(tk.mint) : null), [tk.mint]);
   const quoteMint = useMemo(() => new PublicKey(cluster.quoteMint), [cluster.quoteMint]);
 
@@ -80,16 +79,14 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
 
   const suggestions = useMemo(() => {
     const s: { label: string; price: number }[] = [];
-    if (isMainnet && ref.price != null) s.push({ label: ref.fresh ? "Pyth" : "Last Pyth", price: ref.price });
+    if (ref.fresh && ref.price != null) s.push({ label: "Pyth mainnet", price: ref.price });
     if (indicative && indicative.volume > 0 && !crossed) s.push({ label: "Cross", price: indicative.price });
     const { bid, ask } = bestBidAsk(book);
     if (bid != null) s.push({ label: "Bid", price: bid });
     if (ask != null) s.push({ label: "Ask", price: ask });
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMainnet, ref.price, ref.fresh, indicative?.price, indicative?.volume, crossed, book]);
-
-  const otherCluster = cluster.name === "devnet" ? "mainnet" : "devnet";
+  }, [ref.price, ref.fresh, indicative?.price, indicative?.volume, crossed, book]);
   const loadingAuction = !!mint && venue.auctions === null && !venue.error;
 
   return (
@@ -114,9 +111,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
           ))}
         </nav>
         <div className="top-actions">
-          <a className={`cluster cluster-${cluster.name}`} href={`?cluster=${otherCluster}&ticker=${ticker}`} title={`Switch to ${otherCluster}`}>
-            {cluster.label}
-          </a>
+          <span className="cluster">{cluster.label}</span>
           <button className="icon-btn" onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
             {theme === "dark" ? "☀" : "☾"}
           </button>
@@ -145,7 +140,6 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
           m={m}
           now={now}
           loadingAuction={loadingAuction}
-          isMainnet={isMainnet}
         />
 
         {venue.error && <div className="banner err">Couldn't load auctions: {venue.error}. Retrying automatically.</div>}
@@ -162,7 +156,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
           <DepthChart
             orders={book}
             indicative={indicative}
-            reference={isMainnet && ref.price != null ? { price: ref.price, fresh: ref.fresh } : null}
+            reference={ref.fresh && ref.price != null ? { price: ref.price, fresh: true } : null}
             crossed={crossed}
           />
           <OrderForm
@@ -205,8 +199,8 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             </a>
           </span>
         )}
-        <span>Reference prices: Pyth Network on Solana mainnet</span>
-        {cluster.name === "devnet" && <span>Devnet uses test tokens with no value.</span>}
+        <span>Auctions settle on Solana devnet</span>
+        <span>Reference prices are read from Pyth on Solana mainnet</span>
       </footer>
 
       <div className="toasts" aria-live="polite">

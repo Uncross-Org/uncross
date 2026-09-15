@@ -23,7 +23,7 @@ async function simulate(conn: Connection, payer: PublicKey, ixs: TransactionInst
 }
 
 console.log("== Pyth (mainnet) ==");
-const aapl = CLUSTERS.mainnet.tickers.AAPLx;
+const aapl = CLUSTERS.devnet.tickers.AAPLx;
 const p = await fetchPythPrice(main, aapl.pythAccount!);
 const age = Date.now() / 1000 - p.publishTime;
 console.log(`AAPL price $${p.price.toFixed(4)} ±${p.conf.toFixed(4)} expo ${p.expo} published ${new Date(p.publishTime * 1000).toISOString()} (age ${age.toFixed(0)}s) feed ${p.feedId.slice(0, 8)}… matches=${p.feedId === aapl.pythFeedId}`);
@@ -31,7 +31,7 @@ const sched = await fetchSchedule(aapl.hermesQuery, aapl.pythFeedId);
 console.log(`schedule: ${sched}`);
 const ms = marketState(parseSchedule(sched!));
 console.log(`market open=${ms.open} nextOpen=${ms.nextOpen ? new Date(ms.nextOpen).toISOString() : null} closesAt=${ms.closesAt ? new Date(ms.closesAt).toISOString() : null}`);
-const ibmSched = await fetchSchedule("IBM", CLUSTERS.mainnet.tickers.IBMx.pythFeedId);
+const ibmSched = await fetchSchedule("IBM", CLUSTERS.devnet.tickers.IBMx.pythFeedId);
 console.log(`IBM schedule found: ${!!ibmSched}`);
 // Known-schedule checks: Sat → next open Mon 09:30 ET; holiday 1127 half day.
 const s = parseSchedule(sched!);
@@ -41,7 +41,7 @@ console.log(`Wed 2026-09-16 14:00 ET → ${JSON.stringify(marketState(s, Date.pa
 console.log(`Thanksgiving 2026-11-26 → nextOpen ${new Date(marketState(s, Date.parse("2026-11-26T15:00:00Z")).nextOpen!).toISOString()} (expect 11-27 14:30Z)`);
 
 console.log("\n== Multipliers ==");
-for (const [c, conn] of [["mainnet", main], ["devnet", dev]] as const) {
+for (const [c, conn] of [["devnet", dev]] as const) {
   for (const t of Object.values(CLUSTERS[c].tickers)) {
     if (!t.mint) continue;
     console.log(`${c} ${t.symbol} m=${await fetchMultiplier(conn, new PublicKey(t.mint))}`);

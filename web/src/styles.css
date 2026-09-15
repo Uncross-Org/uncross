@@ -282,13 +282,9 @@ input {
   border: 1px solid var(--border);
   color: var(--text-2);
 }
-.cluster-devnet {
-  color: var(--warn);
-  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
-}
-.cluster-mainnet {
-  color: var(--good);
-  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+.cluster {
+  cursor: default;
+  user-select: none;
 }
 .icon-btn {
   width: 36px;

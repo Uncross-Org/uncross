@@ -7,20 +7,21 @@ AAPLx and IBMx). Instead of trading against a pool whose price moves with every
 order, orders are collected for a few minutes and then all filled together at
 one fair price.
 
-- **Live app:** https://uncross.0xo.in
-- **Program:** `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP` (Solana mainnet and devnet)
+- **Live app:** https://uncross.0xo.in — Solana devnet
+- **Program:** `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP` on devnet
 - Built for the Stocklana hackathon (Solana Foundation), September 2026.
 
 ## The problem
 
 Tokenized US stocks trade on Solana around the clock, but most tickers have only
 a few thousand dollars of liquidity, so an ordinary-sized order moves the price
-against the person placing it. Outside US market hours there is often no live
-reference price to trade against, and for many tickers — IBM, for one — there
-is no on-chain price at all.
+against the person placing it. Outside US market hours the reference price
+thins out or disappears, and for many tickers — IBM, for one — there is no
+on-chain price at all.
 
 Measured on mainnet while building this: the IBMx pool held about $1,400, and a
-$1 swap moved its price by 0.58%.
+$1 swap moved its price by 0.58%. There is no Pyth price account for IBM on
+Solana.
 
 ## How it works
 
@@ -33,10 +34,10 @@ flowchart LR
 ```
 
 Every trade in an auction happens at **one price**, whatever each person bid or
-asked. That price is the one at which the most shares can change hands. If more
-than one price does that equally well, Uncross prefers the one where buying and
-selling interest is most balanced, then the one nearest the live Pyth price if
-the market is open, then the middle of the range.
+asked: the price at which the most shares can change hands. If several prices
+do that equally well, Uncross prefers the one where buying and selling interest
+is most balanced, then the one nearest a fresh Pyth price, then the middle of
+the range.
 
 A real auction from testing, so the rule is concrete:
 
@@ -51,49 +52,120 @@ Nobody trades at a worse price than they asked for, and nobody gets a worse
 price than anyone else in the same auction. Before the cross, the app shows the
 price the auction would clear at right now, updated with every new order.
 
-While US markets are open, the app shows Pyth's live price next to Uncross's
-clearing price. When they are closed, it says so — and for tickers with no
-on-chain Pyth price at all, the auction's own book is the price.
+## What it runs on, and why that is the strongest test
+
+Uncross runs on Solana devnet against **fixture mints built to be
+extension-identical to the real xStocks**. Here is how that was established.
+
+**1. The real mint, read live.** The AAPLx mint on mainnet
+(`XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp`) was read directly with
+`getAccountInfo`, not from documentation. It is a Token-2022 mint with 8
+decimals and eight extensions, the ones every candidate xStock carries.
+
+**2. The fixture, built to match.** The devnet fixture
+(`BvgVkJawYWrWV2eu5ousJUvGWwbgDTUdyr9vBM27BYYG`) was created with the same
+extensions and read back the same way:
+
+| Property | Mainnet AAPLx | Devnet fixture | Match |
+|---|---|---|---|
+| Token program | spl-token-2022 | spl-token-2022 | yes |
+| decimals | 8 | 8 | yes |
+| freezeAuthority | set | set | yes |
+| `defaultAccountState` | `initialized` | `initialized` | yes |
+| `permanentDelegate` | set | set | yes |
+| `transferHook` | present, `programId: null` | present, `programId: null` | yes |
+| `confidentialTransferMint` | present, `autoApproveNewAccounts: false` | present, `autoApproveNewAccounts: false` | yes |
+| `scaledUiAmountConfig` | present | present | yes (value differs, below) |
+| `pausableConfig` | present, `paused: false` | present, `paused: false` | yes |
+| `metadataPointer` | present, self-pointing | present, self-pointing | yes |
+| `tokenMetadata` | present | present | yes |
+| `transferFee` | not present | not present | yes |
+| `nonTransferable` | not present | not present | yes |
+
+**3. The four fields deliberately not reproduced:**
+
+1. **Authority keys.** Every authority on the fixture belongs to us, not the
+   issuer. That is the point — see below.
+2. **The scaled-UI multiplier's starting value.** Mainnet AAPLx sits near 1.003;
+   the fixture starts at 1 so the multiplier test has a clean before/after.
+3. **Supply.** Whatever we mint; irrelevant to the program.
+4. **The metadata URI.** Nothing on-chain reads it.
+
+An IBMx fixture (`9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp`) replicates the
+real IBMx mint the same way, including its live multiplier of 1.0153. The full
+comparison is in [`docs/devnet-fixture.md`](docs/devnet-fixture.md).
+
+**4. What the fixture made testable.** Two of the most important failure modes
+of these assets can only be tested with a mint you control, because on mainnet
+those authorities belong to the issuer. Nobody but Backed Finance can pause
+AAPLx or change its multiplier. With the fixture, both were run for real:
+
+- **The issuer pauses the token mid-auction.** Settlement failed cleanly with
+  nothing half-settled, dollar refunds went out while the token was still
+  paused, share refunds went out after it resumed, and both escrow vaults ended
+  at exactly zero.
+  Signatures: [refund while paused](https://explorer.solana.com/tx/4DNRgi4M1aXGQd7GajCDk3XrVEoznDRu5kqUojdhL5Ek1A2mTpG3DZaXoDCHBjYMTdtE8oQ4YFfAar2CZBBPGxbZ?cluster=devnet),
+  [refund after resume](https://explorer.solana.com/tx/2r9ANErSqUQUzQLSQwwbrJvwDwZXkGr6uwCeFUkh4QdWWh6ew9JJc4gVEBixbD1RfGkHmZ4ztQ5LDY9GNpP1eNB7?cluster=devnet).
+- **The issuer changes the multiplier mid-auction** (how xStocks express a
+  stock split). The multiplier was doubled between order entry and the cross.
+  Every fill and refund came out exactly as predicted beforehand, because
+  Uncross keeps raw token amounts only; the wallet display doubled, the
+  accounting did not move.
+  Signatures: [multiplier 1.0153 → 2](https://explorer.solana.com/tx/uWkV19hzfH1kcjHxwBKTUNqvCHs7SnHo7B46BdZDEMALSDsLUZoN9qbgAdQhLjBUqsY7SZg4hvQJGjvnWEaZm4v?cluster=devnet),
+  [cross](https://explorer.solana.com/tx/5H6bFXTHyaBveTcNoQdzVWRF6kTbpCy5ejjTzBgVxZDendpfR6GeZdmGNVrKJ67cJ4yZHkS8RGjUfdDKTg9n2hp9?cluster=devnet),
+  [settlement](https://explorer.solana.com/tx/5bmP3jkqpcujvMMPrU5aqCivJudXQwxy6Hffn8M7jgZVKqVfFSHpfPkcm7rvHRGyW7ETCPyYscSeidALh85wbvMa?cluster=devnet).
+
+The same fixture carried the largest settlement test: 42 orders from 42
+different wallets, settled in seven-order batches deliberately out of order,
+with a duplicate batch that paid nothing twice. Both vaults ended at exactly
+zero, and every wallet's balance change matched its fill to the unit. Details
+and every signature are in [`docs/phase2.md`](docs/phase2.md).
+
+**The reference price comes from mainnet, read-only.** The app shows Pyth's
+AAPL/USD price read directly from its account on Solana mainnet, and says so on
+screen; auctions clear on devnet. Pyth has no live AAPL price on devnet — the
+only devnet account is months stale — so the auction's Pyth tie-break (the third
+rule above) never runs on-chain here. It is covered by unit tests built from the
+real mainnet price account's bytes. There is no IBM price on either network, so
+for IBMx the auction book is the only price there is.
 
 ## What this doesn't solve
 
 Uncross holds your shares and dollars in escrow between placing an order and
 settlement. That escrow sits under the token issuer's rules, not only ours.
 
-- **The issuer can pause the token.** Every xStock mint can be paused by its
-  issuer. While paused, nothing can move those shares — not settlement and not
-  refunds. Uncross fails safely (nothing is half-settled, and everything is
-  refunded once the pause lifts), but it cannot give you your shares back
-  during a pause. Dollar refunds still work.
+- **The issuer can pause the token.** While paused, nothing can move those
+  shares — not settlement and not refunds. Uncross fails safely (nothing is
+  half-settled, and everything is refunded once the pause lifts), but it cannot
+  give you your shares back during a pause. Dollar refunds still work.
 - **The issuer can take tokens from any account, including escrow.** Every
-  candidate mint has a "permanent delegate": the issuer can move or burn
-  tokens in any account without the holder's signature. That is a regulatory
-  control built into these assets. It applies to shares waiting in an Uncross
-  auction exactly as it applies to your own wallet.
-- **The issuer could add a transfer rule later.** The mints have a transfer-hook
-  setting that is currently switched off. If an issuer switched it on, every
-  settlement transaction would need more accounts and fewer orders would fit in
-  each one.
-- **Pyth keeps publishing after the 4pm ET close**, apparently extended-hours
-  prices. Uncross accepts a Pyth price as a reference only when it is fresh and
-  precise, but it cannot tell a regular-session price from an extended-hours one
-  on-chain — the on-chain Pyth account carries no trading-session field.
-- **Some tokenized stocks don't work.** PreStocks tokens charge a 0.5% fee on
+  xStock mint has a "permanent delegate": the issuer can move or burn tokens in
+  any account without the holder's signature. That regulatory control applies
+  to shares waiting in an Uncross auction exactly as it does to your wallet.
+- **The issuer could add a transfer rule later.** The mints have a
+  transfer-hook setting that is switched off today. Switching it on would add
+  accounts to every settlement and shrink how many orders fit in each
+  transaction.
+- **Pyth keeps publishing after the 4pm ET close.** Measured on 15 September:
+  the AAPL price account was still updating every few seconds at 5:06 PM ET,
+  with the price moving — extended-hours prices. The on-chain account carries
+  no trading-session field, so a regular-session price cannot be told apart
+  from an extended-hours one on-chain. "No reference price" is true overnight
+  and at weekends, not the moment NASDAQ closes.
+- **Tokens with transfer fees don't work.** PreStocks tokens charge 0.5% on
   every transfer, which the escrow accounting does not handle, so they are not
-  supported.
-- **Account rent is not reclaimed yet.** Each auction and each order creates a
-  small Solana account whose deposit (about $2–3 per auction) stays locked;
-  there is no close instruction yet.
+  supported. Their mints were verified live, and custody works, but the fee
+  would leave escrow short.
+- **Account deposits are not reclaimed yet.** Each auction and order creates a
+  small Solana account whose rent deposit stays locked; there is no close
+  instruction yet.
 
 **Not yet tested:**
 
-- The Pyth tie-break has been checked against real price data in unit tests, but
-  its first live use on-chain is the mainnet demo — there is no live Pyth equity
-  price on devnet to test against.
-- The largest book tested had 42 orders; the maximum is 64.
-- Settlement batches were measured at 7 orders per transaction (with every order
-  from a different wallet). A full book needs about 10 settlement transactions;
-  address lookup tables would raise that limit and are not used yet.
+- The Pyth tie-break on-chain (unit tests only, for the reason above).
+- A real browser wallet signing. The app's transaction code was driven end to
+  end on devnet with local keys standing in for the wallet.
+- A full 64-order book; the largest tested had 42.
 - Nothing here has been audited.
 
 ## Open-source components
@@ -118,10 +190,10 @@ the web app — was written for this project.
 |---|---|
 | `uncross/programs/uncross/` | The on-chain program (Rust, Anchor) |
 | `uncross/scripts/keeper.mjs` | Opens auctions on a schedule and runs the cross and settlement |
+| `uncross/scripts/create-devnet-fixture.sh` | Builds the extension-identical fixture mints |
 | `uncross/scripts/devnet-*.mjs` | End-to-end tests against devnet |
 | `web/` | The web app |
 | `docs/` | Research and test logs, with transaction signatures |
 
-The test logs in `docs/` record every run that backs the claims above,
-including the three accounting bugs found and fixed along the way
-(`docs/phase2.md`).
+The test logs in `docs/` back every claim above, including the accounting bugs
+found and fixed along the way (`docs/phase2.md`).

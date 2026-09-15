@@ -10,8 +10,8 @@ on mainnet): `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP`.
 | 1. Multi-batch settlement on devnet | Surfaced three conservation bugs and a wrong batch limit; all fixed. Multi-batch run: see below |
 | 2. PreStocks verification | **Dropped** — every PreStocks mint charges an active 50 bps transfer fee |
 | 3. Mainnet deploy | Awaiting funding |
-| 4. Frontend | In progress |
-| 5. README | Not started |
+| 4. Frontend | Deployed to Vercel production (`uncross.0xo.in` alias; DNS record pending). Devnet keeper + order activity running |
+| 5. README | Drafted (`README.md`); live URL and final untested list to confirm after mainnet |
 | 6. Friday demo | Timing conflict flagged: the deadline is the market close |
 
 Task 1 was meant to be an hour of confirming the crank loop works. It turned

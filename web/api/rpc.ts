@@ -1,37 +1,11 @@
-// Same-origin JSON-RPC proxy for mainnet. The public mainnet RPC refuses
-// browser-origin requests (HTTP 403), so the app reads mainnet through here.
-// Set MAINNET_RPC_UPSTREAM in the Vercel project to a keyed endpoint and the
-// key stays server-side instead of shipping in the JS bundle.
+// Same-origin, read-only window onto Solana mainnet for exactly one thing: the
+// Pyth AAPL/USD price account shown as the reference price. Auctions run on
+// devnet; nothing else goes to mainnet. The public mainnet RPC refuses
+// browser-origin requests (HTTP 403), which is why this proxy exists.
 export const config = { runtime: "edge" };
 
 const UPSTREAM = process.env.MAINNET_RPC_UPSTREAM || "https://api.mainnet-beta.solana.com";
-const PROGRAM_ID = "Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP";
-
-// Only what the app needs. getProgramAccounts is the expensive one, so it is
-// limited to the Uncross program itself.
-const ALLOWED = new Set([
-  "getAccountInfo",
-  "getBalance",
-  "getBlockHeight",
-  "getBlockTime",
-  "getEpochInfo",
-  "getFeeForMessage",
-  "getGenesisHash",
-  "getLatestBlockhash",
-  "getMinimumBalanceForRentExemption",
-  "getMultipleAccounts",
-  "getProgramAccounts",
-  "getRecentPerformanceSamples",
-  "getRecentPrioritizationFees",
-  "getSignatureStatuses",
-  "getSlot",
-  "getTokenAccountBalance",
-  "getTokenAccountsByOwner",
-  "getVersion",
-  "isBlockhashValid",
-  "sendTransaction",
-  "simulateTransaction",
-]);
+const PYTH_AAPL = "D9uk39pqZMcnmtPP9WeC8cREUpKZmyXLga9mSQ79SphW";
 
 interface RpcCall {
   method?: unknown;
@@ -39,11 +13,13 @@ interface RpcCall {
 }
 
 function allowed(call: RpcCall): boolean {
-  if (!call || typeof call.method !== "string" || !ALLOWED.has(call.method)) return false;
-  if (call.method === "getProgramAccounts") {
-    return Array.isArray(call.params) && call.params[0] === PROGRAM_ID;
+  if (!call || !Array.isArray(call.params)) return false;
+  const [target] = call.params;
+  if (call.method === "getAccountInfo") return target === PYTH_AAPL;
+  if (call.method === "getMultipleAccounts") {
+    return Array.isArray(target) && target.length > 0 && target.every((k) => k === PYTH_AAPL);
   }
-  return true;
+  return false;
 }
 
 const json = (body: unknown, status: number) =>
@@ -61,8 +37,8 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error" } }, 400);
   }
   const calls = (Array.isArray(body) ? body : [body]) as RpcCall[];
-  if (calls.length === 0 || calls.length > 20 || !calls.every(allowed)) {
-    return json({ jsonrpc: "2.0", id: null, error: { code: -32601, message: "method not allowed through this proxy" } }, 403);
+  if (calls.length === 0 || calls.length > 5 || !calls.every(allowed)) {
+    return json({ jsonrpc: "2.0", id: null, error: { code: -32601, message: "only the Pyth AAPL account can be read through this proxy" } }, 403);
   }
   const upstream = await fetch(UPSTREAM, {
     method: "POST",

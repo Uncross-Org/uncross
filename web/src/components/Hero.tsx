@@ -15,9 +15,9 @@ interface Props {
   m: number | null;
   now: number;
   loadingAuction: boolean;
-  /** Devnet auctions trade test tokens, so comparing them to real Pyth prices is meaningless. */
-  isMainnet: boolean;
 }
+
+const refLabel = (tk: TickerConfig) => `Pyth · ${tk.underlying}/USD · read from Solana mainnet`;
 
 function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: number }) {
   const reopen = r.market?.nextOpen ? (
@@ -30,7 +30,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
     return (
       <div className="hero-side ref">
         <div className="hero-label">
-          <span className="dot dot-off" /> NASDAQ reference · Pyth
+          <span className="dot dot-off" /> {refLabel(tk)}
         </div>
         <div className="hero-none">No Pyth price on Solana for {tk.underlying}</div>
         <div className="ref-sub strong">The auction book is the only on-chain price.</div>
@@ -41,7 +41,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
   if (r.kind === "loading") {
     return (
       <div className="hero-side ref">
-        <div className="hero-label">NASDAQ reference · Pyth</div>
+        <div className="hero-label">{refLabel(tk)}</div>
         <div className="hero-price skeleton">&nbsp;</div>
         <div className="ref-sub">Reading Pyth on Solana mainnet…</div>
       </div>
@@ -50,7 +50,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
   if (r.kind === "error" || r.price == null) {
     return (
       <div className="hero-side ref">
-        <div className="hero-label">NASDAQ reference · Pyth</div>
+        <div className="hero-label">{refLabel(tk)}</div>
         <div className="hero-none">Reference price unavailable</div>
         <div className="ref-sub">Couldn't reach Solana mainnet. Retrying.</div>
       </div>
@@ -60,7 +60,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
     return (
       <div className="hero-side ref">
         <div className="hero-label">
-          <span className="dot dot-warn" /> NASDAQ reference · Pyth
+          <span className="dot dot-warn" /> {refLabel(tk)}
         </div>
         <div className="hero-none warn">No reference price for {fmtDuration(r.ageMs!)}</div>
         <div className="ref-stale num">
@@ -75,7 +75,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
   return (
     <div className="hero-side ref">
       <div className="hero-label">
-        <span className={`dot ${regular ? "dot-live" : "dot-ext"}`} /> NASDAQ reference · Pyth
+        <span className={`dot ${regular ? "dot-live" : "dot-ext"}`} /> {refLabel(tk)}
         {regular ? <span className="tag tag-live">Trading</span> : r.kind === "extended" ? <span className="tag tag-ext">Extended hours</span> : null}
       </div>
       <div className="hero-price num">
@@ -93,7 +93,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
   );
 }
 
-export function Hero({ tk, ref_, auction, phase, book, m, now, loadingAuction, isMainnet }: Props) {
+export function Hero({ tk, ref_, auction, phase, book, m, now, loadingAuction }: Props) {
   const crossed = phase === "cleared" || phase === "settled";
   let right: JSX.Element;
   if (!tk.mint) {
@@ -126,7 +126,8 @@ export function Hero({ tk, ref_, auction, phase, book, m, now, loadingAuction, i
     const vol = rawToShares(volRaw, m);
     const { bid, ask } = bestBidAsk(book);
     const flashKey = `${priceRaw}|${volRaw}`;
-    const vsRef = isMainnet && ref_.price != null && volRaw > 0n ? ((price - ref_.price) / ref_.price) * 100 : null;
+    // Only against a fresh print: a stale price is not a reference.
+    const vsRef = ref_.fresh && ref_.price != null && volRaw > 0n ? ((price - ref_.price) / ref_.price) * 100 : null;
     right = (
       <div className="hero-side venue">
         <div className="hero-label">
@@ -145,11 +146,8 @@ export function Hero({ tk, ref_, auction, phase, book, m, now, loadingAuction, i
               </Flash>
             </div>
             {vsRef != null && (
-              <div className={`ref-sub num ${ref_.fresh ? "" : "muted"}`}>
-                {fmtPct(vsRef)} vs {ref_.fresh ? "Pyth" : "last Pyth print"}
-              </div>
+              <div className="ref-sub num">{fmtPct(vsRef)} vs Pyth (Solana mainnet)</div>
             )}
-            {!isMainnet && <div className="ref-sub muted">Devnet test prices</div>}
           </>
         ) : crossed ? (
           <>

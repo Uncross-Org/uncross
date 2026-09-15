@@ -197,7 +197,7 @@ export function DepthChart({ orders, indicative, reference, crossed }: Props) {
                   <g className={reference.fresh ? "ref-mark" : "ref-mark stale"}>
                     <line x1={geo.sx(reference.price)} x2={geo.sx(reference.price)} y1={M.t} y2={H - M.b} />
                     <text x={geo.sx(reference.price)} y={M.t - 8} textAnchor="middle">
-                      Pyth {reference.fresh ? "" : "(stale) "}
+                      Pyth mainnet {reference.fresh ? "" : "(stale) "}
                       {fmtPrice(reference.price)}
                     </text>
                   </g>
@@ -208,7 +208,7 @@ export function DepthChart({ orders, indicative, reference, crossed }: Props) {
                     y={M.t - 8}
                     textAnchor={reference.price > geo.x1 ? "end" : "start"}
                   >
-                    {reference.price > geo.x1 ? "" : "← "}Pyth {reference.fresh ? "" : "(stale) "}
+                    {reference.price > geo.x1 ? "" : "← "}Pyth mainnet {reference.fresh ? "" : "(stale) "}
                     {fmtPrice(reference.price)}
                     {reference.price > geo.x1 ? " →" : ""}
                   </text>
