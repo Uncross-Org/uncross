@@ -1,0 +1,41 @@
+use anchor_lang::prelude::*;
+
+#[error_code]
+pub enum UncrossError {
+    #[msg("close_slot must be after open_slot")]
+    InvalidWindow,
+    #[msg("freeze_slots must be smaller than the auction window")]
+    FreezeTooLong,
+    #[msg("auction is not accepting orders")]
+    AuctionNotOpen,
+    #[msg("current slot is outside the auction's open window")]
+    OutsideOpenWindow,
+    #[msg("auction order book is full")]
+    OrderBookFull,
+    #[msg("quantity must be greater than zero")]
+    ZeroQuantity,
+    #[msg("limit_price must be greater than zero")]
+    ZeroPrice,
+    #[msg("order does not belong to this auction")]
+    OrderAuctionMismatch,
+    #[msg("only the order owner may cancel it")]
+    NotOrderOwner,
+    #[msg("order is past the cancellation freeze window")]
+    PastFreezeWindow,
+    #[msg("order already cancelled")]
+    AlreadyCancelled,
+    #[msg("order already settled")]
+    AlreadySettled,
+    #[msg("clearing can only run after the auction closes")]
+    AuctionNotClosed,
+    #[msg("settlement requires clearing to have run first")]
+    NotYetCleared,
+    #[msg("order index out of range")]
+    OrderIndexOutOfRange,
+    #[msg("a settlement batch may contain at most 18 orders (docs/phase0.md Q6)")]
+    BatchTooLarge,
+    #[msg("math overflow")]
+    MathOverflow,
+    #[msg("wrong token mint for this order side")]
+    WrongMint,
+}
