@@ -246,7 +246,9 @@ pub mod uncross {
         a.executable_volume = v_star;
         a.indicative_price = p_star;
         a.indicative_volume = v_star;
-        a.status = STATUS_CLEARED;
+        // An empty book, or one where every order was cancelled, has nothing
+        // to settle; without this it would sit in Cleared forever.
+        a.status = if a.settled_count >= a.order_count { STATUS_SETTLED } else { STATUS_CLEARED };
         Ok(())
     }
 

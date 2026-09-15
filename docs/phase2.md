@@ -353,6 +353,39 @@ sells at 90 — and the final indicative matched `compute_clearing`.
 The 42 order signatures are in `uncross/scripts/devnet-multibatch.mjs`'s run
 log; placement is reproducible with that script.
 
+### The web app's own transaction code, driven end to end
+
+`web/scripts/wallet-flow.ts` runs the functions the UI calls on click
+(`placeOrderIxs`, `cancelOrderIx`, `computeClearingIx`, `settleIx`, `sendIxs`,
+`sendMany`) against devnet, with local keypairs standing in for a browser
+wallet, on the IBMx fixture (multiplier 1.0153, so every price and quantity
+goes through the per-share conversion). Sell 3 @ $100/share, buy 3 @ $110,
+buy 1 @ $50 then cancelled. Indicative $105.00 × 3.0000 shares after the
+second order; cleared at **$105.00/share × 3.0000 shares**; settled 3/3; both
+vaults zero. It also confirmed the app's ATA handling: each place-order
+transaction creates the Token-2022 ticker ATA and the legacy USDC ATA
+idempotently.
+
+| Step | Signature |
+|---|---|
+| sell 3 @ $100 | `2uFQVk7BnJJkpPSwuGDuxUZZUtt5pXS8BcSfK7uGVVsBfTBhSzK3VqwehuPwFaxq9E29rXb6CfL9WSPjGEKLApDV` |
+| buy 3 @ $110 | `2KGpK3rDfFZeh2krRdAmahrw2geQMeEKxQVPRENtaU3u1eTSHm6jetXXXbq67D8jds6giDyzoy8zcY5SSgf4mSx2` |
+| buy 1 @ $50 | `2NAPv3cnPBg4xEyaGzR6MVttJ95ZtmcCipX18forw36o1gekguJ6tvRT1NBaiKwJ4fd1Ddatqp3h95Z6jfR5vgeZ` |
+| cancel #2 | `2voYdJUaiuUytMvajGKdFZ9iYtmGzyt4yUi5GzpYBeDKvbPjTfqVeRFkpJsCFtuAzYdxjSDJfBkaUNcZ2B9hZaNY` |
+| compute_clearing | `22AZrNnWM49asDum4YY5vbfkKw4RmEeuj9dM2jUXtBDmem66ydpzig8QJpQp7hP1mNiqF8C9cXc7EMtJx2k1QUmA` |
+| settle | `2jCyg2YV9MYtB3kZNreGwHDcMz2Vk9oJJNSz5ENkMrb1KkLXb3Wdo3UTzuKkN1oxRuz6NT3n8z7aPdaw3z28ZeM4` |
+
+Still not exercised: a real browser wallet (Phantom/Solflare/Backpack) signing.
+
+### Bug: empty auctions never finished (fixed)
+
+`compute_clearing` always left an auction `cleared`, and only settlement moved
+it to `settled`. An auction with no orders — or whose orders were all
+cancelled — has nothing to settle, so it stayed `cleared` forever, and the
+keeper and the UI both kept treating it as unfinished. Caught by the UI showing
+"An auction is waiting to be finished · 0 orders · 0 to settle". Now
+`compute_clearing` marks it `settled` when nothing is left to settle.
+
 ### Task 1 checklist
 
 | Requirement | Result |

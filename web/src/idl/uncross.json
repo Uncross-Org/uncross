@@ -1,0 +1,974 @@
+{
+  "address": "Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP",
+  "metadata": {
+    "name": "uncross",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "cancel_and_refund",
+      "docs": [
+        "Failure path: refunds each order's full original escrow, ignoring any",
+        "computed fill -- e.g. when settle_batch cannot run because the mint is",
+        "paused. Only available before any order has been clear-settled."
+      ],
+      "discriminator": [
+        86,
+        34,
+        75,
+        82,
+        239,
+        186,
+        2,
+        228
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "auction",
+          "writable": true
+        },
+        {
+          "name": "vault_ticker",
+          "writable": true
+        },
+        {
+          "name": "vault_quote",
+          "writable": true
+        },
+        {
+          "name": "ticker_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "ticker_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "order_indices",
+          "type": {
+            "vec": "u16"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancel_order",
+      "discriminator": [
+        95,
+        129,
+        237,
+        240,
+        8,
+        49,
+        223,
+        132
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "auction",
+          "writable": true
+        },
+        {
+          "name": "order",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "auction"
+              },
+              {
+                "kind": "account",
+                "path": "order.order_index",
+                "account": "Order"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_ticker",
+          "writable": true
+        },
+        {
+          "name": "vault_quote",
+          "writable": true
+        },
+        {
+          "name": "owner_ticker_ata",
+          "writable": true
+        },
+        {
+          "name": "owner_quote_ata",
+          "writable": true
+        },
+        {
+          "name": "ticker_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "ticker_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "compute_clearing",
+      "docs": [
+        "Permissionless / crank-callable. Idempotent: a call after the auction is",
+        "already Cleared or Settled is a no-op rather than an error."
+      ],
+      "discriminator": [
+        3,
+        65,
+        154,
+        219,
+        80,
+        250,
+        15,
+        100
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "auction",
+          "writable": true
+        },
+        {
+          "name": "ticker_mint"
+        },
+        {
+          "name": "pyth_price_feed",
+          "docs": [
+            "Pyth PriceUpdateV2 account for this auction's feed. Any account may be",
+            "passed; oracle::read_fresh_price checks owner, feed id, verification",
+            "level, freshness and confidence, and anything that fails simply means",
+            "\"no oracle anchor\" for this cross."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_auction",
+      "discriminator": [
+        37,
+        10,
+        117,
+        197,
+        208,
+        88,
+        117,
+        62
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "auction",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "ticker_mint"
+              },
+              {
+                "kind": "arg",
+                "path": "open_slot"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticker_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "vault_ticker",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "auction"
+              },
+              {
+                "kind": "account",
+                "path": "ticker_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "ticker_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "vault_quote",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "auction"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "ticker_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "open_slot",
+          "type": "u64"
+        },
+        {
+          "name": "close_slot",
+          "type": "u64"
+        },
+        {
+          "name": "freeze_slots",
+          "type": "u64"
+        },
+        {
+          "name": "cadence_slots",
+          "type": "u64"
+        },
+        {
+          "name": "pyth_feed_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "place_order",
+      "discriminator": [
+        51,
+        194,
+        155,
+        175,
+        109,
+        130,
+        96,
+        106
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "auction",
+          "writable": true
+        },
+        {
+          "name": "order",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "auction"
+              },
+              {
+                "kind": "arg",
+                "path": "order_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_ticker",
+          "writable": true
+        },
+        {
+          "name": "vault_quote",
+          "writable": true
+        },
+        {
+          "name": "owner_ticker_ata",
+          "docs": [
+            "Must already exist. Left unchecked (address-derived, not deserialized as",
+            "a typed Token-2022 account) to keep this struct's BPF stack frame small."
+          ],
+          "writable": true
+        },
+        {
+          "name": "owner_quote_ata",
+          "writable": true
+        },
+        {
+          "name": "ticker_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "ticker_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "side",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        },
+        {
+          "name": "limit_price",
+          "type": "u64"
+        },
+        {
+          "name": "quantity",
+          "type": "u64"
+        },
+        {
+          "name": "order_index",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "settle_batch",
+      "docs": [
+        "Crank-callable, permissionless. Settles a batch of orders using the fills",
+        "and quote amounts fixed by compute_clearing. remaining_accounts must be",
+        "[order, owner_ticker_ata, owner_quote_ata] repeated once per index."
+      ],
+      "discriminator": [
+        22,
+        2,
+        21,
+        223,
+        225,
+        122,
+        163,
+        214
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "auction",
+          "writable": true
+        },
+        {
+          "name": "vault_ticker",
+          "writable": true
+        },
+        {
+          "name": "vault_quote",
+          "writable": true
+        },
+        {
+          "name": "ticker_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "ticker_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "order_indices",
+          "type": {
+            "vec": "u16"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Auction",
+      "discriminator": [
+        218,
+        94,
+        247,
+        242,
+        126,
+        233,
+        131,
+        81
+      ]
+    },
+    {
+      "name": "Order",
+      "discriminator": [
+        134,
+        173,
+        223,
+        185,
+        77,
+        86,
+        28,
+        51
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidWindow",
+      "msg": "close_slot must be after open_slot"
+    },
+    {
+      "code": 6001,
+      "name": "FreezeTooLong",
+      "msg": "freeze_slots must be smaller than the auction window"
+    },
+    {
+      "code": 6002,
+      "name": "AuctionNotOpen",
+      "msg": "auction is not accepting orders"
+    },
+    {
+      "code": 6003,
+      "name": "OutsideOpenWindow",
+      "msg": "current slot is outside the auction's open window"
+    },
+    {
+      "code": 6004,
+      "name": "OrderBookFull",
+      "msg": "auction order book is full"
+    },
+    {
+      "code": 6005,
+      "name": "ZeroQuantity",
+      "msg": "quantity must be greater than zero"
+    },
+    {
+      "code": 6006,
+      "name": "ZeroPrice",
+      "msg": "limit_price must be greater than zero"
+    },
+    {
+      "code": 6007,
+      "name": "OrderAuctionMismatch",
+      "msg": "order does not belong to this auction"
+    },
+    {
+      "code": 6008,
+      "name": "NotOrderOwner",
+      "msg": "only the order owner may cancel it"
+    },
+    {
+      "code": 6009,
+      "name": "PastFreezeWindow",
+      "msg": "order is past the cancellation freeze window"
+    },
+    {
+      "code": 6010,
+      "name": "AlreadyCancelled",
+      "msg": "order already cancelled"
+    },
+    {
+      "code": 6011,
+      "name": "AlreadySettled",
+      "msg": "order already settled"
+    },
+    {
+      "code": 6012,
+      "name": "AuctionNotClosed",
+      "msg": "clearing can only run after the auction closes"
+    },
+    {
+      "code": 6013,
+      "name": "NotYetCleared",
+      "msg": "settlement requires clearing to have run first"
+    },
+    {
+      "code": 6014,
+      "name": "OrderIndexOutOfRange",
+      "msg": "order index out of range"
+    },
+    {
+      "code": 6015,
+      "name": "BatchTooLarge",
+      "msg": "too many orders in one settlement batch"
+    },
+    {
+      "code": 6016,
+      "name": "MathOverflow",
+      "msg": "math overflow"
+    },
+    {
+      "code": 6017,
+      "name": "WrongMint",
+      "msg": "wrong token account for this order's owner"
+    },
+    {
+      "code": 6018,
+      "name": "OrderIndexMismatch",
+      "msg": "order_index must equal the auction's current order count"
+    },
+    {
+      "code": 6019,
+      "name": "SettlementPathLocked",
+      "msg": "auction is already being wound down on the other settlement path"
+    }
+  ],
+  "types": [
+    {
+      "name": "Auction",
+      "docs": [
+        "Zero-copy so Anchor never deserializes this ~2.9KB account onto the 4KB BPF",
+        "stack. Fields are ordered largest-alignment-first with explicit padding so",
+        "the repr(C) layout has no implicit padding, which bytemuck requires."
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "open_slot",
+            "type": "u64"
+          },
+          {
+            "name": "close_slot",
+            "type": "u64"
+          },
+          {
+            "name": "freeze_slots",
+            "type": "u64"
+          },
+          {
+            "name": "cadence_slots",
+            "type": "u64"
+          },
+          {
+            "name": "clearing_price",
+            "type": "u64"
+          },
+          {
+            "name": "executable_volume",
+            "type": "u64"
+          },
+          {
+            "name": "reference_price",
+            "type": "u64"
+          },
+          {
+            "name": "indicative_price",
+            "type": "u64"
+          },
+          {
+            "name": "indicative_volume",
+            "type": "u64"
+          },
+          {
+            "name": "ticker_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticker_token_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_token_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_ticker",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault_quote",
+            "type": "pubkey"
+          },
+          {
+            "name": "pyth_feed_id",
+            "docs": [
+              "Pyth feed this auction accepts as its reference price. All-zero means no",
+              "oracle anchor. Bound at creation so a permissionless compute_clearing",
+              "caller cannot substitute another asset's feed."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "protocol_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "order_count",
+            "type": "u16"
+          },
+          {
+            "name": "settled_count",
+            "type": "u16"
+          },
+          {
+            "name": "ticker_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "quote_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "reference_price_set",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "settle_path",
+            "type": "u8"
+          },
+          {
+            "name": "_pad",
+            "type": {
+              "array": [
+                "u8",
+                4
+              ]
+            }
+          },
+          {
+            "name": "orders",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "OrderSummary"
+                  }
+                },
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Order",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "auction",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "order_index",
+            "type": "u16"
+          },
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "Side"
+              }
+            }
+          },
+          {
+            "name": "limit_price",
+            "type": "u64"
+          },
+          {
+            "name": "quantity",
+            "type": "u64"
+          },
+          {
+            "name": "escrow_amount",
+            "type": "u64"
+          },
+          {
+            "name": "filled_quantity",
+            "type": "u64"
+          },
+          {
+            "name": "cancelled",
+            "type": "bool"
+          },
+          {
+            "name": "settled",
+            "type": "bool"
+          },
+          {
+            "name": "refunded",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrderSummary",
+      "docs": [
+        "Mirror of an Order's clearing-relevant fields, kept inline in the Auction so",
+        "compute_clearing runs over one account. `filled_quantity` and `quote_amount`",
+        "are both decided by compute_clearing; settlement only moves them.",
+        "`quote_amount` is what a seller receives, or what a buyer is charged, in raw",
+        "quote units."
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "limit_price",
+            "type": "u64"
+          },
+          {
+            "name": "quantity",
+            "type": "u64"
+          },
+          {
+            "name": "filled_quantity",
+            "type": "u64"
+          },
+          {
+            "name": "quote_amount",
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "type": "u8"
+          },
+          {
+            "name": "cancelled",
+            "type": "u8"
+          },
+          {
+            "name": "side",
+            "type": "u8"
+          },
+          {
+            "name": "_pad",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Side",
+      "repr": {
+        "kind": "rust"
+      },
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Buy"
+          },
+          {
+            "name": "Sell"
+          }
+        ]
+      }
+    }
+  ]
+}
