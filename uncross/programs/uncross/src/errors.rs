@@ -32,10 +32,14 @@ pub enum UncrossError {
     NotYetCleared,
     #[msg("order index out of range")]
     OrderIndexOutOfRange,
-    #[msg("a settlement batch may contain at most 18 orders (docs/phase0.md Q6)")]
+    #[msg("too many orders in one settlement batch")]
     BatchTooLarge,
     #[msg("math overflow")]
     MathOverflow,
-    #[msg("wrong token mint for this order side")]
+    #[msg("wrong token account for this order's owner")]
     WrongMint,
+    #[msg("order_index must equal the auction's current order count")]
+    OrderIndexMismatch,
+    #[msg("auction is already being wound down on the other settlement path")]
+    SettlementPathLocked,
 }

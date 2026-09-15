@@ -68,6 +68,16 @@ fixture, with the same configuration shape, and nothing extra is present.
 4. **Metadata `uri`.** Points at a non-existent example.com URL; the real one
    points at Backed Finance's metadata service. Nothing on-chain reads it.
 
+## IBMx fixture (added in Phase 2)
+
+`9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp` — the same eight extensions and
+8 decimals as the ticker fixture above, replicating the real IBMx mint
+(`XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr`, read live in Phase 2 and found
+extension-identical to AAPLx). Its scaled-UI multiplier starts at the live IBMx
+value, 1.015340763856885, rather than 1, so anything that converts between raw
+and UI amounts is exercised against a non-trivial multiplier on devnet. 1,000
+tokens were minted to the deploy wallet; wallet 2 holds an empty ATA.
+
 ### What this fixture cannot tell us
 
 The fixture cannot prove anything about behaviour that depends on the *issuer*
