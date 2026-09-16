@@ -160,6 +160,11 @@ Two consequences:
   at weekends, but possibly not 16:00–20:00 ET. When the feed actually goes
   stale is being measured.
 
+  > **Measured result (later):** it did not go stale overnight either. Checked
+  > every five minutes from 16:11 to 02:49 ET, the latest print was never more
+  > than 14 seconds old. The overnight claim is retracted; see
+  > [docs/pyth.md](pyth.md).
+
 ### Task 6 timing conflict
 
 Submission closes **Fri 18 Sept 16:00 ET — which is the market close.** A

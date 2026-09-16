@@ -24,9 +24,10 @@ declare_id!("Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP");
 /// when owners repeat (docs/phase2.md).
 pub const MAX_BATCH: usize = 12;
 
-/// Freshness window for a Pyth price to count as live. Outside US market hours
-/// the feed stops publishing and this gate fails, which is the expected path:
-/// the auction proceeds without an oracle anchor (docs/phase0.md Q3).
+/// Freshness window for a Pyth price to count as live. When a feed stops
+/// publishing this gate fails and the auction clears on its own book with no
+/// oracle anchor. Freshness is not a market-hours signal, though: the AAPL feed
+/// was measured still publishing through the close and overnight (docs/pyth.md).
 pub const ORACLE_MAX_AGE_SECS: u64 = 90;
 
 #[program]

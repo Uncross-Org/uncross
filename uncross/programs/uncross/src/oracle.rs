@@ -38,8 +38,9 @@ pub const MAX_CONF_BPS: u128 = 200;
 ///
 /// The spec's "status == Trading" gate has no direct equivalent here:
 /// PriceUpdateV2 carries no trading-status field, so freshness is the only
-/// on-chain signal of a live market. Returns None on anything else, which when
-/// the feed has stopped publishing is the expected outcome (docs/phase0.md Q3).
+/// on-chain signal of a live price. Returns None on anything else. A stale feed
+/// is one such case, but staleness is not a proxy for "market closed": the AAPL
+/// feed was measured publishing through the close and overnight (docs/pyth.md).
 pub fn read_fresh_price(
     account: &AccountInfo,
     expected_feed_id: &[u8; 32],
