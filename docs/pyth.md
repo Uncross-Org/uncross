@@ -113,6 +113,14 @@ returns a price only if every one of these holds:
 7. It was published within 90 seconds of the current on-chain time.
 8. The confidence interval is no wider than 2% of the price.
 
+Whatever the gate decides is written to the auction at the cross: a result
+code in `oracle_gate` (passed, or the first reason it refused — no feed, wrong
+owner, not a price update, not fully verified, wrong feed, bad price, stale,
+confidence too wide, multiplier unreadable) and, once the account is confirmed
+to be the bound feed, the price's `publish_time` in `oracle_publish_time`. Any
+cross can be audited afterwards from the auction account alone. Auctions that
+crossed before this was deployed on 16 September read 0, "not recorded".
+
 A passing price is then converted from per-share to per-raw-token. xStocks use
 Token-2022's scaled-UI-amount extension, so one raw token is worth `m` shares,
 while limit prices are quoted per raw token. The program reads the mint's
@@ -149,7 +157,8 @@ pausing the token mid-auction, and changing its multiplier mid-auction.
 Pyth's devnet AAPL account is a stale shard 0, more than two months old. So on
 devnet the gate is exercised on its failure path on every auction: the keeper
 passes the freshest devnet shard, the gate rejects it as stale, and the auction
-clears by rule 4. The keeper logs this as `pyth anchor none`.
+clears by rule 4. The auction records the refusal as `stale`, with the stale
+price's publish time, and the site shows that recorded result.
 
 The passing path is covered by unit tests built from the real mainnet
 account's bytes and the real AAPLx mint's bytes:
@@ -166,6 +175,7 @@ account's bytes and the real AAPLx mint's bytes:
 | `converts_per_share_to_per_raw_token` | the unit conversion |
 | `reads_live_aaplx_multiplier_either_side_of_its_scheduled_change` | the effective multiplier |
 | `aapl_oracle_price_converts_to_aaplx_per_token_units` | the conversion on real bytes |
+| `records_why_the_gate_refused` | the recorded result for every refusal path |
 | `oracle_breaks_price_tie` | rule 3 in the clearing logic |
 
 The site shows Pyth's live mainnet price, read directly from the account through

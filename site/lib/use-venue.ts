@@ -37,6 +37,8 @@ interface WireAuction {
   indicativePrice: string;
   indicativeVolume: string;
   referencePriceSet?: boolean;
+  oracleGate?: number;
+  oraclePublishTime?: number;
   orders: WireOrder[];
 }
 
@@ -62,6 +64,8 @@ export interface LiveAuction {
   indicativePrice: bigint;
   indicativeVolume: bigint;
   referencePriceSet: boolean;
+  oracleGate: number;
+  oraclePublishTime: number;
   orders: OrderSummary[];
 }
 
@@ -78,6 +82,8 @@ const hydrate = (w: WireAuction): LiveAuction => ({
   indicativePrice: BigInt(w.indicativePrice),
   indicativeVolume: BigInt(w.indicativeVolume),
   referencePriceSet: w.referencePriceSet ?? false,
+  oracleGate: w.oracleGate ?? 0,
+  oraclePublishTime: w.oraclePublishTime ?? 0,
   orders: w.orders.map((o) => ({
     index: o.index,
     side: o.side,
