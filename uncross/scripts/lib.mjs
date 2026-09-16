@@ -34,6 +34,59 @@ export const RPC_URLS = (process.env.RPC_URLS ?? process.env.RPC_URL ?? process.
 /** The preferred endpoint. Kept as a single value for existing callers. */
 export const RPC_URL = RPC_URLS[0];
 
+/** Hostnames only: a dedicated endpoint's URL carries its API key. */
+export const rpcHosts = () => RPC_URLS.map((u) => new URL(u).host);
+
+// Failover across RPC_URLS. web3.js sends every request to the one endpoint a
+// Connection was built with, so without this the list above was only ever its
+// first entry. This fetch tries endpoints in order, skipping any that failed
+// in the last minute; a network error, 429 or 5xx parks that endpoint and the
+// same request goes to the next one. It also counts requests and 429s per RPC
+// method, which is what the soak test reports.
+const COOLDOWN_MS = 60_000;
+const parkedUntil = new Map();
+export const rpcStats = { since: Date.now(), requests: {}, rateLimited: {}, failovers: 0 };
+
+export async function failoverFetch(_input, init) {
+  let method = "?";
+  try {
+    const body = JSON.parse(init?.body ?? "{}");
+    method = Array.isArray(body) ? `batch:${body[0]?.method}` : body.method;
+  } catch {}
+  rpcStats.requests[method] = (rpcStats.requests[method] ?? 0) + 1;
+
+  const now = Date.now();
+  const ready = RPC_URLS.filter((u) => (parkedUntil.get(u) ?? 0) <= now);
+  const order = ready.length ? ready : RPC_URLS;
+  let last;
+  for (let i = 0; i < order.length; i++) {
+    const url = order[i];
+    const isLast = i === order.length - 1;
+    try {
+      const res = await fetch(url, init);
+      if (res.status === 429) rpcStats.rateLimited[method] = (rpcStats.rateLimited[method] ?? 0) + 1;
+      if ((res.status === 429 || res.status >= 500) && !isLast) {
+        parkedUntil.set(url, Date.now() + COOLDOWN_MS);
+        rpcStats.failovers++;
+        last = res;
+        continue;
+      }
+      return res;
+    } catch (e) {
+      last = e;
+      parkedUntil.set(url, Date.now() + COOLDOWN_MS);
+      if (!isLast) rpcStats.failovers++;
+    }
+  }
+  if (last instanceof Response) return last;
+  throw last;
+}
+
+/** A devnet Connection that fails over across RPC_URLS. */
+export function makeConnection(commitment = "confirmed") {
+  return new Connection(RPC_URL, { commitment, fetch: failoverFetch });
+}
+
 export const TICKER_PROGRAM = TOKEN_2022_PROGRAM_ID;
 export const QUOTE_PROGRAM = TOKEN_PROGRAM_ID;
 export const ASSOCIATED_TOKEN_PROGRAM = new PublicKey(
@@ -101,15 +154,22 @@ export function loadFixture() {
   );
 }
 
+/**
+ * The program's IDL. Read from idl/, which is committed, because target/ is
+ * gitignored and a hosted runner builds from a clean checkout: loading from
+ * target/idl would crash the keeper and bot on start. Regenerate with
+ * `anchor build && cp target/idl/uncross.json idl/`.
+ */
+export function loadIdl() {
+  return JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "idl/uncross.json"), "utf8"));
+}
+
 export function getProgram(payerKeypair) {
-  const connection = new Connection(RPC_URL, "confirmed");
+  const connection = makeConnection();
   const provider = new AnchorProvider(connection, new Wallet(payerKeypair), {
     commitment: "confirmed",
   });
-  const idl = JSON.parse(
-    fs.readFileSync(path.join(PROJECT_ROOT, "target/idl/uncross.json"), "utf8"),
-  );
-  return { program: new Program(idl, provider), connection, provider };
+  return { program: new Program(loadIdl(), provider), connection, provider };
 }
 
 export function auctionPda(programId, tickerMint, openSlot) {
@@ -141,7 +201,8 @@ export function decodeAuction(data) {
   const key = (o) => new PublicKey(b.subarray(o, o + 32));
   const orderCount = b.readUInt16LE(306);
   const orders = [];
-  for (let i = 0; i < orderCount; i++) {
+  // 63 summary slots; the 64th slot's bytes now hold the rent payer.
+  for (let i = 0; i < Math.min(orderCount, 63); i++) {
     const o = 320 + i * 40;
     orders.push({
       index: i,
@@ -180,6 +241,10 @@ export function decodeAuction(data) {
     referencePriceSet: b[313] !== 0,
     bump: b[314],
     settlePath: SETTLE_PATH[b[315]],
+    // Who paid the rent, returned by close_auction. All-zero on auctions
+    // created before the field existed, which can never be closed.
+    payer: key(2840),
+    hasPayer: b.subarray(2840, 2872).some((x) => x !== 0),
     orders,
   };
 }

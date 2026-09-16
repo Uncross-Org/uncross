@@ -5,7 +5,9 @@
     "nixpacksPlan": {
       "phases": {
         "install": {
-          "cmds": ["npm ci --omit=dev || npm install --omit=dev"]
+          "cmds": [
+            "yarn install --frozen-lockfile --production"
+          ]
         }
       }
     }

@@ -25,7 +25,9 @@ import { decodeAuction, getAccountsBatched, sleep, withRetry } from "./lib.mjs";
 const { PublicKey } = anchor.web3;
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "..");
-const INDEX_PATH = path.join(PROJECT_ROOT, "scripts/.auction-index.json");
+// Overridable so a run against another cluster (a local validator, say) cannot
+// prune the devnet index as dead addresses.
+const INDEX_PATH = process.env.AUCTION_INDEX_PATH || path.join(PROJECT_ROOT, "scripts/.auction-index.json");
 
 /** Auction accounts are exactly this many bytes, discriminator included. */
 const AUCTION_SIZE = 2880;

@@ -30,7 +30,7 @@ the repository.
 
 | Variable | Purpose |
 |---|---|
-| `RPC_URLS` | Comma-separated endpoints, best first. The public devnet endpoint is appended automatically as a fallback, so losing the dedicated one degrades the venue rather than stopping it. |
+| `RPC_URLS` | Comma-separated endpoints, best first. The public devnet endpoint is appended automatically. Every connection the keeper and bot make goes through `failoverFetch` in `scripts/lib.mjs`: a network error, 429 or 5xx parks that endpoint for a minute and the same request goes to the next one. Logs show hostnames only, never the URL, because a dedicated URL carries its API key. |
 | `KEYPAIR_DEPLOY` | Contents of `deploy.json` — the keeper's fee payer and the fixture mint authority. |
 | `KEYPAIR_WALLET2` | Contents of `wallet2.json` — funds order owners. Activity service only. |
 | `KEYPAIR_MB_OWNERS` | Contents of `mb-owners.json`, the 42 test order owners (~9.7 KB). Activity service only. |
@@ -43,6 +43,13 @@ the keypair files contain.
 The endpoint URL carries an API key. It is set in Railway (and, for the site, in
 Vercel as the server-only `DEVNET_RPC` — never `NEXT_PUBLIC_DEVNET_RPC`, which
 would inline it into the browser bundle).
+
+> **Correction.** An earlier version of this document said losing the dedicated
+> endpoint would degrade the venue rather than stop it. As first committed that
+> was not true: nothing ever used any entry after the first, and the keeper
+> ignored `RPC_URLS` altogether, reading `DEVNET_RPC` instead. Both are fixed;
+> failover was tested with a dead primary (one request, one failover, the next
+> request skipping the parked endpoint).
 
 ## What it costs to run, measured
 
@@ -81,6 +88,19 @@ Cadence is the lever, because cost is per auction opened:
 An auction accepts orders for its whole window, so a longer cadence still leaves
 a live book with orders arriving and a populated recent-crosses list. What it
 costs is the chance of a visitor watching a cross land during a short visit.
+
+### After close_auction
+
+The figures above describe the program before `close_auction`. With it, the
+keeper returns an auction's rent and both vaults' rent once the auction is fully
+settled and its vaults are empty, so rent stops accumulating and the running
+cost falls towards transaction fees. The keeper closes empty auctions at once
+and keeps the newest six traded auctions per ticker, because the site's
+recent-crosses list and hero read them from chain.
+
+The measured per-auction net cost on devnet is reported once the upgrade is
+deployed. Deploying needs a temporary 2.2515 SOL buffer deposit, refunded when
+the upgrade completes.
 
 ### What is actually available
 
