@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fmtEt, fmtPrice, fmtShares } from "@/lib/uncross/format";
 import { useVenue } from "@/lib/use-venue";
+import { GATE_REASONS } from "@/lib/uncross/auction";
 
 const PHASE_COPY: Record<string, string> = {
   upcoming: "Opening",
@@ -133,12 +134,14 @@ export function LivePulse() {
 
       {current && (
         <p className="num border-t border-line pt-2 text-[11.5px] text-muted">
-          Pyth tie-break:{" "}
+          Pyth gate:{" "}
           {running
-            ? "checked at the cross"
-            : current.referencePriceSet
-              ? "a fresh Pyth price was available at the cross"
-              : "not used at this cross — the devnet Pyth feed was stale, so any tie went to the midpoint"}
+            ? "checked by the program at the cross"
+            : current.oracleGate === 0
+              ? "not recorded — this auction crossed before the program recorded it"
+              : `${current.oracleGate === 1 ? "passed" : `refused, ${GATE_REASONS[current.oracleGate] ?? "unknown reason"}`}${
+                  current.oraclePublishTime ? ` · price published ${fmtEt(current.oraclePublishTime * 1000)}` : ""
+                } · recorded on-chain`}
         </p>
       )}
 

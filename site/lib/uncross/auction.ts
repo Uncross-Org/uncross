@@ -52,8 +52,27 @@ export interface Auction {
   referencePriceSet: boolean;
   bump: number;
   settlePath: SettlePath;
+  /** Pyth gate outcome recorded at the cross; see GATE_REASONS. */
+  oracleGate: number;
+  /** publish_time (unix s) of the Pyth price the gate examined; 0 if none. */
+  oraclePublishTime: number;
   orders: OrderSummary[];
 }
+
+/** GATE_* codes from programs/uncross/src/oracle.rs, by value. */
+export const GATE_REASONS = [
+  "not recorded",
+  "passed",
+  "no feed configured",
+  "wrong owner",
+  "not a price update",
+  "not fully verified",
+  "wrong feed",
+  "bad price",
+  "stale",
+  "confidence too wide",
+  "multiplier unreadable",
+];
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
 
@@ -105,6 +124,8 @@ export function decodeAuction(address: PublicKey, data: Uint8Array): Auction {
     referencePriceSet: b[313] !== 0,
     bump: b[314],
     settlePath: SETTLE_PATH[b[315]] ?? "none",
+    oracleGate: b[316],
+    oraclePublishTime: Number(dv.getBigInt64(2872, true)),
     orders,
   };
 }

@@ -56,6 +56,9 @@ interface WireAuction {
   indicativeVolume: string;
   /** Whether a Pyth price passed the gate at the cross. */
   referencePriceSet: boolean;
+  /** The gate's recorded outcome (GATE_REASONS index) and the price's publish time. */
+  oracleGate: number;
+  oraclePublishTime: number;
   orders: WireOrder[];
   /** The raw account, base64, so the dashboard can decode it with its own decoder. */
   data: string;
@@ -84,6 +87,8 @@ const wire = (a: RawAuction, ticker: TickerSymbol): WireAuction => ({
   indicativePrice: a.indicativePrice.toString(),
   indicativeVolume: a.indicativeVolume.toString(),
   referencePriceSet: a.referencePriceSet,
+  oracleGate: a.oracleGate,
+  oraclePublishTime: a.oraclePublishTime,
   orders: a.orders.map((o) => ({
     index: o.index,
     side: o.side,

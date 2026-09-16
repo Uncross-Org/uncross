@@ -129,7 +129,9 @@ screen; auctions clear on devnet. Pyth has no live AAPL price on devnet — the
 only devnet account is months stale — so the auction's Pyth tie-break (the third
 rule above) never runs on-chain here. It is covered by unit tests built from the
 real mainnet price account's bytes. There is no IBM price on either network, so
-for IBMx the auction book is the only price there is.
+for IBMx the auction book is the only price there is. Since 16 September every
+auction also records on-chain what the gate decided at its cross, and the
+publish time of the price it examined, so any cross can be audited afterwards.
 
 ## What this doesn't solve
 
@@ -163,19 +165,24 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
   every transfer, which the escrow accounting does not handle, so they are not
   supported. Their mints were verified live, and custody works, but the fee
   would leave escrow short.
-- **Account deposits are not reclaimed yet.** Each auction and order creates a
-  small Solana account whose rent deposit stays locked; the deployed program
-  has no close instruction yet. `close_auction` is written and tested and
-  deploys after the submission. Auctions created before that upgrade have no
-  recorded payer, so they can never be closed and their rent stays locked
-  permanently.
+- **Order deposits are not reclaimed.** Each order creates a small account
+  whose rent, paid by the trader, stays locked. Auction rent is reclaimed:
+  since 16 September `close_auction` returns an auction's rent and both vaults'
+  rent to whoever paid it, but only once every order is settled and both vaults
+  are exactly empty; it refuses anything else. On devnet it refused an auction
+  mid-window, one cleared but unsettled, one partially settled, one with a
+  stray token in a vault, and a wrong rent recipient, then closed a finished
+  one. Opening, crossing, settling and closing an auction now costs about
+  0.00002 SOL net. Auctions created before that upgrade have no recorded payer,
+  so they can never be closed and their rent stays locked permanently.
 
 **Not yet tested:**
 
 - The Pyth tie-break on-chain (unit tests only, for the reason above).
 - A real browser wallet signing. The app's transaction code was driven end to
   end on devnet with local keys standing in for the wallet.
-- A full 64-order book; the largest tested had 42.
+- A full order book. Capacity is 63 orders (down from 64, to make room for the
+  rent payer); the largest tested had 42.
 - Nothing here has been audited.
 
 ## Open-source components

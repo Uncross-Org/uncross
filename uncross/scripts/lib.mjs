@@ -94,6 +94,8 @@ export const ASSOCIATED_TOKEN_PROGRAM = new PublicKey(
 );
 export const STATUS = ["open", "cleared", "settled"];
 export const SETTLE_PATH = ["none", "clear", "refund"];
+/** GATE_* codes from programs/uncross/src/oracle.rs, by value. */
+export const GATE = ["not recorded", "passed", "no feed configured", "wrong owner", "not a price update", "not fully verified", "wrong feed", "bad price", "stale", "confidence too wide", "multiplier unreadable"];
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -241,6 +243,10 @@ export function decodeAuction(data) {
     referencePriceSet: b[313] !== 0,
     bump: b[314],
     settlePath: SETTLE_PATH[b[315]],
+    // Pyth gate outcome at the cross (GATE_* in oracle.rs; 0 = not recorded)
+    // and the publish time of the price it examined.
+    oracleGate: b[316],
+    oraclePublishTime: Number(b.readBigInt64LE(2872)),
     // Who paid the rent, returned by close_auction. All-zero on auctions
     // created before the field existed, which can never be closed.
     payer: key(2840),

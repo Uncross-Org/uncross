@@ -32,54 +32,95 @@ const MIN_LEN: usize = OFF_PUBLISH_TIME + 8;
 /// price is too uncertain to break a tie with.
 pub const MAX_CONF_BPS: u128 = 200;
 
-/// Returns the oracle's price *per share*, scaled to 1e6, only if `account` is
-/// a fully-verified PriceUpdateV2 for exactly `expected_feed_id`, published
-/// within ORACLE_MAX_AGE_SECS, with conf/price under MAX_CONF_BPS.
+/// Outcome of the Pyth gate, recorded on the auction at the cross so it can be
+/// audited afterwards. 0 is reserved for "not recorded".
+pub const GATE_NOT_RECORDED: u8 = 0;
+pub const GATE_PASSED: u8 = 1;
+pub const GATE_NO_FEED: u8 = 2;
+pub const GATE_WRONG_OWNER: u8 = 3;
+pub const GATE_NOT_PRICE_UPDATE: u8 = 4;
+pub const GATE_NOT_FULLY_VERIFIED: u8 = 5;
+pub const GATE_WRONG_FEED: u8 = 6;
+pub const GATE_BAD_PRICE: u8 = 7;
+pub const GATE_STALE: u8 = 8;
+pub const GATE_WIDE_CONFIDENCE: u8 = 9;
+/// Set by compute_clearing when a passing price cannot be converted to
+/// per-raw-token units (the mint's multiplier could not be read).
+pub const GATE_BAD_MULTIPLIER: u8 = 10;
+
+/// What the gate saw: its verdict, the per-share price if it passed (1e6
+/// scale), and the account's publish_time once the account was confirmed to be
+/// the bound feed.
+#[derive(Debug, PartialEq, Eq)]
+pub struct GateReading {
+    pub outcome: u8,
+    pub price_per_share: Option<u64>,
+    pub publish_time: i64,
+}
+
+/// The Pyth gate. A price passes only if `account` is a fully-verified
+/// PriceUpdateV2 for exactly `expected_feed_id`, positive, published within
+/// ORACLE_MAX_AGE_SECS, with conf/price under MAX_CONF_BPS. Anything else is
+/// refused with the first reason that applies.
 ///
 /// The spec's "status == Trading" gate has no direct equivalent here:
 /// PriceUpdateV2 carries no trading-status field, so freshness is the only
-/// on-chain signal of a live price. Returns None on anything else. A stale feed
-/// is one such case, but staleness is not a proxy for "market closed": the AAPL
-/// feed was measured publishing through the close and overnight (docs/pyth.md).
-pub fn read_fresh_price(
-    account: &AccountInfo,
-    expected_feed_id: &[u8; 32],
-    clock: &Clock,
-) -> Option<u64> {
+/// on-chain signal of a live price. A stale feed fails here, but staleness is
+/// not a proxy for "market closed": the AAPL feed was measured publishing
+/// through the close and overnight (docs/pyth.md).
+pub fn check_price(account: &AccountInfo, expected_feed_id: &[u8; 32], clock: &Clock) -> GateReading {
+    let fail = |outcome: u8, publish_time: i64| GateReading { outcome, price_per_share: None, publish_time };
+
     if expected_feed_id == &[0u8; 32] {
-        return None;
+        return fail(GATE_NO_FEED, 0);
     }
     if account.owner != &PYTH_RECEIVER_PROGRAM_ID {
-        return None;
+        return fail(GATE_WRONG_OWNER, 0);
     }
-    let data = account.try_borrow_data().ok()?;
+    let Ok(data) = account.try_borrow_data() else {
+        return fail(GATE_NOT_PRICE_UPDATE, 0);
+    };
     if data.len() < MIN_LEN || data[..8] != PRICE_UPDATE_V2_DISCRIMINATOR {
-        return None;
+        return fail(GATE_NOT_PRICE_UPDATE, 0);
     }
     if data[OFF_VERIFICATION] != VERIFICATION_FULL {
-        return None;
+        return fail(GATE_NOT_FULLY_VERIFIED, 0);
     }
     if &data[OFF_FEED_ID..OFF_FEED_ID + 32] != expected_feed_id {
-        return None;
+        return fail(GATE_WRONG_FEED, 0);
     }
 
-    let price = read_i64(&data, OFF_PRICE)?;
-    let conf = read_u64(&data, OFF_CONF)?;
-    let expo = read_i32(&data, OFF_EXPO)?;
-    let publish_time = read_i64(&data, OFF_PUBLISH_TIME)?;
+    let (Some(price), Some(conf), Some(expo), Some(publish_time)) = (
+        read_i64(&data, OFF_PRICE),
+        read_u64(&data, OFF_CONF),
+        read_i32(&data, OFF_EXPO),
+        read_i64(&data, OFF_PUBLISH_TIME),
+    ) else {
+        return fail(GATE_BAD_PRICE, 0);
+    };
 
     if price <= 0 {
-        return None;
+        return fail(GATE_BAD_PRICE, publish_time);
     }
-    let age = clock.unix_timestamp.checked_sub(publish_time)?;
-    if age < 0 || age as u64 > ORACLE_MAX_AGE_SECS {
-        return None;
+    let fresh = clock
+        .unix_timestamp
+        .checked_sub(publish_time)
+        .is_some_and(|age| age >= 0 && age as u64 <= ORACLE_MAX_AGE_SECS);
+    if !fresh {
+        return fail(GATE_STALE, publish_time);
     }
     if (conf as u128) * 10_000 > (price as u128) * MAX_CONF_BPS {
-        return None;
+        return fail(GATE_WIDE_CONFIDENCE, publish_time);
     }
+    match scale_to_1e6(price, expo) {
+        Some(p) => GateReading { outcome: GATE_PASSED, price_per_share: Some(p), publish_time },
+        None => fail(GATE_BAD_PRICE, publish_time),
+    }
+}
 
-    scale_to_1e6(price, expo)
+/// The per-share price (1e6 scale) if the gate passes, otherwise None.
+pub fn read_fresh_price(account: &AccountInfo, expected_feed_id: &[u8; 32], clock: &Clock) -> Option<u64> {
+    check_price(account, expected_feed_id, clock).price_per_share
 }
 
 /// Effective scaled-UI multiplier of a Token-2022 mint: `new_multiplier` once
@@ -227,6 +268,56 @@ mod tests {
         data[OFF_CONF..OFF_CONF + 8].copy_from_slice(&wide.to_le_bytes());
         with_account(&mut data, &PYTH_RECEIVER_PROGRAM_ID, |ai| {
             assert_eq!(read_fresh_price(ai, &aapl_feed_id(), &clock_at(PUBLISH_TIME + 10)), None);
+        });
+    }
+
+    #[test]
+    fn records_why_the_gate_refused() {
+        let at = clock_at(PUBLISH_TIME + 10);
+        let mut data = hex_to_bytes(LIVE_AAPL);
+        with_account(&mut data, &PYTH_RECEIVER_PROGRAM_ID, |ai| {
+            let ok = check_price(ai, &aapl_feed_id(), &at);
+            assert_eq!(ok, GateReading { outcome: GATE_PASSED, price_per_share: Some(329_949_980), publish_time: PUBLISH_TIME });
+
+            let stale = check_price(ai, &aapl_feed_id(), &clock_at(PUBLISH_TIME + ORACLE_MAX_AGE_SECS as i64 + 1));
+            assert_eq!((stale.outcome, stale.publish_time), (GATE_STALE, PUBLISH_TIME));
+
+            let future = check_price(ai, &aapl_feed_id(), &clock_at(PUBLISH_TIME - 1));
+            assert_eq!(future.outcome, GATE_STALE);
+
+            assert_eq!(check_price(ai, &[0u8; 32], &at).outcome, GATE_NO_FEED);
+            let mut other = aapl_feed_id();
+            other[0] ^= 0xff;
+            // A different feed's publish time is not this feed's, so it is not recorded.
+            assert_eq!(check_price(ai, &other, &at), GateReading { outcome: GATE_WRONG_FEED, price_per_share: None, publish_time: 0 });
+        });
+        with_account(&mut data, &Pubkey::default(), |ai| {
+            assert_eq!(check_price(ai, &aapl_feed_id(), &at).outcome, GATE_WRONG_OWNER);
+        });
+
+        let mut partial = hex_to_bytes(LIVE_AAPL);
+        partial[OFF_VERIFICATION] = 0;
+        with_account(&mut partial, &PYTH_RECEIVER_PROGRAM_ID, |ai| {
+            assert_eq!(check_price(ai, &aapl_feed_id(), &at).outcome, GATE_NOT_FULLY_VERIFIED);
+        });
+
+        let mut not_update = hex_to_bytes(LIVE_AAPL);
+        not_update[0] ^= 0xff;
+        with_account(&mut not_update, &PYTH_RECEIVER_PROGRAM_ID, |ai| {
+            assert_eq!(check_price(ai, &aapl_feed_id(), &at).outcome, GATE_NOT_PRICE_UPDATE);
+        });
+
+        let mut wide = hex_to_bytes(LIVE_AAPL);
+        wide[OFF_CONF..OFF_CONF + 8].copy_from_slice(&(32_994_998u64 / 20).to_le_bytes());
+        with_account(&mut wide, &PYTH_RECEIVER_PROGRAM_ID, |ai| {
+            let r = check_price(ai, &aapl_feed_id(), &at);
+            assert_eq!((r.outcome, r.publish_time), (GATE_WIDE_CONFIDENCE, PUBLISH_TIME));
+        });
+
+        let mut negative = hex_to_bytes(LIVE_AAPL);
+        negative[OFF_PRICE..OFF_PRICE + 8].copy_from_slice(&(-1i64).to_le_bytes());
+        with_account(&mut negative, &PYTH_RECEIVER_PROGRAM_ID, |ai| {
+            assert_eq!(check_price(ai, &aapl_feed_id(), &at).outcome, GATE_BAD_PRICE);
         });
     }
 

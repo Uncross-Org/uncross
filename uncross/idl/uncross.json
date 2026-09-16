@@ -881,11 +881,19 @@
             "type": "u8"
           },
           {
+            "name": "oracle_gate",
+            "docs": [
+              "What the Pyth gate decided at the cross: one of the GATE_* codes in",
+              "oracle.rs. 0 on auctions cleared before the field existed."
+            ],
+            "type": "u8"
+          },
+          {
             "name": "_pad",
             "type": {
               "array": [
                 "u8",
-                4
+                3
               ]
             }
           },
@@ -912,13 +920,13 @@
             "type": "pubkey"
           },
           {
-            "name": "_pad_tail",
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
+            "name": "oracle_publish_time",
+            "docs": [
+              "publish_time of the Pyth price the gate examined, once it had confirmed",
+              "the account was the bound feed. 0 when the gate stopped earlier, and on",
+              "auctions cleared before the field existed."
+            ],
+            "type": "i64"
           }
         ]
       }

@@ -22,6 +22,7 @@ import {
   TICKER_PROGRAM,
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
+  GATE,
   makeConnection,
   loadIdl,
   rpcHosts,
@@ -138,7 +139,7 @@ async function clear(t, mint, a) {
   const after = decodeAuction((await connection.getAccountInfo(a.pubkey, "confirmed")).data);
   log(
     `${t.symbol} cleared ${a.pubkey.toBase58()} at ${after.clearingPrice} x ${after.executableVolume}`,
-    `(${after.orderCount} orders, pyth anchor ${after.referencePriceSet ? after.referencePrice : "none"})`,
+    `(${after.orderCount} orders, pyth gate ${GATE[after.oracleGate] ?? after.oracleGate}${after.oraclePublishTime ? ` @${after.oraclePublishTime}` : ""}${after.referencePriceSet ? `, anchor ${after.referencePrice}` : ""})`,
     r.sig,
   );
 }
