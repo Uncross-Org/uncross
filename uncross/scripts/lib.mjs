@@ -19,7 +19,20 @@ const {
 } = anchor.web3;
 
 const PROJECT_ROOT = path.resolve(import.meta.dirname, "..");
-export const RPC_URL = process.env.RPC_URL ?? "https://api.devnet.solana.com";
+// Endpoints, best first. A dedicated endpoint goes in RPC_URLS (or RPC_URL);
+// the public one stays last as a fallback, so losing the dedicated endpoint
+// degrades the venue rather than stopping it. The public endpoint alone
+// rate-limits getProgramAccounts into uselessness for this program once more
+// than one consumer is polling it.
+export const RPC_URLS = (process.env.RPC_URLS ?? process.env.RPC_URL ?? process.env.DEVNET_RPC ?? "")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean)
+  .concat("https://api.devnet.solana.com")
+  .filter((u, i, all) => all.indexOf(u) === i);
+
+/** The preferred endpoint. Kept as a single value for existing callers. */
+export const RPC_URL = RPC_URLS[0];
 
 export const TICKER_PROGRAM = TOKEN_2022_PROGRAM_ID;
 export const QUOTE_PROGRAM = TOKEN_PROGRAM_ID;

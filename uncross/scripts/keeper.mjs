@@ -25,6 +25,7 @@ import {
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
 } from "./lib.mjs";
+import { listAuctions as listAuctionsIndexed, rememberAuction } from "./auction-index.mjs";
 
 const { AnchorProvider, Program, Wallet, BN } = anchor;
 const { Connection, PublicKey, SystemProgram } = anchor.web3;
@@ -93,11 +94,12 @@ async function pythAccountFor(feedHex) {
   return best?.key ?? SystemProgram.programId;
 }
 
+// Reads auctions by address through the shared index rather than
+// getProgramAccounts, which the public devnet RPC rate-limits into
+// uselessness once more than one consumer polls it. See
+// scripts/auction-index.mjs for the measurements.
 async function listAuctions(mint) {
-  const accounts = await connection.getProgramAccounts(ID, {
-    filters: [{ dataSize: 2880 }, { memcmp: { offset: 80, bytes: mint.toBase58() } }],
-  });
-  return accounts.map(({ pubkey, account }) => ({ pubkey, ...decodeAuction(account.data) }));
+  return listAuctionsIndexed(connection, ID, mint);
 }
 
 async function openAuction(t, mint, slot) {
@@ -118,6 +120,9 @@ async function openAuction(t, mint, slot) {
     })
     .instruction();
   const r = await sendV0(connection, payer, [], [ix]);
+  // The keeper knows this address first-hand, so record it straight away: the
+  // index never has to discover an auction we opened ourselves.
+  rememberAuction(auction);
   log(`${t.symbol} opened ${auction.toBase58()} slots ${slot}..${slot + CADENCE} (freeze ${FREEZE})`, r.sig);
 }
 

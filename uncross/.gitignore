@@ -6,3 +6,4 @@ node_modules
 test-ledger
 .yarn
 .multibatch-result.json
+scripts/.auction-index.json

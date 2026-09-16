@@ -32,6 +32,7 @@ import {
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
 } from "./lib.mjs";
+import { listAuctions as listAuctionsIndexed } from "./auction-index.mjs";
 
 const { BN } = anchor;
 const { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL } = anchor.web3;
@@ -91,12 +92,12 @@ async function fundOwner(owner, mint, side, rawQty, escrow) {
 
 async function seed(tk) {
   const slot = await withRetry(() => connection.getSlot("confirmed"));
-  const accounts = await withRetry(() =>
-    connection.getProgramAccounts(ID, { filters: [{ dataSize: 2880 }, { memcmp: { offset: 80, bytes: tk.mint.toBase58() } }] }),
+  // Shared index read, not getProgramAccounts: that method is rate-limited
+  // into uselessness on the public devnet endpoint with several consumers on
+  // one address. See scripts/auction-index.mjs.
+  const open = (await listAuctionsIndexed(connection, ID, tk.mint)).find(
+    (a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot,
   );
-  const open = accounts
-    .map(({ pubkey, account }) => ({ pubkey, ...decodeAuction(account.data) }))
-    .find((a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot);
   if (!open || open.orderCount >= 6) return;
 
   const ref = await tk.ref();
