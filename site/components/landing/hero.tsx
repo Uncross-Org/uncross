@@ -16,6 +16,7 @@ import type { Snapshot } from "@/lib/snapshot";
 import { latestFor } from "@/lib/snapshot";
 import { CrossPanel } from "./cross-panel";
 import { OraclePanel } from "./oracle-panel";
+import { LivePulse } from "./live-pulse";
 import { LiveCurves } from "./live-section";
 
 // Bid blue fading into ask orange: the book's own two colours, nothing else.
@@ -46,33 +47,43 @@ export function Hero({ snapshot }: { snapshot: Snapshot }) {
       />
 
       <Container className="relative z-10 pt-9 pb-14 md:pt-16 md:pb-20">
-        <span className="inline-flex items-center gap-2 rounded-full border border-line bg-bg/70 px-3 py-1.5 text-[13px] text-text-2">
-          <span className="size-[7px] rounded-full bg-bid shadow-[0_0_0_3px_rgba(57,135,229,0.3)]" aria-hidden="true" />
-          Live on Solana devnet · auctions every few minutes
-        </span>
+        {/* The headline claims; the panel beside it shows the claim happening. */}
+        <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-bg/70 px-3 py-1.5 text-[13px] text-text-2">
+              <span
+                className="pulse-dot size-[7px] rounded-full bg-bid shadow-[0_0_0_3px_rgba(57,135,229,0.3)]"
+                aria-hidden="true"
+              />
+              Live on Solana devnet · auctions every few minutes
+            </span>
 
-        <h1 className="display mt-5 max-w-[15ch] text-[40px] leading-none font-semibold md:text-[72px]">
-          One price for everyone, even when the market is thin.
-        </h1>
+            <h1 className="display mt-5 max-w-[15ch] text-[40px] leading-none font-semibold md:text-[72px]">
+              One price for everyone, even when the market is thin.
+            </h1>
 
-        <p className="mt-5 max-w-[52ch] text-base leading-relaxed text-text-2 md:text-xl">
-          Uncross collects orders for a few minutes, then fills all of them at the single price that trades the most
-          shares. Built for tokenized stocks that trade around the clock on Solana.
-        </p>
+            <p className="mt-5 max-w-[52ch] text-base leading-relaxed text-text-2 md:text-xl">
+              Uncross collects orders for a few minutes, then fills all of them at the single price that trades the
+              most shares. Built for tokenized stocks that trade around the clock on Solana.
+            </p>
 
-        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/app"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-cta-bg px-4 py-3 text-sm font-semibold text-cta-fg transition active:scale-[0.98]"
-          >
-            Connect wallet &amp; open app →
-          </Link>
-          <a
-            href="#live"
-            className="inline-flex items-center justify-center rounded-lg border border-line px-4 py-3 text-sm font-medium text-text transition hover:bg-raise"
-          >
-            Watch the live auction
-          </a>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/app"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-cta-bg px-4 py-3 text-sm font-semibold text-cta-fg transition active:scale-[0.98]"
+              >
+                Connect wallet &amp; open app →
+              </Link>
+              <a
+                href="#live"
+                className="inline-flex items-center justify-center rounded-lg border border-line px-4 py-3 text-sm font-medium text-text transition hover:bg-raise"
+              >
+                Watch the live auction
+              </a>
+            </div>
+          </div>
+
+          <LivePulse />
         </div>
 
         {/* The window frame is the template's; what sits inside it is live data, not a screenshot. */}

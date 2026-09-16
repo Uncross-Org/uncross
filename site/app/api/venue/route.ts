@@ -92,7 +92,12 @@ async function read(): Promise<VenuePayload> {
   const conn = new Connection(CLUSTER.rpc, "confirmed");
   const program = new PublicKey(PROGRAM_ID);
 
-  if (Date.now() - lastDiscovery > DISCOVER_MS) {
+  // The first read has to be fast. Discovery is a signature scan that costs
+  // ~20 seconds, and a visitor arriving at a cold server would stare at an
+  // empty panel for all of it. The seeded addresses are enough to render a
+  // real page immediately, so discovery waits for the second read onwards.
+  const firstRead = cache === null;
+  if (!firstRead && Date.now() - lastDiscovery > DISCOVER_MS) {
     lastDiscovery = Date.now();
     try {
       const found = await discoverAuctions(conn, program);

@@ -5,6 +5,7 @@
 // than the code does.
 
 import { Container } from "@/components/container";
+import { CountUp } from "./motion";
 
 export function SectionHead({
   eyebrow,
@@ -31,7 +32,7 @@ function Card({
   children,
   source,
 }: {
-  stat?: string;
+  stat?: React.ReactNode;
   statLabel?: string;
   title: string;
   children: React.ReactNode;
@@ -66,12 +67,21 @@ export function Problem() {
         lede="Tokenized stocks quote around the clock. For the thin ones, the quote is the only part that works."
       />
       <div className="mt-10 grid gap-4 md:grid-cols-3">
-        <Card stat="$247.14" title="A price with no route behind it" source="Jupiter + DexScreener · 4:02 AM ET, 16 Sep">
+        <Card
+          stat={<CountUp value={247.14} prefix="$" />}
+          title="A price with no route behind it"
+          source="Jupiter + DexScreener · 4:02 AM ET, 16 Sep"
+        >
           That is the reference price Jupiter publishes for IBMx, which has a live pool holding $1,666. Ask it to
           actually buy and it returns no route — at $10,000, at $100, and at $1. The quote is real; the trade is not
           available at any size.
         </Card>
-        <Card stat="2.5" statLabel="%" title="Or a route that charges for being thin" source="Jupiter quote · $100 buy · 16 Sep">
+        <Card
+          stat={<CountUp value={2.5} decimals={1} />}
+          statLabel="%"
+          title="Or a route that charges for being thin"
+          source="Jupiter quote · $100 buy · 16 Sep"
+        >
           JPMx fills a $100 buy 2.5% above its own reference price, then has no route at $1,000. XOMx fills $1,000 and
           runs out by $10,000. The cost of trading arrives as a cliff, not a slope.
         </Card>

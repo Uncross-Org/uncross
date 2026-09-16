@@ -157,12 +157,15 @@ export function useVenue(ticker: TickerSymbol, multiplier = 1): LiveVenue {
     if (!payload) return { ...EMPTY, error: failed };
     const mine = payload.auctions.filter((a) => a.ticker === ticker).map(hydrate);
 
-    // Show the newest auction that actually has a book. The very newest is
-    // often one the keeper opened seconds ago with no orders in it yet, and an
-    // empty chart is a worse answer than a real one from a few minutes back —
-    // the panel names the auction it is showing either way.
+    // Prefer an auction that is genuinely running and has a book: that is what
+    // panels labelled "running now" are claiming to show. Fall back to the
+    // newest auction with a book (the keeper often opens one seconds ago with
+    // nothing in it yet, and an empty chart is a worse answer than a real one
+    // from a few minutes back), then to the newest of all. Callers are told
+    // the phase so they can label what they actually got.
     const hasBook = (a: LiveAuction) => a.orders.some((o) => o.active && !o.cancelled);
-    const current = mine.find(hasBook) ?? mine[0] ?? null;
+    const isRunning = (a: LiveAuction) => a.status === "open";
+    const current = mine.find((a) => isRunning(a) && hasBook(a)) ?? mine.find(hasBook) ?? mine[0] ?? null;
     const book: BookOrder[] = current
       ? current.orders
           .filter((o) => o.active && !o.cancelled)

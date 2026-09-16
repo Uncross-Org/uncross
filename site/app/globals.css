@@ -213,6 +213,40 @@ img {
   }
 }
 
+/* A new order landing in the hero's live panel. Marks a real arrival, once. */
+.arrive {
+  animation: arrive 1.2s ease-out;
+}
+
+@keyframes arrive {
+  0% {
+    background: color-mix(in oklab, var(--bid) 22%, transparent);
+    transform: translateY(-3px);
+  }
+  100% {
+    background: transparent;
+    transform: none;
+  }
+}
+
+/* The "running now" indicator. */
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrive,
+  .pulse-dot {
+    animation: none;
+  }
+}
+
 /* The freeze window, wherever it appears: hatched amber. */
 .hatch-freeze {
   background:

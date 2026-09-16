@@ -9,6 +9,7 @@ import { Hero } from "@/components/landing/hero";
 import { Problem, HowItWorks, WhatItsFor, Faq } from "@/components/landing/sections";
 import { LiquidityPanel } from "@/components/landing/liquidity-panel";
 import { LiveSection } from "@/components/landing/live-section";
+import { Reveal } from "@/components/landing/motion";
 
 /** Re-prerender every 5 minutes, so the snapshot in the HTML stays recent. */
 export const revalidate = 300;
@@ -22,17 +23,31 @@ export default async function Page() {
       <div className="rule-h" />
       <Hero snapshot={snapshot} />
       <div className="rule-h" />
-      <Problem />
+      {/* One effect per section: each rises once as it comes into view, and
+          renders in its finished state under prefers-reduced-motion. */}
+      <Reveal>
+        <Problem />
+      </Reveal>
       <div className="rule-h" />
-      <HowItWorks />
+      <Reveal>
+        <HowItWorks />
+      </Reveal>
       <div className="rule-h" />
-      <LiquidityPanel />
+      <Reveal>
+        <LiquidityPanel />
+      </Reveal>
       <div className="rule-h" />
-      <WhatItsFor />
+      <Reveal>
+        <WhatItsFor />
+      </Reveal>
       <div className="rule-h" />
-      <LiveSection />
+      <Reveal>
+        <LiveSection />
+      </Reveal>
       <div className="rule-h" />
-      <Faq />
+      <Reveal>
+        <Faq />
+      </Reveal>
       <div className="rule-h" />
       <Footer />
     </>
