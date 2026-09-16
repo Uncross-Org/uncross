@@ -158,7 +158,14 @@ Pyth's devnet AAPL account is a stale shard 0, more than two months old. So on
 devnet the gate is exercised on its failure path on every auction: the keeper
 passes the freshest devnet shard, the gate rejects it as stale, and the auction
 clears by rule 4. The auction records the refusal as `stale`, with the stale
-price's publish time, and the site shows that recorded result.
+price's publish time, and the site shows that recorded result. The first cross
+after the upgrade recorded `stale` with publish time 1783000135: 2 July, the
+last update on that account.
+
+IBMx auctions record `wrong owner`. There is no Pyth account for IBM on any
+network, so the keeper has nothing to pass and passes the System Program in its
+place; the gate refuses it at the ownership check, which is the correct
+outcome, though the label describes the mechanism rather than the cause.
 
 The passing path is covered by unit tests built from the real mainnet
 account's bytes and the real AAPLx mint's bytes:
