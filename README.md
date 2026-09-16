@@ -163,8 +163,11 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
   supported. Their mints were verified live, and custody works, but the fee
   would leave escrow short.
 - **Account deposits are not reclaimed yet.** Each auction and order creates a
-  small Solana account whose rent deposit stays locked; there is no close
-  instruction yet.
+  small Solana account whose rent deposit stays locked; the deployed program
+  has no close instruction yet. `close_auction` is written and tested and
+  deploys after the submission. Auctions created before that upgrade have no
+  recorded payer, so they can never be closed and their rent stays locked
+  permanently.
 
 **Not yet tested:**
 
