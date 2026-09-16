@@ -6,7 +6,6 @@
 //
 //   node scripts/devnet-activity.mjs          one pass
 //   node scripts/devnet-activity.mjs --loop   every 60s
-import fs from "node:fs";
 import anchor from "@coral-xyz/anchor";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -14,7 +13,7 @@ import {
 } from "@solana/spl-token";
 import {
   loadKeypair,
-  keypairPath,
+  loadKeypairArray,
   loadFixture,
   getProgram,
   decodeAuction,
@@ -42,7 +41,9 @@ const funder = loadKeypair("wallet2"); // SOL and ATA rent for owners
 const fx = loadFixture();
 const { program, connection } = getProgram(deploy);
 const ID = program.programId;
-const owners = JSON.parse(fs.readFileSync(keypairPath("mb-owners"), "utf8")).map((s) => Keypair.fromSecretKey(Uint8Array.from(s)));
+// Via the shared loader so the owners can come from KEYPAIR_MB_OWNERS on a
+// host with no ~/.config/solana.
+const owners = loadKeypairArray("mb-owners");
 const mainnet = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 

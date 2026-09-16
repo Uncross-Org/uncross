@@ -64,9 +64,32 @@ export function keypairPath(name) {
   return path.join(os.homedir(), ".config/solana/uncross", `${name}.json`);
 }
 
+/**
+ * Secret material by name, from the environment first and the local keyring
+ * second.
+ *
+ * A hosted runner has no ~/.config/solana, so keys arrive as environment
+ * variables holding the same JSON array a keypair file contains:
+ *   deploy      -> KEYPAIR_DEPLOY
+ *   wallet2     -> KEYPAIR_WALLET2
+ *   mb-owners   -> KEYPAIR_MB_OWNERS
+ * Hyphens become underscores and the name is upper-cased. The file path stays
+ * the fallback so nothing changes for a local run.
+ */
+export function readKeyMaterial(name) {
+  const envName = `KEYPAIR_${name.replace(/-/g, "_").toUpperCase()}`;
+  const fromEnv = process.env[envName];
+  if (fromEnv && fromEnv.trim()) return JSON.parse(fromEnv);
+  return JSON.parse(fs.readFileSync(keypairPath(name), "utf8"));
+}
+
 export function loadKeypair(name) {
-  const secret = JSON.parse(fs.readFileSync(keypairPath(name), "utf8"));
-  return Keypair.fromSecretKey(Uint8Array.from(secret));
+  return Keypair.fromSecretKey(Uint8Array.from(readKeyMaterial(name)));
+}
+
+/** A file holding an array of secret keys, such as the test order owners. */
+export function loadKeypairArray(name) {
+  return readKeyMaterial(name).map((secret) => Keypair.fromSecretKey(Uint8Array.from(secret)));
 }
 
 export function loadFixture() {
