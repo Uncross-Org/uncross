@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::{get_associated_token_address_with_program_id, AssociatedToken};
-use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_spl::token_interface::{
+    close_account, transfer_checked, CloseAccount, Mint, TokenAccount, TokenInterface, TransferChecked,
+};
 
 mod clearing;
 mod errors;
@@ -60,6 +62,7 @@ pub mod uncross {
         a.status = STATUS_OPEN;
         a.settle_path = SETTLE_PATH_NONE;
         a.bump = ctx.bumps.auction;
+        a.payer = ctx.accounts.payer.key();
         Ok(())
     }
 
@@ -270,6 +273,47 @@ pub mod uncross {
         order_indices: Vec<u16>,
     ) -> Result<()> {
         settle_or_refund(ctx, order_indices, SETTLE_PATH_REFUND)
+    }
+
+    /// Permissionless. Returns the rent of a finished auction and its two
+    /// vaults to whoever paid it. Refuses anything that could still owe a user
+    /// money: the auction must be fully settled and both vaults exactly empty.
+    /// Leaking rent is recoverable; stranding escrow is not.
+    pub fn close_auction(ctx: Context<CloseAuction>) -> Result<()> {
+        let (ticker_mint, open_slot, bump) = {
+            let a = ctx.accounts.auction.load()?;
+            require!(a.payer != Pubkey::default(), UncrossError::UnknownRentPayer);
+            require!(a.status == STATUS_SETTLED, UncrossError::AuctionNotSettled);
+            require!(a.settled_count >= a.order_count, UncrossError::AuctionNotSettled);
+            (a.ticker_mint, a.open_slot, a.bump)
+        };
+        require!(
+            ctx.accounts.vault_ticker.amount == 0 && ctx.accounts.vault_quote.amount == 0,
+            UncrossError::VaultNotEmpty
+        );
+
+        let open_slot_bytes = open_slot.to_le_bytes();
+        let bump_bytes = [bump];
+        let seeds: &[&[u8]] = &[b"auction", ticker_mint.as_ref(), &open_slot_bytes, &bump_bytes];
+        let signer = [seeds];
+
+        for (vault, program) in [
+            (ctx.accounts.vault_ticker.to_account_info(), ctx.accounts.ticker_token_program.to_account_info()),
+            (ctx.accounts.vault_quote.to_account_info(), ctx.accounts.quote_token_program.to_account_info()),
+        ] {
+            close_account(CpiContext::new_with_signer(
+                program,
+                CloseAccount {
+                    account: vault,
+                    destination: ctx.accounts.rent_recipient.to_account_info(),
+                    authority: ctx.accounts.auction.to_account_info(),
+                },
+                &signer,
+            ))?;
+        }
+        // The auction account itself is closed to rent_recipient by the
+        // `close` constraint once this returns.
+        Ok(())
     }
 }
 
@@ -591,4 +635,26 @@ pub struct SettleAccounts<'info> {
     #[account(address = auction.load()?.quote_token_program)]
     pub quote_token_program: Interface<'info, TokenInterface>,
     // remaining_accounts: [order, owner_ticker_ata, owner_quote_ata] per batch entry
+}
+
+#[derive(Accounts)]
+pub struct CloseAuction<'info> {
+    pub caller: Signer<'info>,
+
+    #[account(mut, close = rent_recipient)]
+    pub auction: AccountLoader<'info, Auction>,
+
+    /// CHECK: only ever credited; must be the account recorded as having paid.
+    #[account(mut, address = auction.load()?.payer @ UncrossError::WrongRentRecipient)]
+    pub rent_recipient: UncheckedAccount<'info>,
+
+    #[account(mut, address = auction.load()?.vault_ticker)]
+    pub vault_ticker: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(mut, address = auction.load()?.vault_quote)]
+    pub vault_quote: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(address = auction.load()?.ticker_token_program)]
+    pub ticker_token_program: Interface<'info, TokenInterface>,
+    #[account(address = auction.load()?.quote_token_program)]
+    pub quote_token_program: Interface<'info, TokenInterface>,
 }

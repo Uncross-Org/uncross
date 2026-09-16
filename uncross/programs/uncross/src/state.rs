@@ -1,6 +1,11 @@
 use anchor_lang::prelude::*;
 
-pub const MAX_ORDERS: usize = 64;
+/// 63, not 64: the 64th summary slot's 40 bytes now hold `payer` and padding,
+/// so the account stays 2880 bytes and every auction created before
+/// close_auction existed still loads under this layout. No live auction has
+/// ever used slot 63 (the largest book run is 42 orders), and in those legacy
+/// accounts the bytes are zero, which reads as "payer unknown".
+pub const MAX_ORDERS: usize = 63;
 
 pub const SIDE_BUY: u8 = 0;
 pub const SIDE_SELL: u8 = 1;
@@ -82,6 +87,11 @@ pub struct Auction {
     pub settle_path: u8,
     pub _pad: [u8; 4],
     pub orders: [OrderSummary; MAX_ORDERS],
+    /// Who paid the rent for this auction and its two vaults. close_auction
+    /// returns it here and nowhere else. All-zero on auctions created before
+    /// the field existed; those cannot be closed, which is the safe failure.
+    pub payer: Pubkey,
+    pub _pad_tail: [u8; 8],
 }
 
 impl Auction {
@@ -122,7 +132,7 @@ mod size_tests {
     #[test]
     fn zero_copy_layout_has_no_hidden_padding() {
         assert_eq!(std::mem::size_of::<OrderSummary>(), 40);
-        assert_eq!(std::mem::size_of::<Auction>(), 312 + 40 * MAX_ORDERS);
+        assert_eq!(std::mem::size_of::<Auction>(), 312 + 40 * MAX_ORDERS + 32 + 8);
         assert_eq!(Auction::SIZE, 8 + 2872);
     }
 

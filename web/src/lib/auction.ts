@@ -5,7 +5,8 @@ import { Connection, PublicKey } from "@solana/web3.js";
 // byte for byte (offsets include the 8-byte discriminator). Never use Anchor's
 // account fetch for it.
 export const AUCTION_SIZE = 2880;
-export const MAX_ORDERS = 64;
+// 63 since close_auction: the 64th summary slot now holds the rent payer.
+export const MAX_ORDERS = 63;
 
 export type Side = "buy" | "sell";
 export type AuctionStatus = "open" | "cleared" | "settled";
