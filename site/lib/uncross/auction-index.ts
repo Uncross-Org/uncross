@@ -51,15 +51,18 @@ export const tickerOf = (a: Auction): TickerSymbol | null => MINT_TO_TICKER[a.ti
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** A decoded auction plus the account bytes it came from. */
+export type RawAuction = Auction & { raw: Uint8Array };
+
 /** Read the given addresses and keep the ones that really are auctions. */
-export async function readAuctions(conn: Connection, addresses: string[], programId: PublicKey): Promise<Auction[]> {
-  const out: Auction[] = [];
+export async function readAuctions(conn: Connection, addresses: string[], programId: PublicKey): Promise<RawAuction[]> {
+  const out: RawAuction[] = [];
   for (let i = 0; i < addresses.length; i += 100) {
     const batch = addresses.slice(i, i + 100).map((a) => new PublicKey(a));
     const infos = await conn.getMultipleAccountsInfo(batch, "confirmed");
     infos.forEach((info, j) => {
       if (info && info.data.length === AUCTION_SIZE && info.owner.equals(programId)) {
-        out.push(decodeAuction(batch[j], info.data));
+        out.push({ ...decodeAuction(batch[j], info.data), raw: info.data });
       }
     });
     if (i + 100 < addresses.length) await sleep(150);
@@ -88,4 +91,40 @@ export async function discoverAuctions(conn: Connection, programId: PublicKey, t
 
   const found = await readAuctions(conn, [...candidates], programId);
   return found.map((a) => a.address.toBase58());
+}
+
+/**
+ * The newest auctions per ticker, found by scanning the program.
+ *
+ * On the dedicated endpoint getProgramAccounts works (both tickers in under a
+ * second each, measured), so it is the complete and authoritative listing. It
+ * matters on Vercel in particular: every cold serverless instance starts with
+ * only the seed addresses, so an index built up in memory would keep showing
+ * old auctions. The scan asks for the 8-byte open slot only, keeps the newest
+ * few per ticker, then reads just those in full. Returns null when the scan is
+ * refused, so callers fall back to the address index.
+ */
+export async function listRecentAuctions(
+  conn: Connection,
+  programId: PublicKey,
+  perTicker: number,
+): Promise<RawAuction[] | null> {
+  try {
+    const picked: string[] = [];
+    for (const mint of Object.keys(MINT_TO_TICKER)) {
+      const slim = await conn.getProgramAccounts(programId, {
+        commitment: "confirmed",
+        dataSlice: { offset: 8, length: 8 },
+        filters: [{ dataSize: AUCTION_SIZE }, { memcmp: { offset: 80, bytes: mint } }],
+      });
+      slim
+        .map((a) => ({ key: a.pubkey.toBase58(), openSlot: Number(Buffer.from(a.account.data).readBigUInt64LE(0)) }))
+        .sort((x, y) => y.openSlot - x.openSlot)
+        .slice(0, perTicker)
+        .forEach((a) => picked.push(a.key));
+    }
+    return await readAuctions(conn, picked, programId);
+  } catch {
+    return null;
+  }
 }

@@ -11,8 +11,14 @@
 
 import { Connection, PublicKey } from "@solana/web3.js";
 import { CLUSTER, PROGRAM_ID, type TickerSymbol } from "@/lib/uncross/config";
-import type { Auction } from "@/lib/uncross/auction";
-import { SEED_AUCTIONS, discoverAuctions, readAuctions, tickerOf } from "@/lib/uncross/auction-index";
+import {
+  SEED_AUCTIONS,
+  discoverAuctions,
+  listRecentAuctions,
+  readAuctions,
+  tickerOf,
+  type RawAuction,
+} from "@/lib/uncross/auction-index";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +29,8 @@ const FRESH_MS = 10_000;
 const BACKOFF_MS = 20_000;
 /** Look for newly opened auctions this often; reads of known ones are cheaper. */
 const DISCOVER_MS = 120_000;
+/** Newest auctions served per ticker: the current one plus recent history. */
+const RECENT_PER_TICKER = 12;
 
 interface WireOrder {
   index: number;
@@ -47,6 +55,8 @@ interface WireAuction {
   indicativePrice: string;
   indicativeVolume: string;
   orders: WireOrder[];
+  /** The raw account, base64, so the dashboard can decode it with its own decoder. */
+  data: string;
 }
 
 export interface VenuePayload {
@@ -58,7 +68,8 @@ export interface VenuePayload {
   auctions: WireAuction[];
 }
 
-const wire = (a: Auction, ticker: TickerSymbol): WireAuction => ({
+const wire = (a: RawAuction, ticker: TickerSymbol): WireAuction => ({
+  data: Buffer.from(a.raw).toString("base64"),
   address: a.address.toBase58(),
   ticker,
   openSlot: a.openSlot,
@@ -92,22 +103,24 @@ async function read(): Promise<VenuePayload> {
   const conn = new Connection(CLUSTER.rpc, "confirmed");
   const program = new PublicKey(PROGRAM_ID);
 
-  // The first read has to be fast. Discovery is a signature scan that costs
-  // ~20 seconds, and a visitor arriving at a cold server would stare at an
-  // empty panel for all of it. The seeded addresses are enough to render a
-  // real page immediately, so discovery waits for the second read onwards.
-  const firstRead = cache === null;
-  if (!firstRead && Date.now() - lastDiscovery > DISCOVER_MS) {
-    lastDiscovery = Date.now();
-    try {
-      const found = await discoverAuctions(conn, program);
-      known = new Set([...known, ...found]);
-    } catch {
-      /* discovery is opportunistic; the known set still works */
+  // Authoritative listing first; the address index only if the scan is refused.
+  let auctions = await listRecentAuctions(conn, program, RECENT_PER_TICKER);
+  if (!auctions) {
+    // The first read has to be fast. Discovery is a signature scan that can
+    // take ~20 seconds on a throttled endpoint, so a cold instance serves the
+    // seeded addresses first and discovers from the second read onwards.
+    const firstRead = cache === null;
+    if (!firstRead && Date.now() - lastDiscovery > DISCOVER_MS) {
+      lastDiscovery = Date.now();
+      try {
+        const found = await discoverAuctions(conn, program);
+        known = new Set([...known, ...found]);
+      } catch {
+        /* discovery is opportunistic; the known set still works */
+      }
     }
+    auctions = await readAuctions(conn, [...known], program);
   }
-
-  const auctions = await readAuctions(conn, [...known], program);
   const slot = await conn.getSlot("confirmed").catch(() => null);
 
   return {

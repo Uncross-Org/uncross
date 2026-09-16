@@ -10,7 +10,7 @@
 
 import { Connection, PublicKey } from "@solana/web3.js";
 import { CLUSTER, MAINNET_UPSTREAM, ORACLE_MAX_AGE_SECS, PROGRAM_ID, type TickerSymbol } from "./uncross/config";
-import { SEED_AUCTIONS, discoverAuctions, readAuctions, tickerOf } from "./uncross/auction-index";
+import { SEED_AUCTIONS, discoverAuctions, listRecentAuctions, readAuctions, tickerOf } from "./uncross/auction-index";
 import { decodePriceUpdate } from "./uncross/pyth";
 
 export interface Cross {
@@ -45,14 +45,17 @@ const PROGRAM = new PublicKey(PROGRAM_ID);
 
 /** Auctions that actually traded, newest first, dated by their last transaction. */
 async function readCrosses(conn: Connection, perTicker: number): Promise<Cross[]> {
-  let known = [...SEED_AUCTIONS];
-  try {
-    known = [...new Set([...known, ...(await discoverAuctions(conn, PROGRAM))])];
-  } catch {
-    /* discovery is opportunistic; the seed list still renders a real page */
+  let all = await listRecentAuctions(conn, PROGRAM, 24);
+  if (!all) {
+    let known = [...SEED_AUCTIONS];
+    try {
+      known = [...new Set([...known, ...(await discoverAuctions(conn, PROGRAM))])];
+    } catch {
+      /* discovery is opportunistic; the seed list still renders a real page */
+    }
+    all = await readAuctions(conn, known, PROGRAM);
   }
-
-  const auctions = (await readAuctions(conn, known, PROGRAM)).filter((a) => a.executableVolume > 0n);
+  const auctions = all.filter((a) => a.executableVolume > 0n);
 
   const picked: Cross[] = [];
   for (const ticker of ["AAPLx", "IBMx"] as TickerSymbol[]) {

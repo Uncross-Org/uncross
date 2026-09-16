@@ -128,8 +128,30 @@ export function orderPda(programId: PublicKey, auction: PublicKey, orderIndex: n
   return PublicKey.findProgramAddressSync([enc.encode("order"), auction.toBytes(), leBytes(orderIndex, 2)], programId)[0];
 }
 
-/** All current-layout auctions for a ticker, newest (highest openSlot) first. */
+/**
+ * All current-layout auctions for a ticker, newest (highest openSlot) first.
+ *
+ * Reads the site's cached /api/venue first. getProgramAccounts on the public
+ * devnet RPC is rate-limited into returning nothing for this program, which
+ * left the dashboard saying "No auction yet" while auctions were running. The
+ * route serves the raw accounts, decoded here with the same decoder, and the
+ * direct scan remains as the fallback (and is what runs under the Vite dev
+ * server, which has no /api/venue).
+ */
 export async function fetchAuctions(conn: Connection, programId: PublicKey, tickerMint: PublicKey): Promise<Auction[]> {
+  try {
+    const r = await fetch("/api/venue", { cache: "no-store" });
+    if (r.ok) {
+      const payload = (await r.json()) as { auctions?: { address: string; data?: string }[] };
+      const list = (payload.auctions ?? [])
+        .filter((w) => typeof w.data === "string")
+        .map((w) => decodeAuction(new PublicKey(w.address), Uint8Array.from(atob(w.data as string), (c) => c.charCodeAt(0))))
+        .filter((a) => a.tickerMint.equals(tickerMint));
+      if (list.length > 0) return list.sort((a, b) => b.openSlot - a.openSlot);
+    }
+  } catch {
+    // fall through to the direct scan
+  }
   const accs = await conn.getProgramAccounts(programId, {
     commitment: "confirmed",
     filters: [{ dataSize: AUCTION_SIZE }, { memcmp: { offset: 80, bytes: tickerMint.toBase58() } }],

@@ -5,6 +5,6 @@
 # It is built without VITE_DEVNET_RPC on purpose: that value would be inlined
 # into the browser bundle, and the dedicated endpoint's URL carries an API key.
 set -e
-cd "$(dirname "$0")/../web"
+cd "$(dirname "$0")/../../web"
 npx tsc --noEmit -p .
 npx vite build --base=/app/ --outDir ../site/public/app --emptyOutDir
