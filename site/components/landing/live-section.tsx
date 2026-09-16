@@ -8,7 +8,7 @@ import { explorerAddr } from "@/lib/uncross/config";
 import { fmtEt, fmtPrice, fmtShares } from "@/lib/uncross/format";
 import { programToPerShare, rawToShares } from "@/lib/uncross/units";
 import { useVenue } from "@/lib/use-venue";
-import { DepthCurves } from "./depth-curves";
+import { DepthChart } from "./depth-chart";
 import { SectionHead } from "./sections";
 
 const PHASE_LABEL: Record<string, string> = {
@@ -30,7 +30,7 @@ export function LiveCurves() {
         <span>AAPLx · current book</span>
         {phase && <span className={phase === "freeze" ? "text-amber" : "text-muted"}>{PHASE_LABEL[phase] ?? phase}</span>}
       </div>
-      <DepthCurves book={book} indicative={indicative} loading={loading} height={220} />
+      <DepthChart book={book} indicative={indicative} loading={loading} height={220} />
     </div>
   );
 }
@@ -75,7 +75,7 @@ export function LiveSection() {
               </span>
             )}
           </div>
-          <DepthCurves book={book} indicative={indicative} loading={loading} height={280} />
+          <DepthChart book={book} indicative={indicative} loading={loading} height={280} />
           <p className="mt-3 max-w-[62ch] text-[12.5px] text-muted">
             Each step is one order placed by a devnet wallet. The curves cross where the most shares can change hands —
             that price is what everyone in this auction will pay or receive.

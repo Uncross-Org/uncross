@@ -72,13 +72,52 @@ export function Reveal({
     );
   }
 
+  return <RevealAnimated className={className} delay={delay} as={as} children={children} />;
+}
+
+/**
+ * The animated path, with a guarantee: the content becomes visible whether or
+ * not the viewport observer ever fires.
+ *
+ * whileInView alone leaves a section at opacity 0 until it is scrolled to. A
+ * full-page render that never scrolls — a screenshot, a link preview, a
+ * thumbnail, a reader who lands deep via an anchor — then shows blank space
+ * where the page should be. Measured: a full-height capture of this page came
+ * back with every section below the hero empty. So the reveal is an
+ * enhancement on top of a state that is readable regardless.
+ */
+function RevealAnimated({
+  children,
+  delay,
+  className,
+  as,
+}: {
+  children: React.ReactNode;
+  delay: number;
+  className: string;
+  as: "div" | "section";
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.15, margin: "0px 0px -80px 0px" });
+  const [forced, setForced] = useState(false);
+
+  // If the observer has not fired shortly after mount, show the content
+  // anyway. Never leave it hidden.
+  useEffect(() => {
+    const t = setTimeout(() => setForced(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  const shown = inView || forced;
+  const Component = as === "section" ? motion.section : motion.div;
+
   return (
     <Component
+      ref={ref as React.Ref<HTMLDivElement & HTMLElement>}
       data-reveal="animated"
       className={className}
       initial={{ opacity: 0, y: 14 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15, margin: "0px 0px -80px 0px" }}
+      animate={shown ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
       transition={{ duration: 0.5, ease: EASE, delay }}
     >
       {children}
