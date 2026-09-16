@@ -17,7 +17,19 @@ export const ORACLE_MAX_AGE_SECS = 90;
 /** settle_batch orders per transaction: the measured size limit with distinct owners. */
 export const SETTLE_BATCH = 7;
 
-export const DEVNET_RPC = process.env.NEXT_PUBLIC_DEVNET_RPC || "https://api.devnet.solana.com";
+/**
+ * The devnet endpoint, read server-side only.
+ *
+ * DEVNET_RPC is deliberately NOT prefixed NEXT_PUBLIC_: that prefix inlines a
+ * value into the client bundle at build time, so a dedicated endpoint's API
+ * key would be readable by every visitor. Nothing in the browser needs this —
+ * auctions are read by the cached /api/venue route, and the only client that
+ * wants venue data fetches that route. NEXT_PUBLIC_DEVNET_RPC is still honoured
+ * so an existing deployment keeps working, but it exposes the key: prefer
+ * DEVNET_RPC.
+ */
+export const DEVNET_RPC =
+  process.env.DEVNET_RPC || process.env.NEXT_PUBLIC_DEVNET_RPC || "https://api.devnet.solana.com";
 
 /**
  * The public mainnet RPC returns 403 to browser-origin requests, so in the
