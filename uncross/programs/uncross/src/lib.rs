@@ -227,19 +227,24 @@ pub mod uncross {
         // Pyth quotes per real share; limit prices are per raw token, and one raw
         // token is worth `m` shares under the mint's scaled-UI multiplier.
         let ticker_mint_ai = ctx.accounts.ticker_mint.to_account_info();
-        let oracle_price = oracle::read_fresh_price(
-            &ctx.accounts.pyth_price_feed.to_account_info(),
-            &feed_id,
-            &clock,
-        )
-        .and_then(|per_share| {
+        let reading = oracle::check_price(&ctx.accounts.pyth_price_feed.to_account_info(), &feed_id, &clock);
+        let oracle_price = reading.price_per_share.and_then(|per_share| {
             let m = oracle::effective_multiplier(&ticker_mint_ai, clock.unix_timestamp)?;
             oracle::per_raw_token(per_share, m)
         });
+        let gate = if reading.price_per_share.is_some() && oracle_price.is_none() {
+            oracle::GATE_BAD_MULTIPLIER
+        } else {
+            reading.outcome
+        };
 
         let mut a = ctx.accounts.auction.load_mut()?;
         a.reference_price_set = oracle_price.is_some() as u8;
         a.reference_price = oracle_price.unwrap_or(0);
+        // Recorded so every auction can be audited after the fact: what the
+        // gate decided, and how old the price it looked at was.
+        a.oracle_gate = gate;
+        a.oracle_publish_time = reading.publish_time;
 
         let (p_star, v_star) = clearing::find_clearing_price(&a.orders[..], oracle_price);
         let ticker_decimals = a.ticker_decimals;

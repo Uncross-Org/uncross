@@ -85,13 +85,19 @@ pub struct Auction {
     pub reference_price_set: u8,
     pub bump: u8,
     pub settle_path: u8,
-    pub _pad: [u8; 4],
+    /// What the Pyth gate decided at the cross: one of the GATE_* codes in
+    /// oracle.rs. 0 on auctions cleared before the field existed.
+    pub oracle_gate: u8,
+    pub _pad: [u8; 3],
     pub orders: [OrderSummary; MAX_ORDERS],
     /// Who paid the rent for this auction and its two vaults. close_auction
     /// returns it here and nowhere else. All-zero on auctions created before
     /// the field existed; those cannot be closed, which is the safe failure.
     pub payer: Pubkey,
-    pub _pad_tail: [u8; 8],
+    /// publish_time of the Pyth price the gate examined, once it had confirmed
+    /// the account was the bound feed. 0 when the gate stopped earlier, and on
+    /// auctions cleared before the field existed.
+    pub oracle_publish_time: i64,
 }
 
 impl Auction {
