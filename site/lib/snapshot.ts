@@ -11,7 +11,7 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { CLUSTER, MAINNET_UPSTREAM, ORACLE_MAX_AGE_SECS, PROGRAM_ID, type TickerSymbol } from "./uncross/config";
 import { SEED_AUCTIONS, discoverAuctions, listRecentAuctions, readAuctions, tickerOf } from "./uncross/auction-index";
-import { decodePriceUpdate } from "./uncross/pyth";
+import { decodePriceUpdate, fetchSchedule } from "./uncross/pyth";
 
 export interface Cross {
   auction: string;
@@ -30,9 +30,19 @@ export interface OracleSnapshot {
   conf: number;
   publishTime: number;
   feedId: string;
+  verification: number;
   ageSecs: number;
   fresh: boolean;
+  /** Pyth's published market schedule for the feed (Hermes metadata). */
+  schedule: string;
 }
+
+/**
+ * Equity.US.AAPL/USD's schedule as Hermes published it on 16 September 2026,
+ * used only if the metadata endpoint cannot be reached at build time.
+ */
+const AAPL_SCHEDULE_FALLBACK =
+  "America/New_York;0930-1600,0930-1600,0930-1600,0930-1600,0930-1600,C,C;0907/C,1126/C,1127/0930-1300,1224/0930-1300,1225/C,0101/C,0118/C,0215/C,0326/C,0531/C,0618/C,0705/C";
 
 export interface Snapshot {
   builtAt: number;
@@ -88,7 +98,18 @@ async function readOracle(): Promise<OracleSnapshot | null> {
   if (!info) return null;
   const p = decodePriceUpdate(info.data);
   const ageSecs = Math.max(0, Math.floor(Date.now() / 1000) - p.publishTime);
-  return { price: p.price, conf: p.conf, publishTime: p.publishTime, feedId: p.feedId, ageSecs, fresh: ageSecs <= ORACLE_MAX_AGE_SECS };
+  const t = CLUSTER.tickers.AAPLx;
+  const schedule = (await fetchSchedule(t.hermesQuery, t.pythFeedId).catch(() => null)) ?? AAPL_SCHEDULE_FALLBACK;
+  return {
+    price: p.price,
+    conf: p.conf,
+    publishTime: p.publishTime,
+    feedId: p.feedId,
+    verification: p.verification,
+    ageSecs,
+    fresh: ageSecs <= ORACLE_MAX_AGE_SECS,
+    schedule,
+  };
 }
 
 export async function getSnapshot(): Promise<Snapshot> {

@@ -206,8 +206,8 @@ export function WhatItsFor() {
 
 const FAQ = [
   {
-    q: "Is this real money?",
-    a: "No. It runs on Solana devnet, on mints built to match the real AAPLx and IBMx extension for extension. That is what made it possible to test an issuer pausing the token mid-auction and changing its multiplier — things only the issuer can do on mainnet.",
+    q: "Why does it run on devnet?",
+    a: "Because devnet is where the issuer's powers can be tested. On mainnet only the issuer can pause AAPLx or change its multiplier. Here the mints are built to match the real AAPLx and IBMx extension for extension, with authorities we hold, so both were run for real in the middle of an auction. Balances are test tokens; the liquidity evidence on this page comes from live mainnet reads.",
   },
   {
     q: "Does the cross price prove anything about price discovery?",
@@ -227,7 +227,7 @@ const FAQ = [
   },
   {
     q: "Does the Pyth feed stop after the 4pm close?",
-    a: "Not in the window measured. Across 82 samples the AAPL feed published continuously for 10h38m, through the close and the overnight, the oldest print at any check being 14 seconds — while its own schedule called the market closed. Weekends were not measured.",
+    a: "Not in the window measured. Checked every five minutes for 10h38m, through the close and the overnight, the AAPL feed's latest print was at most 14 seconds old at all 80 checks — while its own schedule called the market closed. Weekends were not measured.",
   },
 ];
 

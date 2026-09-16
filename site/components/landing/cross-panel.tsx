@@ -65,7 +65,7 @@ export function CrossPanel({ cross }: { cross: Cross | null }) {
           Devnet orders are placed by our test bot, which prices them around Pyth.
         </strong>{" "}
         So this price shows the auction mechanism settling a book, not independent price discovery — the proximity to
-        any reference price is circular. The auction itself never reads an oracle on devnet.
+        any reference price is circular. Pyth never set this price: on devnet its feed is stale, so the program's gate rejects it.
       </p>
     </div>
   );

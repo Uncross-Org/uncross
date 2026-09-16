@@ -54,6 +54,8 @@ interface WireAuction {
   executableVolume: string;
   indicativePrice: string;
   indicativeVolume: string;
+  /** Whether a Pyth price passed the gate at the cross. */
+  referencePriceSet: boolean;
   orders: WireOrder[];
   /** The raw account, base64, so the dashboard can decode it with its own decoder. */
   data: string;
@@ -81,6 +83,7 @@ const wire = (a: RawAuction, ticker: TickerSymbol): WireAuction => ({
   executableVolume: a.executableVolume.toString(),
   indicativePrice: a.indicativePrice.toString(),
   indicativeVolume: a.indicativeVolume.toString(),
+  referencePriceSet: a.referencePriceSet,
   orders: a.orders.map((o) => ({
     index: o.index,
     side: o.side,

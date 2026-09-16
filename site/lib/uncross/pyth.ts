@@ -12,6 +12,8 @@ export interface PythPrice {
   expo: number;
   publishTime: number; // unix seconds
   feedId: string;
+  /** 1 = Full (Wormhole-verified). The program rejects anything else. */
+  verification: number;
 }
 
 export function decodePriceUpdate(data: Uint8Array): PythPrice {
@@ -27,6 +29,7 @@ export function decodePriceUpdate(data: Uint8Array): PythPrice {
     expo,
     publishTime: Number(dv.getBigInt64(93, true)),
     feedId: Array.from(data.subarray(41, 73), (x) => x.toString(16).padStart(2, "0")).join(""),
+    verification: data[40],
   };
 }
 

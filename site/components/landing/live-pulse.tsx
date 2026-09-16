@@ -131,6 +131,17 @@ export function LivePulse() {
         )}
       </div>
 
+      {current && (
+        <p className="num border-t border-line pt-2 text-[11.5px] text-muted">
+          Pyth tie-break:{" "}
+          {running
+            ? "checked at the cross"
+            : current.referencePriceSet
+              ? "a fresh Pyth price was available at the cross"
+              : "not used at this cross — the devnet Pyth feed was stale, so any tie went to the midpoint"}
+        </p>
+      )}
+
       {stale && readAt && (
         <p className="num text-[11px] text-amber">last read {fmtEt(readAt)} — devnet RPC is rate-limiting</p>
       )}
