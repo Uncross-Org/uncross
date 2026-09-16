@@ -227,7 +227,7 @@ const FAQ = [
   },
   {
     q: "Does the Pyth feed stop after the 4pm close?",
-    a: "Not in the window measured. Across 82 samples the AAPL feed published continuously for 10h38m, through the close and the overnight, the oldest print at any check being 14 seconds — while its own schedule called the market closed. Weekends were not measured.",
+    a: "Not in the window measured. Checked every five minutes for 10h38m, through the close and the overnight, the AAPL feed's latest print was at most 14 seconds old at all 80 checks — while its own schedule called the market closed. Weekends were not measured.",
   },
 ];
 
