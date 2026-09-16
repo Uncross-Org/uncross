@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { Container } from "@/components/container";
+import { ModeToggle } from "@/components/mode-toggle";
 import { PROGRAM_ID } from "@/lib/uncross/config";
 
 function Wordmark() {
@@ -44,6 +45,7 @@ export function Navbar() {
         <span className="num hidden rounded-md border border-line px-2.5 py-1.5 text-xs tracking-[0.06em] text-text-2 uppercase sm:inline">
           Devnet
         </span>
+        <ModeToggle />
         <Link
           href="/app"
           className="rounded-lg bg-cta-bg px-4 py-2.5 text-sm font-semibold text-cta-fg transition active:scale-[0.98]"
