@@ -36,6 +36,7 @@ interface WireAuction {
   executableVolume: string;
   indicativePrice: string;
   indicativeVolume: string;
+  referencePriceSet?: boolean;
   orders: WireOrder[];
 }
 
@@ -60,6 +61,7 @@ export interface LiveAuction {
   executableVolume: bigint;
   indicativePrice: bigint;
   indicativeVolume: bigint;
+  referencePriceSet: boolean;
   orders: OrderSummary[];
 }
 
@@ -75,6 +77,7 @@ const hydrate = (w: WireAuction): LiveAuction => ({
   executableVolume: BigInt(w.executableVolume),
   indicativePrice: BigInt(w.indicativePrice),
   indicativeVolume: BigInt(w.indicativeVolume),
+  referencePriceSet: w.referencePriceSet ?? false,
   orders: w.orders.map((o) => ({
     index: o.index,
     side: o.side,

@@ -63,8 +63,8 @@ export function Hero({ snapshot }: { snapshot: Snapshot }) {
             </h1>
 
             <p className="mt-5 max-w-[52ch] text-base leading-relaxed text-text-2 md:text-xl">
-              Uncross collects orders for a few minutes, then fills all of them at the single price that trades the
-              most shares. Built for tokenized stocks that trade around the clock on Solana.
+              Uncross gathers everyone who wants to trade a thin tokenized stock into the same few minutes, then fills
+              them all at one price — instead of leaving each person to walk an empty pool alone.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -98,7 +98,7 @@ export function Hero({ snapshot }: { snapshot: Snapshot }) {
 
           <div className="grid md:grid-cols-[1.35fr_1fr]">
             <CrossPanel cross={cross} />
-            <OraclePanel oracle={snapshot.oracle} />
+            <OraclePanel oracle={snapshot.oracle} builtAt={snapshot.builtAt} />
           </div>
 
           {/* Cumulative demand and supply, assembling from the live book. */}

@@ -1,11 +1,11 @@
 # Uncross
 
-**Fair fills for tokenized stocks when the market is thin and Wall Street is closed.**
+**One price for everyone, even when the market is thin.**
 
-Uncross is a trading venue on Solana for tokenized US equities (xStocks such as
-AAPLx and IBMx). Instead of trading against a pool whose price moves with every
-order, orders are collected for a few minutes and then all filled together at
-one fair price.
+Uncross is a call auction on Solana for tokenized US equities (xStocks such as
+AAPLx and IBMx). It gathers everyone who wants to trade a thin tokenized stock
+into the same few minutes and fills them all at one price, instead of leaving
+each person to walk an empty pool alone.
 
 - **Live app:** https://uncross.0xo.in — Solana devnet
 - **Program:** `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP` on devnet
@@ -15,13 +15,15 @@ one fair price.
 
 Tokenized US stocks trade on Solana around the clock, but most tickers have only
 a few thousand dollars of liquidity, so an ordinary-sized order moves the price
-against the person placing it. Outside US market hours the reference price
-thins out or disappears, and for many tickers — IBM, for one — there is no
-on-chain price at all.
+against the person placing it. A reference price is easy to find; the ability
+to trade at it is not.
 
-Measured on mainnet while building this: the IBMx pool held about $1,400, and a
-$1 swap moved its price by 0.58%. There is no Pyth price account for IBM on
-Solana.
+Measured on mainnet on 16 September: Jupiter published $247.14 for IBMx, whose
+pool held $1,666, and found no route to buy it at $10,000, at $100, or at $1.
+JPMx filled a $100 buy 2.5% above its reference and had no route at $1,000.
+There is no Pyth price account for IBM on Solana at all. The full measurement,
+and why Pyth's AAPL price is a guard rather than a source of liquidity, is in
+[`docs/pyth.md`](docs/pyth.md).
 
 ## How it works
 
