@@ -1,0 +1,250 @@
+{
+  "capturedAt": "2026-09-16T04:02:15-04:00",
+  "capturedAtNote": "ET (EDT). Live Solana mainnet reads; US equity market closed at capture time.",
+  "sources": {
+    "quotes": "https://lite-api.jup.ag/swap/v1/quote (slippageBps=50)",
+    "fallbackQuote": "https://quote-api.jup.ag/v6/quote - UNREACHABLE, curl HTTP 000 (connection failure), all attempts",
+    "pools": "https://api.dexscreener.com/latest/dex/tokens/<mint>",
+    "tokenMeta": "https://lite-api.jup.ag/tokens/v2/search"
+  },
+  "usdcMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "tickers": [
+    {
+      "symbol": "AAPLx",
+      "mint": "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp",
+      "tvlUsd": 243054.27,
+      "tvlUsdAllPoolsJupiter": 690789.83,
+      "volume24hUsd": 348671.25,
+      "dex": "raydium (ApniVWuZbZoruTAJdyJcLBA4AVw4DKGdV5fHxo6qrAZT, AAPLx/USDC)",
+      "jupiterRefPriceUsd": 330.76505807,
+      "quotes": [
+        {
+          "sizeUsd": 100,
+          "priceImpactPct": "0.0019186135033480715286910833",
+          "inAmount": "100000000",
+          "outAmount": "30066137",
+          "effectivePrice": 332.6001,
+          "route": "Quantum(100%) > Meteora DLMM(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.0
+        },
+        {
+          "sizeUsd": 1000,
+          "priceImpactPct": "0.003327214423401679766425504",
+          "inAmount": "1000000000",
+          "outAmount": "300237044",
+          "effectivePrice": 333.0702,
+          "route": "Raydium CLMM(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.1413
+        },
+        {
+          "sizeUsd": 10000,
+          "priceImpactPct": "0.0040793037956916959883210486",
+          "inAmount": "10000000000",
+          "outAmount": "3000104851",
+          "effectivePrice": 333.3217,
+          "route": "Byreal(35%) > Raydium CLMM(53%) > Raydium CLMM(12%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.217
+        }
+      ],
+      "premiumOfSmallestVsJupiterRefPct": 0.5548
+    },
+    {
+      "symbol": "NVDAx",
+      "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+      "tvlUsd": 2149353.24,
+      "tvlUsdAllPoolsJupiter": 1782794.54,
+      "volume24hUsd": 883726.98,
+      "dex": "raydium (49iMatQtoyabsYAQc8GafVq6aeBFVDxSRH44oiatyyw6, NVDAx/USDC)",
+      "jupiterRefPriceUsd": 213.53071703,
+      "quotes": [
+        {
+          "sizeUsd": 100,
+          "priceImpactPct": "0.0009369779695917149769577618",
+          "inAmount": "100000000",
+          "outAmount": "46702277",
+          "effectivePrice": 214.1223,
+          "route": "Whirlpool(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.0
+        },
+        {
+          "sizeUsd": 1000,
+          "priceImpactPct": "0.0014880038872437786167693502",
+          "inAmount": "1000000000",
+          "outAmount": "466765187",
+          "effectivePrice": 214.2405,
+          "route": "TesseraV(100%) > Raydium CLMM(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.0552
+        },
+        {
+          "sizeUsd": 10000,
+          "priceImpactPct": "0.0024367635009738760050255393",
+          "inAmount": "10000000000",
+          "outAmount": "4663216791",
+          "effectivePrice": 214.4442,
+          "route": "HumidiFi(20%) > Raydium CLMM(100%) > Byreal(26%) > Raydium CLMM(54%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.1503
+        }
+      ],
+      "premiumOfSmallestVsJupiterRefPct": 0.277
+    },
+    {
+      "symbol": "IBMx",
+      "mint": "XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr",
+      "tvlUsd": 1666.27,
+      "tvlUsdAllPoolsJupiter": 1028.44,
+      "volume24hUsd": 224.87,
+      "dex": "meteora (JCcH5D8TZ3JkeKpaMpMHNtS4kZXAdnZuN2gjD3KPqrak, IBMx/USDC)",
+      "jupiterRefPriceUsd": 247.13873566,
+      "quotes": [
+        {
+          "ok": false,
+          "error": "lite-api.jup.ag/swap/v1/quote HTTP 400 NO_ROUTES_FOUND (confirmed on retry)",
+          "priceImpactPct": null,
+          "effectivePrice": null,
+          "outAmount": null,
+          "route": null,
+          "sizeUsd": 100,
+          "inAmount": "100000000",
+          "premiumVsSmallestPct": null
+        },
+        {
+          "ok": false,
+          "error": "lite-api.jup.ag/swap/v1/quote HTTP 400 NO_ROUTES_FOUND (confirmed on retry)",
+          "priceImpactPct": null,
+          "effectivePrice": null,
+          "outAmount": null,
+          "route": null,
+          "sizeUsd": 1000,
+          "inAmount": "1000000000",
+          "premiumVsSmallestPct": null
+        },
+        {
+          "ok": false,
+          "error": "lite-api.jup.ag/swap/v1/quote HTTP 400 NO_ROUTES_FOUND (confirmed on retry)",
+          "priceImpactPct": null,
+          "effectivePrice": null,
+          "outAmount": null,
+          "route": null,
+          "sizeUsd": 10000,
+          "inAmount": "10000000000",
+          "premiumVsSmallestPct": null
+        }
+      ],
+      "extraProbes": [
+        {
+          "sizeUsd": 1,
+          "ok": false,
+          "error": "HTTP 400 NO_ROUTES_FOUND"
+        },
+        {
+          "sizeUsd": 10,
+          "ok": false,
+          "error": "HTTP 400 NO_ROUTES_FOUND"
+        }
+      ],
+      "premiumOfSmallestVsJupiterRefPct": null
+    },
+    {
+      "symbol": "XOMx",
+      "mint": "XsaHND8sHyfMfsWPj6kSdd5VwvCayZvjYgKmmcNL5qh",
+      "tvlUsd": 18937.69,
+      "tvlUsdAllPoolsJupiter": 20251.31,
+      "volume24hUsd": 2980.17,
+      "dex": "raydium (H3qMpQnUiod9qfEMZL84nvoYd2pXrscHA6NQAb6icwxD, XOMx/USDC)",
+      "jupiterRefPriceUsd": 165.74466555,
+      "quotes": [
+        {
+          "sizeUsd": 100,
+          "priceImpactPct": "0.0201693214260341607896266843",
+          "inAmount": "100000000",
+          "outAmount": "58072893",
+          "effectivePrice": 172.1974,
+          "route": "Raydium CLMM(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.0
+        },
+        {
+          "sizeUsd": 1000,
+          "priceImpactPct": "0.0233099230287727863782558644",
+          "inAmount": "1000000000",
+          "outAmount": "578867549",
+          "effectivePrice": 172.7511,
+          "route": "Raydium CLMM(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.3215
+        },
+        {
+          "ok": false,
+          "error": "lite-api.jup.ag/swap/v1/quote HTTP 400 NO_ROUTES_FOUND (confirmed on retry)",
+          "priceImpactPct": null,
+          "effectivePrice": null,
+          "outAmount": null,
+          "route": null,
+          "sizeUsd": 10000,
+          "inAmount": "10000000000",
+          "premiumVsSmallestPct": null
+        }
+      ],
+      "premiumOfSmallestVsJupiterRefPct": 3.8932
+    },
+    {
+      "symbol": "JPMx",
+      "mint": "XsMAqkcKsUewDrzVkait4e5u4y8REgtyS7jWgCpLV2C",
+      "tvlUsd": 1780.99,
+      "tvlUsdAllPoolsJupiter": 1132.94,
+      "volume24hUsd": 125.0,
+      "dex": "raydium (BxT1o9XsnbAPpQnRgfBoh77gcQH4EarYMBwHTcDhVQca, JPMx/USDC)",
+      "jupiterRefPriceUsd": 346.48622958,
+      "quotes": [
+        {
+          "sizeUsd": 100,
+          "priceImpactPct": "0.0252457613316208408409139361",
+          "inAmount": "100000000",
+          "outAmount": "27737450",
+          "effectivePrice": 360.5234,
+          "route": "Raydium CLMM(100%)",
+          "ok": true,
+          "error": null,
+          "premiumVsSmallestPct": 0.0
+        },
+        {
+          "ok": false,
+          "error": "lite-api.jup.ag/swap/v1/quote HTTP 400 NO_ROUTES_FOUND (confirmed on retry)",
+          "priceImpactPct": null,
+          "effectivePrice": null,
+          "outAmount": null,
+          "route": null,
+          "sizeUsd": 1000,
+          "inAmount": "1000000000",
+          "premiumVsSmallestPct": null
+        },
+        {
+          "ok": false,
+          "error": "lite-api.jup.ag/swap/v1/quote HTTP 400 NO_ROUTES_FOUND (confirmed on retry)",
+          "priceImpactPct": null,
+          "effectivePrice": null,
+          "outAmount": null,
+          "route": null,
+          "sizeUsd": 10000,
+          "inAmount": "10000000000",
+          "premiumVsSmallestPct": null
+        }
+      ],
+      "premiumOfSmallestVsJupiterRefPct": 4.0513
+    }
+  ]
+}

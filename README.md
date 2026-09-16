@@ -146,12 +146,18 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
   transfer-hook setting that is switched off today. Switching it on would add
   accounts to every settlement and shrink how many orders fit in each
   transaction.
-- **Pyth keeps publishing after the 4pm ET close.** Measured on 15 September:
-  the AAPL price account was still updating every few seconds at 5:06 PM ET,
-  with the price moving — extended-hours prices. The on-chain account carries
-  no trading-session field, so a regular-session price cannot be told apart
-  from an extended-hours one on-chain. "No reference price" is true overnight
-  and at weekends, not the moment NASDAQ closes.
+- **Pyth keeps publishing long after the 4pm ET close.** Measured over 82
+  samples on 15–16 September: the AAPL price account published without a gap
+  for 10 hours 38 minutes — from 4:11 PM ET, straight through the close and
+  deep into the overnight, to 2:49 AM ET — with the price moving and the
+  oldest print at any check being 14 seconds. Pyth's own schedule called the
+  market closed that entire time. The feed polled was `Equity.US.AAPL/USD`
+  (`49f6b65c…`), the one the program and the app bind to, not the 24/7
+  `Equity.Index.AAPL/USD` variant. The on-chain account carries no
+  trading-session field, so a thin extended-hours print and a liquid
+  regular-session one cannot be told apart on-chain. An earlier draft of this
+  README said "no reference price" was true overnight; that is retracted — the
+  measurement disproves it. Weekends were not measured.
 - **Tokens with transfer fees don't work.** PreStocks tokens charge 0.5% on
   every transfer, which the escrow accounting does not handle, so they are not
   supported. Their mints were verified live, and custody works, but the fee

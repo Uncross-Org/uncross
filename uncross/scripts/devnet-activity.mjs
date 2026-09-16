@@ -6,7 +6,6 @@
 //
 //   node scripts/devnet-activity.mjs          one pass
 //   node scripts/devnet-activity.mjs --loop   every 60s
-import fs from "node:fs";
 import anchor from "@coral-xyz/anchor";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -14,7 +13,7 @@ import {
 } from "@solana/spl-token";
 import {
   loadKeypair,
-  keypairPath,
+  loadKeypairArray,
   loadFixture,
   getProgram,
   decodeAuction,
@@ -32,6 +31,7 @@ import {
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
 } from "./lib.mjs";
+import { listAuctions as listAuctionsIndexed } from "./auction-index.mjs";
 
 const { BN } = anchor;
 const { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL } = anchor.web3;
@@ -41,7 +41,9 @@ const funder = loadKeypair("wallet2"); // SOL and ATA rent for owners
 const fx = loadFixture();
 const { program, connection } = getProgram(deploy);
 const ID = program.programId;
-const owners = JSON.parse(fs.readFileSync(keypairPath("mb-owners"), "utf8")).map((s) => Keypair.fromSecretKey(Uint8Array.from(s)));
+// Via the shared loader so the owners can come from KEYPAIR_MB_OWNERS on a
+// host with no ~/.config/solana.
+const owners = loadKeypairArray("mb-owners");
 const mainnet = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
@@ -91,12 +93,12 @@ async function fundOwner(owner, mint, side, rawQty, escrow) {
 
 async function seed(tk) {
   const slot = await withRetry(() => connection.getSlot("confirmed"));
-  const accounts = await withRetry(() =>
-    connection.getProgramAccounts(ID, { filters: [{ dataSize: 2880 }, { memcmp: { offset: 80, bytes: tk.mint.toBase58() } }] }),
+  // Shared index read, not getProgramAccounts: that method is rate-limited
+  // into uselessness on the public devnet endpoint with several consumers on
+  // one address. See scripts/auction-index.mjs.
+  const open = (await listAuctionsIndexed(connection, ID, tk.mint)).find(
+    (a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot,
   );
-  const open = accounts
-    .map(({ pubkey, account }) => ({ pubkey, ...decodeAuction(account.data) }))
-    .find((a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot);
   if (!open || open.orderCount >= 6) return;
 
   const ref = await tk.ref();

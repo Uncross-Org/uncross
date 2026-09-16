@@ -42,4 +42,12 @@ pub enum UncrossError {
     OrderIndexMismatch,
     #[msg("auction is already being wound down on the other settlement path")]
     SettlementPathLocked,
+    #[msg("auction can only be closed once every order is settled")]
+    AuctionNotSettled,
+    #[msg("auction can only be closed once both vaults are empty")]
+    VaultNotEmpty,
+    #[msg("rent can only be returned to the account that paid it")]
+    WrongRentRecipient,
+    #[msg("auction predates rent tracking and cannot be closed")]
+    UnknownRentPayer,
 }

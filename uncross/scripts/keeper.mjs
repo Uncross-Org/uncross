@@ -7,8 +7,6 @@
 //
 // Cadence is in slots (~0.4s each): 750 is a five-minute demo window, 9000 is
 // hourly. The program stores it; nothing else changes between the two.
-import fs from "node:fs";
-import path from "node:path";
 import anchor from "@coral-xyz/anchor";
 import {
   loadKeypair,
@@ -24,7 +22,12 @@ import {
   TICKER_PROGRAM,
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
+  makeConnection,
+  loadIdl,
+  rpcHosts,
+  rpcStats,
 } from "./lib.mjs";
+import { listAuctions as listAuctionsIndexed, rememberAuction } from "./auction-index.mjs";
 
 const { AnchorProvider, Program, Wallet, BN } = anchor;
 const { Connection, PublicKey, SystemProgram } = anchor.web3;
@@ -35,7 +38,7 @@ const PYTH_PUSH_ORACLE = new PublicKey("pythWSnswVUd12oZpeFP8e9CVaEqJg25g1Vtc2bi
 
 const CLUSTERS = {
   devnet: {
-    rpc: process.env.DEVNET_RPC ?? "https://api.devnet.solana.com",
+    rpc: null, // RPC_URLS, with failover; see makeConnection in lib.mjs
     quoteMint: "22BrsoDTwXigFmNnMRxfTQ66ksS4SgP5k5k9UcdrRP87",
     tickers: [
       { symbol: "AAPLx", mint: "BvgVkJawYWrWV2eu5ousJUvGWwbgDTUdyr9vBM27BYYG", feed: AAPL_FEED },
@@ -67,8 +70,8 @@ const ONLY = opt("ticker", null);
 const BATCH = 7;
 
 const payer = loadKeypair(opt("payer", "deploy"));
-const connection = new Connection(cfg.rpc, "confirmed");
-const idl = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../target/idl/uncross.json"), "utf8"));
+const connection = cfg.rpc ? new Connection(cfg.rpc, "confirmed") : makeConnection();
+const idl = loadIdl();
 const program = new Program(idl, new AnchorProvider(connection, new Wallet(payer), { commitment: "confirmed" }));
 const ID = program.programId;
 const QUOTE = new PublicKey(cfg.quoteMint);
@@ -93,11 +96,12 @@ async function pythAccountFor(feedHex) {
   return best?.key ?? SystemProgram.programId;
 }
 
+// Reads auctions by address through the shared index rather than
+// getProgramAccounts, which the public devnet RPC rate-limits into
+// uselessness once more than one consumer polls it. See
+// scripts/auction-index.mjs for the measurements.
 async function listAuctions(mint) {
-  const accounts = await connection.getProgramAccounts(ID, {
-    filters: [{ dataSize: 2880 }, { memcmp: { offset: 80, bytes: mint.toBase58() } }],
-  });
-  return accounts.map(({ pubkey, account }) => ({ pubkey, ...decodeAuction(account.data) }));
+  return listAuctionsIndexed(connection, ID, mint);
 }
 
 async function openAuction(t, mint, slot) {
@@ -118,6 +122,9 @@ async function openAuction(t, mint, slot) {
     })
     .instruction();
   const r = await sendV0(connection, payer, [], [ix]);
+  // The keeper knows this address first-hand, so record it straight away: the
+  // index never has to discover an auction we opened ourselves.
+  rememberAuction(auction);
   log(`${t.symbol} opened ${auction.toBase58()} slots ${slot}..${slot + CADENCE} (freeze ${FREEZE})`, r.sig);
 }
 
@@ -183,6 +190,57 @@ async function settleNext(t, mint, a) {
   }
 }
 
+// Rent reclaim. Every auction locks rent in its account and two vaults until
+// close_auction returns it. Empty auctions are closed as soon as they finish;
+// ones that traded are kept for a while because the site's recent-crosses list
+// and hero read them from chain. The program refuses anything not fully
+// settled with empty vaults, and sendV0 simulates first, so a refused close
+// costs nothing.
+const KEEP_TRADED = Number(opt("keep-traded", 6));
+const CLOSE_PER_TICK = Number(opt("close-per-tick", 4));
+const closeRefused = new Set();
+
+async function reclaim(t, mint, auctions) {
+  if (flag("no-close")) return;
+  const newest = auctions.reduce((m, a) => Math.max(m, a.openSlot), 0);
+  const traded = auctions
+    .filter((a) => a.executableVolume > 0n)
+    .sort((x, y) => y.openSlot - x.openSlot)
+    .slice(0, KEEP_TRADED)
+    .map((a) => a.pubkey.toBase58());
+  const candidates = auctions
+    .filter((a) => a.status === "settled" && a.hasPayer && a.openSlot !== newest)
+    .filter((a) => !traded.includes(a.pubkey.toBase58()))
+    .filter((a) => !closeRefused.has(a.pubkey.toBase58()))
+    .sort((x, y) => x.openSlot - y.openSlot)
+    .slice(0, CLOSE_PER_TICK);
+
+  for (const a of candidates) {
+    const ix = await program.methods
+      .closeAuction()
+      .accountsStrict({
+        caller: payer.publicKey,
+        auction: a.pubkey,
+        rentRecipient: a.payer,
+        vaultTicker: vaultTickerAta(a.pubkey, mint),
+        vaultQuote: vaultQuoteAta(a.pubkey, QUOTE),
+        tickerTokenProgram: TICKER_PROGRAM,
+        quoteTokenProgram: QUOTE_PROGRAM,
+      })
+      .instruction();
+    try {
+      const r = await sendV0(connection, payer, [], [ix]);
+      log(`${t.symbol} closed ${a.pubkey.toBase58()} (${a.executableVolume > 0n ? "traded" : "empty"}), rent back to ${a.payer.toBase58()}`, r.sig);
+    } catch (e) {
+      const code = (e.logs ?? []).map((l) => l.match(/Error Code: (\w+)/)?.[1]).find(Boolean);
+      // A refusal on program grounds will not change on its own (a stray
+      // token in a vault, say); stop retrying it. Anything else is transient.
+      if (code) closeRefused.add(a.pubkey.toBase58());
+      log(`${t.symbol} close refused for ${a.pubkey.toBase58()}: ${code ?? e.message}`);
+    }
+  }
+}
+
 async function tick() {
   const slot = await connection.getSlot("confirmed");
   for (const t of cfg.tickers) {
@@ -197,6 +255,11 @@ async function tick() {
         log(`${t.symbol} crank error on ${a.pubkey.toBase58()}: ${e.message}`);
       }
     }
+    try {
+      await reclaim(t, mint, auctions);
+    } catch (e) {
+      log(`${t.symbol} reclaim error: ${e.message}`);
+    }
     const live = auctions.some((a) => a.status === "open" && slot < a.closeSlot);
     if (!live && !flag("no-open")) {
       try {
@@ -208,6 +271,7 @@ async function tick() {
   }
 }
 
+log(`keeper endpoints: ${cfg.rpc ? new URL(cfg.rpc).host : rpcHosts().join(" -> ")}`);
 log(`keeper up: ${clusterName}, cadence ${CADENCE} slots, freeze ${FREEZE}, payer ${payer.publicKey.toBase58()}`);
 for (;;) {
   try {
