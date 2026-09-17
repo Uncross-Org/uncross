@@ -5,7 +5,10 @@
 // VITE_MAINNET_RPC.
 
 export type ClusterName = "devnet";
-export type TickerSymbol = "AAPLx" | "IBMx";
+import registry from "./tickers.json";
+
+/** A ticker's symbol, e.g. "AAPLx". The set is uncross/scripts/tickers.json. */
+export type TickerSymbol = string;
 
 export const PROGRAM_ID = "Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP";
 
@@ -65,42 +68,32 @@ export interface ClusterConfig {
   tickers: Record<TickerSymbol, TickerConfig>;
 }
 
-const AAPL_PYTH = {
-  pythAccount: "D9uk39pqZMcnmtPP9WeC8cREUpKZmyXLga9mSQ79SphW", // shard 1 (live). Never shard 0.
-  pythFeedId: "49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688",
-  hermesQuery: "AAPL",
-};
-const IBM_PYTH = {
-  pythAccount: null, // Equity.US.IBM/USD has no PriceUpdateV2 account on Solana.
-  pythFeedId: "cfd44471407f4da89d469242546bb56f5c626d5bef9bd8b9327783065b43c3ef",
-  hermesQuery: "IBM",
-};
-
 export const CLUSTERS: Record<ClusterName, ClusterConfig> = {
   devnet: {
     name: "devnet",
     label: "Devnet",
     rpc: DEVNET_RPC,
-    quoteMint: "22BrsoDTwXigFmNnMRxfTQ66ksS4SgP5k5k9UcdrRP87", // USDC-shaped fixture, legacy SPL, 6 dp
+    quoteMint: registry.quoteMint, // USDC-shaped fixture, legacy SPL, 6 dp
     quoteSymbol: "USDC",
     explorerSuffix: "?cluster=devnet",
-    tickers: {
-      AAPLx: { symbol: "AAPLx", name: "Apple", underlying: "AAPL", mint: "BvgVkJawYWrWV2eu5ousJUvGWwbgDTUdyr9vBM27BYYG", ...AAPL_PYTH },
-      // Devnet fixture replicating real IBMx (scaled-UI multiplier ≈ 1.0153).
-      IBMx: { symbol: "IBMx", name: "IBM", underlying: "IBM", mint: "9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp", ...IBM_PYTH },
-    },
+    tickers: Object.fromEntries(
+      registry.tickers.map((t) => [
+        t.symbol,
+        { symbol: t.symbol, name: t.name, underlying: t.underlying, mint: t.devnetMint, pythAccount: t.pythAccount, pythFeedId: t.pythFeedId, hermesQuery: t.underlying },
+      ]),
+    ),
   },
 };
 
 /** The network auctions run and settle on. */
 export const CLUSTER: ClusterConfig = CLUSTERS.devnet;
 
-export const TICKERS: TickerSymbol[] = ["AAPLx", "IBMx"];
+export const TICKERS: TickerSymbol[] = registry.tickers.map((t) => t.symbol);
 
 export function tickerFromUrl(): TickerSymbol {
   if (typeof window === "undefined") return "AAPLx";
   const t = new URLSearchParams(window.location.search).get("ticker");
-  return t === "IBMx" ? "IBMx" : "AAPLx";
+  return t && TICKERS.includes(t) ? t : "AAPLx";
 }
 
 export const explorerTx = (c: ClusterConfig, sig: string) => `https://explorer.solana.com/tx/${sig}${c.explorerSuffix}`;

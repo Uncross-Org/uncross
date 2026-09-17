@@ -15,6 +15,7 @@ import {
   loadKeypair,
   loadKeypairArray,
   loadFixture,
+  loadTickers,
   getProgram,
   decodeAuction,
   orderPda,
@@ -47,21 +48,24 @@ const owners = loadKeypairArray("mb-owners");
 const mainnet = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
-const TICKERS = [
-  { symbol: "AAPLx", mint: fx.tickerMint, ref: aaplPrice },
-  { symbol: "IBMx", mint: fx.ibmxMint, ref: ibmxPrice },
-];
-
-async function aaplPrice() {
-  const i = await withRetry(() => mainnet.getAccountInfo(new PublicKey("D9uk39pqZMcnmtPP9WeC8cREUpKZmyXLga9mSQ79SphW")));
+// Reference prices for seeding: Pyth's live mainnet account where one exists,
+// otherwise the real token's Jupiter price. Either way the orders are ours,
+// priced around a reference — the site says so beside every cross.
+async function pythPrice(account) {
+  const i = await withRetry(() => mainnet.getAccountInfo(new PublicKey(account)));
   return Number(i.data.readBigInt64LE(73)) * 10 ** i.data.readInt32LE(89);
 }
 
-async function ibmxPrice() {
-  const mint = "XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr";
+async function jupiterPrice(mint) {
   const res = await fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${mint}`).then((r) => r.json());
   return res.find((t) => t.id === mint)?.usdPrice;
 }
+
+const TICKERS = loadTickers().tickers.map((t) => ({
+  symbol: t.symbol,
+  mint: new PublicKey(t.devnetMint),
+  ref: t.pythAccount ? () => pythPrice(t.pythAccount) : () => jupiterPrice(t.mainnetMint),
+}));
 
 async function multiplier(mint) {
   const info = (await withRetry(() => connection.getParsedAccountInfo(mint))).value.data.parsed.info;

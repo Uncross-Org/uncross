@@ -42,10 +42,9 @@ export const SEED_AUCTIONS: string[] = [
   "CS8E5j7f8CpGDgEnYoXSuAJghqUfQbbp6VrLZ5o82exG",
 ];
 
-const MINT_TO_TICKER: Record<string, TickerSymbol> = {
-  [CLUSTER.tickers.AAPLx.mint]: "AAPLx",
-  [CLUSTER.tickers.IBMx.mint]: "IBMx",
-};
+const MINT_TO_TICKER: Record<string, TickerSymbol> = Object.fromEntries(
+  Object.values(CLUSTER.tickers).map((t) => [t.mint, t.symbol]),
+);
 
 export const tickerOf = (a: Auction): TickerSymbol | null => MINT_TO_TICKER[a.tickerMint.toBase58()] ?? null;
 
