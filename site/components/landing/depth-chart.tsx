@@ -135,7 +135,7 @@ export function DepthChart({ book, indicative, height = 280, loading = false }: 
   return (
     <div style={{ height }} aria-label="Cumulative demand and supply by price">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={rows} margin={{ top: 16, right: 16, bottom: 4, left: 4 }}>
+        <ComposedChart data={rows} margin={{ top: 16, right: 28, bottom: 4, left: 4 }}>
           <CartesianGrid stroke="var(--grid)" strokeDasharray="3 4" vertical={false} />
           <XAxis
             dataKey="price"
