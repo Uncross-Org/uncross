@@ -8,6 +8,7 @@ import { ProblemV2 } from "@/components/landing/v2/problem";
 import { TickerStrip } from "@/components/landing/v2/ticker-strip";
 import { HowItWorksV2 } from "@/components/landing/v2/how-it-works";
 import { PythSectionV2 } from "@/components/landing/v2/pyth-section";
+import { LiveSectionV2 } from "@/components/landing/v2/live-section";
 
 export const revalidate = 300;
 
@@ -21,6 +22,7 @@ export default async function Page() {
       <ProblemV2 />
       <HowItWorksV2 />
       <PythSectionV2 oracle={snapshot.oracle} builtAt={snapshot.builtAt} />
+      <LiveSectionV2 />
       <Footer />
     </>
   );
