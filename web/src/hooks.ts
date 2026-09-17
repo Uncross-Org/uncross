@@ -227,6 +227,32 @@ export function useVenue(conn: Connection, mint: PublicKey | null) {
   return { auctions, current, error, reload, refreshCurrent, lastUpdate };
 }
 
+/** Every ticker's auctions from the site's cached venue read, for the parts of
+ *  the shell that show the whole venue (the sidebar). One request, decoded with
+ *  the same decoder; empty under the Vite dev server, which has no route. */
+export function useVenueAll(): { auctions: Auction[]; loading: boolean } {
+  const [auctions, setAuctions] = useState<Auction[] | null>(null);
+  usePoll(
+    async () => {
+      try {
+        const r = await fetch("/api/venue", { cache: "no-store" });
+        if (!r.ok) return;
+        const payload = (await r.json()) as { auctions?: { address: string; data?: string }[] };
+        setAuctions(
+          (payload.auctions ?? [])
+            .filter((w) => typeof w.data === "string")
+            .map((w) => decodeAuction(new PublicKey(w.address), Uint8Array.from(atob(w.data as string), (c) => c.charCodeAt(0)))),
+        );
+      } catch {
+        /* keep the last read */
+      }
+    },
+    15_000,
+    [],
+  );
+  return useMemo(() => ({ auctions: auctions ?? [], loading: auctions === null }), [auctions]);
+}
+
 /** Order accounts of an auction, refetched whenever the book changes. */
 export function useOrders(conn: Connection, auction: Auction | null, refreshKey: number) {
   const [orders, setOrders] = useState<OrderAccount[]>([]);
