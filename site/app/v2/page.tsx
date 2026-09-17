@@ -6,6 +6,7 @@ import { Navbar, Footer } from "@/components/landing/chrome";
 import { HeroV2 } from "@/components/landing/v2/hero";
 import { ProblemV2 } from "@/components/landing/v2/problem";
 import { TickerStrip } from "@/components/landing/v2/ticker-strip";
+import { HowItWorksV2 } from "@/components/landing/v2/how-it-works";
 
 export const revalidate = 300;
 
@@ -17,6 +18,7 @@ export default async function Page() {
       <HeroV2 snapshot={snapshot} />
       <TickerStrip />
       <ProblemV2 />
+      <HowItWorksV2 />
       <Footer />
     </>
   );
