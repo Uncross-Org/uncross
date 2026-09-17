@@ -61,11 +61,30 @@ async function jupiterPrice(mint) {
   return res.find((t) => t.id === mint)?.usdPrice;
 }
 
-const TICKERS = loadTickers().tickers.map((t) => ({
-  symbol: t.symbol,
-  mint: new PublicKey(t.devnetMint),
-  ref: t.pythAccount ? () => pythPrice(t.pythAccount) : () => jupiterPrice(t.mainnetMint),
-}));
+// Throttles. Every order leaves an Order account on chain whose rent never
+// comes back (the program closes auctions, not orders), so seeding is the one
+// standing cost of the venue. --tickers limits which books are seeded,
+// --orders the count per auction (a range, "2-3", or a single number).
+const opt = (name, fallback) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+};
+const ONLY_TICKERS = opt("tickers", "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const [ORDERS_MIN, ORDERS_MAX] = opt("orders", "4-7")
+  .split("-")
+  .map(Number)
+  .reduce((r, n) => (r.length ? [r[0], n] : [n, n]), []);
+
+const TICKERS = loadTickers()
+  .tickers.filter((t) => ONLY_TICKERS.length === 0 || ONLY_TICKERS.includes(t.symbol))
+  .map((t) => ({
+    symbol: t.symbol,
+    mint: new PublicKey(t.devnetMint),
+    ref: t.pythAccount ? () => pythPrice(t.pythAccount) : () => jupiterPrice(t.mainnetMint),
+  }));
 
 async function multiplier(mint) {
   const info = (await withRetry(() => connection.getParsedAccountInfo(mint))).value.data.parsed.info;
@@ -103,12 +122,12 @@ async function seed(tk) {
   const open = (await listAuctionsIndexed(connection, ID, tk.mint)).find(
     (a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot,
   );
-  if (!open || open.orderCount >= 6) return;
+  if (!open || open.orderCount >= ORDERS_MAX) return;
 
   const ref = await tk.ref();
   if (!ref) return log(`${tk.symbol}: no reference price, skipping`);
   const m = await multiplier(tk.mint);
-  const n = 4 + Math.floor(Math.random() * 4);
+  const n = ORDERS_MIN + Math.floor(Math.random() * (ORDERS_MAX - ORDERS_MIN + 1));
   log(`${tk.symbol}: seeding ${n} orders into ${open.pubkey.toBase58()} around $${ref.toFixed(2)}/share`);
 
   for (let k = 0; k < n; k++) {

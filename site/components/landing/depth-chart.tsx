@@ -1,6 +1,6 @@
 "use client";
 
-// The depth curves, drawn with Recharts.
+// The depth curves, drawn with Recharts, finished as an instrument.
 //
 // Tremor was the first choice and is not usable here: its current release is
 // 3.18.7, which declares react ^18 as a peer and expects a Tailwind v3
@@ -11,8 +11,10 @@
 //
 // What is drawn is unchanged: cumulative demand (buyers at or above a price)
 // against cumulative supply (sellers at or below it), crossing where the most
-// shares can trade. Recharts supplies the instrument finish — axis labels,
-// gridlines and a hover readout.
+// shares can trade. The finish follows how exchanges draw depth: filled areas
+// that fade from the line, a hairline grid on both axes, the share axis on the
+// left, a tagged cross line, and a crosshair whose readout follows the price
+// under the pointer with a marker on each curve.
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -28,6 +30,8 @@ import {
 } from "recharts";
 import { demandAt, supplyAt, type BookOrder } from "@/lib/uncross/book";
 import { fmtPrice, fmtShares } from "@/lib/uncross/format";
+
+const MONO = "var(--font-geist-mono), ui-monospace, monospace";
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -66,22 +70,60 @@ function Readout({
   if (!active || !payload?.length) return null;
   const demand = payload.find((p) => p.dataKey === "demand")?.value ?? 0;
   const supply = payload.find((p) => p.dataKey === "supply")?.value ?? 0;
-  return (
-    <div className="num rounded-lg border border-line bg-surface px-3 py-2 text-[12px] shadow-lg">
-      <div className="mb-1 font-semibold text-text">{fmtPrice(label ?? 0)} / share</div>
-      <div className="flex justify-between gap-4 text-text-2">
-        <span>Buyers ≥ price</span>
-        <span className="font-semibold text-bid">{fmtShares(demand)}</span>
-      </div>
-      <div className="flex justify-between gap-4 text-text-2">
-        <span>Sellers ≤ price</span>
-        <span className="font-semibold text-ask">{fmtShares(supply)}</span>
-      </div>
-      <div className="mt-1 flex justify-between gap-4 border-t border-line pt-1 text-text-2">
-        <span>Would trade</span>
-        <span className="font-semibold text-text">{fmtShares(Math.min(demand, supply))}</span>
-      </div>
+  const row = (k: string, v: string, cls: string) => (
+    <div className="flex justify-between gap-5">
+      <span className="text-muted">{k}</span>
+      <span className={`font-semibold ${cls}`}>{v}</span>
     </div>
+  );
+  return (
+    <div className="num rounded-md border border-line bg-surface px-2.5 py-2 text-[11.5px] leading-[1.6] shadow-[0_8px_24px_-8px_rgba(11,14,20,0.35)]">
+      <div className="mb-1 border-b border-line pb-1 font-semibold text-text">{fmtPrice(label ?? 0)}</div>
+      {row("bid ≥", fmtShares(demand), "text-bid")}
+      {row("ask ≤", fmtShares(supply), "text-ask")}
+      {row("fills", fmtShares(Math.min(demand, supply)), "text-text")}
+    </div>
+  );
+}
+
+// The crosshair: a vertical hairline with the price under the pointer tagged
+// on the axis. Recharts hands the cursor the hovered row's coordinates.
+function Crosshair(props: {
+  points?: { x: number; y: number }[];
+  height?: number;
+  payload?: { payload: Row }[];
+}) {
+  // Recharts hands a line cursor two points, the top and bottom of the plot.
+  const x = props.points?.[0]?.x;
+  const price = props.payload?.[0]?.payload.price;
+  if (x == null || price == null) return null;
+  const top = props.points?.[0]?.y ?? 0;
+  const bottom = props.points?.[1]?.y ?? top + (props.height ?? 0);
+  const text = fmtPrice(price);
+  const w = text.length * 7 + 26;
+  return (
+    <g>
+      <line x1={x} x2={x} y1={top} y2={bottom} stroke="var(--text)" strokeWidth={1} strokeDasharray="1 3" />
+      <rect x={x - w / 2} y={bottom + 2} width={w} height={17} rx={3} fill="var(--text)" />
+      <text x={x} y={bottom + 14} textAnchor="middle" fontSize={10.5} fontFamily={MONO} fill="var(--bg)">
+        {text}
+      </text>
+    </g>
+  );
+}
+
+// The cross price as a tag on its line, the way an exchange marks last.
+function CrossTag(props: { viewBox?: { x: number; y: number }; text: string }) {
+  const x = props.viewBox?.x ?? 0;
+  const y = props.viewBox?.y ?? 0;
+  const w = props.text.length * 7 + 14;
+  return (
+    <g>
+      <rect x={x - w / 2} y={y - 20} width={w} height={18} rx={3} fill="var(--text)" />
+      <text x={x} y={y - 7} textAnchor="middle" fontSize={11} fontWeight={600} fontFamily={MONO} fill="var(--bg)">
+        {props.text}
+      </text>
+    </g>
   );
 }
 
@@ -132,69 +174,104 @@ export function DepthChart({ book, indicative, height = 280, loading = false }: 
     );
   }
 
+  const tick = { fill: "var(--muted)", fontSize: 10.5, fontFamily: MONO };
+
   return (
-    <div style={{ height }} aria-label="Cumulative demand and supply by price">
+    <div style={{ height }} aria-label="Cumulative demand and supply by price" className="relative">
+      {/* Axis legends, set the way a terminal labels them: small, in the corners. */}
+      <div className="num pointer-events-none absolute top-1 left-12 text-[10px] tracking-[0.08em] text-muted uppercase">
+        shares
+      </div>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={rows} margin={{ top: 16, right: 28, bottom: 4, left: 4 }}>
-          <CartesianGrid stroke="var(--grid)" strokeDasharray="3 4" vertical={false} />
+        <ComposedChart data={rows} margin={{ top: 28, right: 40, bottom: 22, left: 4 }}>
+          <defs>
+            <linearGradient id="depth-bid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--bid)" stopOpacity={0.32} />
+              <stop offset="100%" stopColor="var(--bid)" stopOpacity={0.04} />
+            </linearGradient>
+            <linearGradient id="depth-ask" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--ask)" stopOpacity={0.32} />
+              <stop offset="100%" stopColor="var(--ask)" stopOpacity={0.04} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="var(--grid)" strokeWidth={1} strokeDasharray="0" />
           <XAxis
             dataKey="price"
             type="number"
             domain={domain}
+            tickCount={6}
             tickFormatter={(v: number) => fmtPrice(v)}
-            tick={{ fill: "var(--muted)", fontSize: 11, fontFamily: "var(--font-geist-mono), monospace" }}
+            tick={tick}
             stroke="var(--line)"
-            tickLine={false}
+            tickLine={{ stroke: "var(--line)" }}
+            tickSize={4}
           />
           <YAxis
             tickFormatter={(v: number) => fmtShares(v)}
-            tick={{ fill: "var(--muted)", fontSize: 11, fontFamily: "var(--font-geist-mono), monospace" }}
+            tick={tick}
             stroke="var(--line)"
-            tickLine={false}
-            width={48}
+            tickLine={{ stroke: "var(--line)" }}
+            tickSize={4}
+            width={44}
           />
-          <Tooltip content={<Readout />} cursor={{ stroke: "var(--muted)", strokeWidth: 1 }} />
+          <Tooltip
+            content={<Readout />}
+            cursor={<Crosshair />}
+            isAnimationActive={false}
+            wrapperStyle={{ outline: "none" }}
+            allowEscapeViewBox={{ x: false, y: true }}
+          />
 
           <Area
             type="stepAfter"
             dataKey="demand"
             stroke="var(--bid)"
-            strokeWidth={2.5}
-            fill="var(--bid)"
-            fillOpacity={0.1}
+            strokeWidth={2}
+            fill="url(#depth-bid)"
             isAnimationActive={!reduced}
             animationDuration={700}
             dot={false}
+            activeDot={{ r: 3.5, strokeWidth: 2, stroke: "var(--surface)", fill: "var(--bid)" }}
             name="Buyers at or above"
           />
           <Area
             type="stepBefore"
             dataKey="supply"
             stroke="var(--ask)"
-            strokeWidth={2.5}
-            fill="var(--ask)"
-            fillOpacity={0.1}
+            strokeWidth={2}
+            fill="url(#depth-ask)"
             isAnimationActive={!reduced}
             animationDuration={700}
             dot={false}
+            activeDot={{ r: 3.5, strokeWidth: 2, stroke: "var(--surface)", fill: "var(--ask)" }}
             name="Sellers at or below"
           />
 
           {indicative && indicative.volume > 0 && (
             <>
+              {/* The cross: a solid line at the price, a dashed level at the
+                  volume it fills, the price tagged on the line. */}
+              <ReferenceLine
+                y={indicative.volume}
+                stroke="var(--text-2)"
+                strokeDasharray="3 3"
+                strokeOpacity={0.6}
+                label={{ value: fmtShares(indicative.volume), position: "insideLeft", dy: -7, fill: "var(--text-2)", fontSize: 10.5, fontFamily: MONO }}
+              />
               <ReferenceLine
                 x={indicative.price}
                 stroke="var(--text)"
-                strokeDasharray="2 3"
-                label={{
-                  value: `cross ${fmtPrice(indicative.price)}`,
-                  position: "top",
-                  fill: "var(--text)",
-                  fontSize: 12,
-                  fontFamily: "var(--font-geist-mono), monospace",
-                }}
+                strokeWidth={1.25}
+                label={<CrossTag text={`cross ${fmtPrice(indicative.price)}`} />}
               />
-              <ReferenceDot x={indicative.price} y={indicative.volume} r={5} fill="var(--text)" stroke="none" />
+              <ReferenceDot
+                x={indicative.price}
+                y={indicative.volume}
+                r={5}
+                fill="var(--text)"
+                stroke="var(--surface)"
+                strokeWidth={2}
+              />
             </>
           )}
         </ComposedChart>
