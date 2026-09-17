@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { Container } from "@/components/container";
+import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 import { Stagger, StaggerItem } from "@/components/landing/motion";
 import { DepthChart } from "@/components/landing/depth-chart";
 import { useVenue } from "@/lib/use-venue";
@@ -74,6 +75,10 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
 
   return (
     <header className="relative overflow-hidden bg-bg">
+      {/* Stage 1 of the hero: the template's dot grid, which follows the
+          cursor, behind the claim. Pointer-driven only, so it costs nothing
+          at rest and needs no reduced-motion variant. */}
+      <HeroHighlight containerClassName="items-stretch">
       <Container className="grid items-center gap-12 pt-12 pb-16 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14 lg:pt-20 lg:pb-24">
         <Stagger className="flex flex-col items-start">
           <StaggerItem>
@@ -84,7 +89,7 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
           </StaggerItem>
           <StaggerItem>
             <h1 className="display mt-6 max-w-[14ch] text-[44px] leading-[0.98] font-semibold text-text md:text-[76px]">
-              One price for everyone, even when the market is thin.
+              <Highlight>One price</Highlight> for everyone, even when the market is thin.
             </h1>
           </StaggerItem>
           <StaggerItem>
@@ -132,6 +137,7 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
           <LiveBook />
         </div>
       </Container>
+      </HeroHighlight>
     </header>
   );
 }
