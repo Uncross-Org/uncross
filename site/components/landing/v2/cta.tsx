@@ -34,7 +34,7 @@ export function CtaV2() {
   const primary = "inline-flex h-12 items-center justify-center gap-2 px-6 text-[15px] font-semibold";
 
   return (
-    <Container as="section" className="py-16 md:py-24">
+    <Container as="section" className="overflow-hidden py-16 md:py-24">
       <div className="relative grid grid-cols-1 bg-gradient-to-br from-raise to-bg md:grid-cols-3">
         <GridLine axis="x" className="top-0" offset="200px" />
         <GridLine axis="x" className="top-auto bottom-0" offset="200px" />

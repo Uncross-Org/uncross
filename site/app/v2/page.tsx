@@ -2,7 +2,7 @@
 // page for approval before the rest is built.
 
 import { getSnapshot } from "@/lib/snapshot";
-import { Navbar, Footer } from "@/components/landing/chrome";
+import { NavbarV2, FooterV2 } from "@/components/landing/v2/chrome";
 import { HeroV2 } from "@/components/landing/v2/hero";
 import { ProblemV2 } from "@/components/landing/v2/problem";
 import { TickerStrip } from "@/components/landing/v2/ticker-strip";
@@ -18,7 +18,7 @@ export default async function Page() {
   const snapshot = await getSnapshot();
   return (
     <>
-      <Navbar />
+      <NavbarV2 />
       <HeroV2 snapshot={snapshot} />
       <TickerStrip />
       <ProblemV2 />
@@ -27,7 +27,7 @@ export default async function Page() {
       <LiveSectionV2 />
       <FaqV2 />
       <CtaV2 />
-      <Footer />
+      <FooterV2 />
     </>
   );
 }

@@ -80,7 +80,7 @@ export function FaqV2() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <Container as="section" id="faq" className="py-16 md:py-24">
+    <Container as="section" id="faq" className="overflow-hidden py-16 md:py-24">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.6fr]">
         <SectionHead eyebrow="Precision" title="What it does, and what it doesn't." />
         <div className="flex flex-col gap-2">
