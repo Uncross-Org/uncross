@@ -5,10 +5,13 @@
 // screenshot: it is the same chart the dashboard draws, from the same devnet
 // read, and it moves when an order lands.
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { motion, useScroll, useTransform } from "motion/react";
 import { Container } from "@/components/container";
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 import { Stagger, StaggerItem } from "@/components/landing/motion";
+import { PhoneLive } from "@/components/landing/v2/phone-live";
 import { DepthChart } from "@/components/landing/depth-chart";
 import { useVenue } from "@/lib/use-venue";
 import { fmtPrice, fmtShares } from "@/lib/uncross/format";
@@ -66,6 +69,37 @@ function LiveBook() {
       <div className="px-2 pt-2 pb-3 md:px-4">
         <DepthChart book={book} indicative={indicative} loading={loading} height={340} />
       </div>
+    </div>
+  );
+}
+
+// Stage 2 of the hero: the browser frame stands slightly tilted back and
+// straightens as the page scrolls — the mechanics of the template's
+// container-scroll-animation, applied to our own frame instead of its
+// 80rem stage and dark bezel. Under prefers-reduced-motion it simply stands
+// straight.
+const TILT_DEG = 14;
+const TILT_OVER_PX = 480;
+
+function TiltFrame({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const on = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const { scrollY } = useScroll();
+  const rotateX = useTransform(scrollY, [0, TILT_OVER_PX], [reduced ? 0 : TILT_DEG, 0]);
+  const y = useTransform(scrollY, [0, TILT_OVER_PX], [0, reduced ? 0 : -24]);
+
+  return (
+    <div ref={ref} style={{ perspective: 1400 }}>
+      <motion.div style={{ rotateX, y, transformOrigin: "50% 100%" }} data-tilt={reduced ? "static" : "animated"}>
+        {children}
+      </motion.div>
     </div>
   );
 }
@@ -134,7 +168,16 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
             aria-hidden="true"
             className="absolute -inset-6 -z-10 rounded-[32px] bg-[radial-gradient(60%_60%_at_30%_20%,var(--accent-soft),transparent_70%),radial-gradient(50%_50%_at_90%_90%,rgba(200,80,28,0.10),transparent_70%)]"
           />
-          <LiveBook />
+          <TiltFrame>
+            <LiveBook />
+          </TiltFrame>
+          {/* The mobile dashboard, live, on the frame's corner — another
+              ticker, so the two screens are visibly two reads of the venue.
+              Hidden at phone width: that visitor is already on the real thing. */}
+          <PhoneLive
+            ticker="NVDAx"
+            className="absolute -right-24 -bottom-14 hidden origin-bottom-right scale-[0.5] lg:block"
+          />
         </div>
       </Container>
       </HeroHighlight>
