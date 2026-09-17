@@ -8,20 +8,65 @@ Nothing here is deployed until a dedicated devnet RPC endpoint exists — the
 public endpoint rate-limits `getProgramAccounts`, `getSignaturesForAddress` and
 `getLatestBlockhash`, and that last one blocks sending transactions at all.
 
-## The two services
+## Deployed, 17 September
 
-Both run from this repository with the root directory set to `uncross/`, and
-differ only in start command. Config is committed:
+Both services are live in the `uncross-venue` Railway project (`uncross-keeper`,
+`uncross-activity`), root directory `uncross/`. Config is `.railway/railway.ts`
+— Railway's config-as-code (`railway.json`) is deprecated in favour of this
+declarative "infrastructure as code" file, applied with `railway config apply`.
+The two committed JSON files this section used to describe are gone; this file
+is now the only source of truth for what each service runs.
 
-| Service | Config file | Start command |
-|---|---|---|
-| `uncross-keeper` | `railway.keeper.json` | `node scripts/keeper.mjs --cluster devnet --cadence 3000 --freeze 300 --interval 20` |
-| `uncross-activity` | `railway.activity.json` | `node scripts/devnet-activity.mjs --loop` |
+| Service | Start command |
+|---|---|
+| `uncross-keeper` | `node scripts/keeper.mjs --cluster devnet --cadence 7000 --freeze 700 --interval 20 --close-per-tick 12` |
+| `uncross-activity` | `node scripts/devnet-activity.mjs --loop --tickers AAPLx,NVDAx,IBMx,TSLAx --orders 2-3` |
 
 Both set `restartPolicyType: ALWAYS` with 10 retries, one replica, and
 `sleepApplication: false` so Railway does not idle them out. One replica each is
 deliberate: two keepers would race to open the same auction, and two bots would
-double-seed.
+double-seed. The repository root also holds the Anchor program's `Cargo.toml`,
+and Railway's builder (Railpack) auto-detected the wrong language and shipped
+an image with no `node` binary when left to guess — `build.nixpacksPlan.providers:
+["node"]` in the IaC file forces it.
+
+Secrets are declared with `preserve()`, not a literal value: the file states
+that each service has an `RPC_URLS` and the relevant `KEYPAIR_*` variables,
+without ever holding their contents, so `railway config apply` can change the
+start command or restart policy without touching — or being able to delete —
+what `railway variable set` put there. Applying a plan that *does* try to
+change or delete a variable is refused without `--confirm-destructive`; seeing
+that flag requested for a variable change is the signal something is wrong,
+not something to pass routinely.
+
+To redeploy either service after a code change: `railway service link
+uncross-keeper` (or `-activity`), then `railway up -y -c --service
+uncross-keeper`. To change start command, replicas or restart policy, edit
+`.railway/railway.ts` and run `railway config plan` then `railway config
+apply --yes` (add `--confirm-destructive` only if the plan's destructive
+change is expected — it usually means a variable fell out of the file).
+
+### A hang that cost the bot its first hour live
+
+`devnet-activity.mjs` reads Pyth's mainnet AAPL price and, for tickers with no
+Pyth feed, Jupiter's price — both over a bare `fetch` to a public endpoint,
+with no timeout. On Railway that request to `api.mainnet-beta.solana.com`
+never resolved or rejected; it just hung. Locally, and against the devnet
+Helius endpoint, everything else worked — the difference only showed up on
+that one outbound path, and a hang produces no error to log, so the service
+looked deployed and healthy (`SUCCESS`, container running) while doing
+nothing. `railway run --service uncross-activity -- node
+scripts/devnet-activity.mjs` pulls the service's real env vars into a local
+process — it ran to completion in seconds, which is what pointed at
+Railway's network path rather than the code or the credentials.
+
+Fixed: every mainnet call now goes through a `fetch` that aborts at 10s
+(`AbortSignal.timeout`), retried through `withRetry` (which now also treats
+an aborted request as retryable), rotating across two public endpoints
+(`api.mainnet-beta.solana.com`, `solana-rpc.publicnode.com`) the way the
+site's `MAINNET_READ_RPCS` already does. If both keep timing out from
+Railway's network, the fix converts a silent, permanent hang into a logged,
+retried failure — still worth a dedicated mainnet RPC key if it recurs.
 
 ## Environment variables
 
@@ -133,7 +178,17 @@ either the cadence drops to ~5 hours or devnet SOL is supplied from elsewhere
 
 1. Shut the local processes down explicitly — `pkill -f keeper.mjs` and
    `pkill -f devnet-activity.mjs` — and confirm with `pgrep` that neither is
-   running. A local keeper racing the hosted one opens duplicate auctions.
-2. Confirm exactly one of each is live on Railway.
+   running. A local keeper racing the hosted one opens duplicate auctions; this
+   is exactly what happened on first deploy here — the local keeper was
+   stopped right away, but the local activity bot was missed for about ten
+   minutes and kept seeding in a race with the (at that point, hung) Railway
+   copy before it was caught and stopped.
+2. Confirm exactly one of each is live on Railway — `railway logs --service
+   uncross-keeper` and `--service uncross-activity` should each show one
+   `Starting Container` for the current deployment and ongoing activity, not
+   silence. Silence for more than a couple of minutes is not proof of health;
+   confirm against chain state (order counts on the newest open auctions) or
+   reproduce the exact command with `railway run --service NAME -- node ...`
+   before trusting it.
 3. Restart the services and confirm both come back unattended and the book
    resumes, without anyone intervening.

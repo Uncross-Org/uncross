@@ -45,19 +45,44 @@ const ID = program.programId;
 // Via the shared loader so the owners can come from KEYPAIR_MB_OWNERS on a
 // host with no ~/.config/solana.
 const owners = loadKeypairArray("mb-owners");
-const mainnet = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
+// A bare fetch to a public RPC has no default timeout: on at least one host
+// (Railway) a request to api.mainnet-beta.solana.com never resolved or
+// rejected, so the bot sat silent indefinitely rather than retrying or
+// logging an error. Every mainnet call now goes through a fetch that aborts
+// at 10s (which withRetry treats as retryable) and rotates across a short
+// list of public endpoints, the way the site's MAINNET_READ_RPCS already does.
+const MAINNET_RPCS = ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"];
+const timeoutFetch = (url, opts) => fetch(url, { ...opts, signal: AbortSignal.timeout(10_000) });
+const mainnetConns = MAINNET_RPCS.map((u) => new Connection(u, { commitment: "confirmed", fetch: timeoutFetch }));
+let mainnetIdx = 0;
+async function mainnetCall(fn) {
+  let last;
+  for (let k = 0; k < mainnetConns.length; k++) {
+    const i = (mainnetIdx + k) % mainnetConns.length;
+    try {
+      const r = await fn(mainnetConns[i]);
+      mainnetIdx = i;
+      return r;
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
+}
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
 // Reference prices for seeding: Pyth's live mainnet account where one exists,
 // otherwise the real token's Jupiter price. Either way the orders are ours,
 // priced around a reference — the site says so beside every cross.
 async function pythPrice(account) {
-  const i = await withRetry(() => mainnet.getAccountInfo(new PublicKey(account)));
+  const i = await withRetry(() => mainnetCall((c) => c.getAccountInfo(new PublicKey(account))));
   return Number(i.data.readBigInt64LE(73)) * 10 ** i.data.readInt32LE(89);
 }
 
 async function jupiterPrice(mint) {
-  const res = await fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${mint}`).then((r) => r.json());
+  const res = await withRetry(() =>
+    fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${mint}`, { signal: AbortSignal.timeout(10_000) }).then((r) => r.json()),
+  );
   return res.find((t) => t.id === mint)?.usdPrice;
 }
 

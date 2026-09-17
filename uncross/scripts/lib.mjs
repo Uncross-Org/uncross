@@ -101,7 +101,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Public RPCs rate-limit hard (HTTP 429). Retry anything that looks transient,
 // with exponential backoff; rethrow real errors immediately.
-const RETRYABLE = /429|Too Many|failed to get|fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|502|503/i;
+const RETRYABLE = /429|Too Many|failed to get|fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|502|503|aborted/i;
 export async function withRetry(fn, tries = 7) {
   let delay = 500;
   for (let attempt = 1; ; attempt++) {
