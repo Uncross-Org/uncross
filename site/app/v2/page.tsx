@@ -9,6 +9,8 @@ import { TickerStrip } from "@/components/landing/v2/ticker-strip";
 import { HowItWorksV2 } from "@/components/landing/v2/how-it-works";
 import { PythSectionV2 } from "@/components/landing/v2/pyth-section";
 import { LiveSectionV2 } from "@/components/landing/v2/live-section";
+import { FaqV2 } from "@/components/landing/v2/faq";
+import { CtaV2 } from "@/components/landing/v2/cta";
 
 export const revalidate = 300;
 
@@ -23,6 +25,8 @@ export default async function Page() {
       <HowItWorksV2 />
       <PythSectionV2 oracle={snapshot.oracle} builtAt={snapshot.builtAt} />
       <LiveSectionV2 />
+      <FaqV2 />
+      <CtaV2 />
       <Footer />
     </>
   );

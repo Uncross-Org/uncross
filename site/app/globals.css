@@ -18,6 +18,7 @@
   --surface: #ffffff;
   --raise: #f3f4f7;
   --line: #e4e7ee;
+  --line-strong: #c3c8d3;
   --grid: rgba(11, 14, 20, 0.14);
 
   --text: #0b0e14;
@@ -64,6 +65,7 @@
   --surface: #10141e;
   --raise: #151b28;
   --line: #1e2433;
+  --line-strong: #2e3547;
   --grid: rgba(233, 237, 245, 0.14);
 
   --text: #e9edf5;
@@ -96,6 +98,7 @@
   --color-surface: var(--surface);
   --color-raise: var(--raise);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-text: var(--text);
   --color-text-2: var(--text-2);
   --color-muted: var(--muted);
