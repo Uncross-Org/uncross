@@ -5,5 +5,13 @@
   "deployQuoteAta": "DeD9Csu6xKDrFqWUedW5SPVRc97BaL9F1y3noTkJSME7",
   "wallet2TickerAta": "4F8pqwHqc8qSmoJGFoLpANEd6wHhe2Y7Jn8TmJiiJzxG",
   "wallet2QuoteAta": "2imy4F96g16TQJ7QzziSNuWgRr56m27YpBdJ5U28gt4F",
-  "ibmxMint": "9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp"
+  "ibmxMint": "9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp",
+  "nvdaxMint": "3RxkqMiy9HfUy3o7BK8ddDAXMG657G8DwxmM5jPFjxDf",
+  "tslaxMint": "2jrNK6LZuYWvEHUDGCFMy9JXU4Jm6yeJyo5MQoBHaLq8",
+  "googlxMint": "7iMhoW3cyCqDZEf4igymXcTdTZssnu9TgJ7zRGBoxENH",
+  "mstrxMint": "Ce75fFHggBEZUbX4wf22aqKmfT3CGQYRvCMcxgeK9Gjb",
+  "hoodxMint": "HF6GmjQcLtRUbGqxeg5w9BLc4fM1HbwHBGchwqMQmxWa",
+  "xomxMint": "CqroxNgfVuwP3m3JCtsACjTjFhBCp81wGzhbrbwc3Xn3",
+  "jpmxMint": "CnbwXPGAaf9EbtssepFPMZDFvkZj7F9VA4JAtUzV4h7g",
+  "orclxMint": "8PzDX9hBMwTc7VpkisVqvH26G6BXBtu6Y8QkSfLzWMpM"
 }

@@ -6,5 +6,8 @@
 # into the browser bundle, and the dedicated endpoint's URL carries an API key.
 set -e
 cd "$(dirname "$0")/../../web"
+# One ticker registry, copied rather than imported: Vercel uploads site/ only.
+cp ../uncross/scripts/tickers.json src/tickers.json
+cp ../uncross/scripts/tickers.json ../site/lib/uncross/tickers.json
 npx tsc --noEmit -p .
 npx vite build --base=/app/ --outDir ../site/public/app --emptyOutDir

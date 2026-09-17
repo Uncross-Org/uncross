@@ -147,6 +147,11 @@ export function loadKeypairArray(name) {
   return readKeyMaterial(name).map((secret) => Keypair.fromSecretKey(Uint8Array.from(secret)));
 }
 
+/** The venue's ticker registry (scripts/tickers.json). */
+export function loadTickers() {
+  return JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "scripts/tickers.json"), "utf8"));
+}
+
 export function loadFixture() {
   const raw = JSON.parse(
     fs.readFileSync(path.join(PROJECT_ROOT, "scripts/devnet-fixture.json"), "utf8"),

@@ -25,6 +25,7 @@ import {
   GATE,
   makeConnection,
   loadIdl,
+  loadTickers,
   rpcHosts,
   rpcStats,
 } from "./lib.mjs";
@@ -33,26 +34,22 @@ import { listAuctions as listAuctionsIndexed, rememberAuction } from "./auction-
 const { AnchorProvider, Program, Wallet, BN } = anchor;
 const { Connection, PublicKey, SystemProgram } = anchor.web3;
 
-const AAPL_FEED = "49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688";
-const IBM_FEED = "cfd44471407f4da89d469242546bb56f5c626d5bef9bd8b9327783065b43c3ef";
 const PYTH_PUSH_ORACLE = new PublicKey("pythWSnswVUd12oZpeFP8e9CVaEqJg25g1Vtc2biRsT");
 
+// The ticker set lives in scripts/tickers.json, shared with the bot and the
+// site. Each devnet mint replicates its mainnet counterpart extension for
+// extension, and each auction is bound to the ticker's Pyth feed ID.
+const registry = loadTickers();
 const CLUSTERS = {
   devnet: {
     rpc: null, // RPC_URLS, with failover; see makeConnection in lib.mjs
-    quoteMint: "22BrsoDTwXigFmNnMRxfTQ66ksS4SgP5k5k9UcdrRP87",
-    tickers: [
-      { symbol: "AAPLx", mint: "BvgVkJawYWrWV2eu5ousJUvGWwbgDTUdyr9vBM27BYYG", feed: AAPL_FEED },
-      { symbol: "IBMx", mint: "9aGoR5JbatqRYbc4SpQuT3pWVLPhZQJvDq26FFb23Jzp", feed: IBM_FEED },
-    ],
+    quoteMint: registry.quoteMint,
+    tickers: registry.tickers.map((t) => ({ symbol: t.symbol, mint: t.devnetMint, feed: t.pythFeedId })),
   },
   mainnet: {
     rpc: process.env.MAINNET_RPC ?? "https://api.mainnet-beta.solana.com",
     quoteMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    tickers: [
-      { symbol: "AAPLx", mint: "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp", feed: AAPL_FEED },
-      { symbol: "IBMx", mint: "XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr", feed: IBM_FEED },
-    ],
+    tickers: registry.tickers.map((t) => ({ symbol: t.symbol, mint: t.mainnetMint, feed: t.pythFeedId })),
   },
 };
 

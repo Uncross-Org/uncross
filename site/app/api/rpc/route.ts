@@ -1,12 +1,14 @@
 // Same-origin, read-only window onto Solana mainnet for exactly one thing: the
-// Pyth AAPL/USD price account shown as the reference price. Auctions run on
+// tickers' Pyth price accounts shown as reference prices. Auctions run on
 // devnet; nothing else goes to mainnet. The public mainnet RPC refuses
 // browser-origin requests (HTTP 403), which is why this proxy exists.
 export const runtime = "edge";
 
 const UPSTREAM = process.env.MAINNET_RPC_UPSTREAM || "https://api.mainnet-beta.solana.com";
-/** Equity.US.AAPL/USD, shard 1. The only account readable through this proxy. */
-const PYTH_AAPL = "D9uk39pqZMcnmtPP9WeC8cREUpKZmyXLga9mSQ79SphW";
+import registry from "@/lib/uncross/tickers.json";
+
+/** The tickers' live Pyth accounts on mainnet: the only accounts readable through this proxy. */
+const ALLOWED = new Set(registry.tickers.map((t) => t.pythAccount).filter((a): a is string => !!a));
 
 interface RpcCall {
   method?: unknown;
@@ -16,9 +18,9 @@ interface RpcCall {
 function allowed(call: RpcCall): boolean {
   if (!call || !Array.isArray(call.params)) return false;
   const [target] = call.params;
-  if (call.method === "getAccountInfo") return target === PYTH_AAPL;
+  if (call.method === "getAccountInfo") return typeof target === "string" && ALLOWED.has(target);
   if (call.method === "getMultipleAccounts") {
-    return Array.isArray(target) && target.length > 0 && target.every((k) => k === PYTH_AAPL);
+    return Array.isArray(target) && target.length > 0 && target.length <= ALLOWED.size && target.every((k) => ALLOWED.has(k));
   }
   return false;
 }
@@ -39,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
   const calls = (Array.isArray(body) ? body : [body]) as RpcCall[];
   if (calls.length === 0 || calls.length > 5 || !calls.every(allowed)) {
     return json(
-      { jsonrpc: "2.0", id: null, error: { code: -32601, message: "only the Pyth AAPL account can be read through this proxy" } },
+      { jsonrpc: "2.0", id: null, error: { code: -32601, message: "only the tickers' Pyth accounts can be read through this proxy" } },
       403,
     );
   }
