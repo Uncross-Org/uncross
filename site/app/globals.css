@@ -46,6 +46,17 @@
 /* Light is the default for every first visit, whatever the OS prefers;
    dark is only ever the visitor's own choice, stamped by next-themes below. */
 
+/* The ticker strip: a row duplicated once, slid by half its width, so the loop
+   is seamless. Duration is set per instance from the number of chips. */
+@keyframes ticker-scroll {
+  to {
+    transform: translateX(calc(-50% - 0.375rem));
+  }
+}
+.ticker-scroll {
+  animation: ticker-scroll var(--ticker-duration, 60s) linear infinite;
+}
+
 /* next-themes stamps .dark / .light on <html> */
 :root[data-theme="dark"],
 .dark {

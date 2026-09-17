@@ -210,6 +210,44 @@ export function useVenue(ticker: TickerSymbol, multiplier = 1): LiveVenue {
   }, [payload, failed, ticker, multiplier]);
 }
 
+/** Every ticker's auctions from the same read, for the parts of the page that
+ *  show the venue as a whole (the ticker strip). Same route, same cadence. */
+export function useVenueAll(): { auctions: LiveAuction[]; slot: number | null; loading: boolean; readAt: number | null; stale: boolean } {
+  const [payload, setPayload] = useState<VenuePayload | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    const pull = async () => {
+      try {
+        const r = await fetch("/api/venue", { cache: "no-store" });
+        if (!r.ok) return;
+        const p = (await r.json()) as VenuePayload;
+        if (alive.current) setPayload(p);
+      } catch {
+        /* keep the last good read */
+      }
+    };
+    void pull();
+    const id = setInterval(() => {
+      if (!document.hidden) void pull();
+    }, 10_000);
+    return () => {
+      alive.current = false;
+      clearInterval(id);
+    };
+  }, []);
+  return useMemo(
+    () => ({
+      auctions: payload ? payload.auctions.map(hydrate) : [],
+      slot: payload?.slot ?? null,
+      loading: !payload,
+      readAt: payload?.readAt ?? null,
+      stale: payload?.stale ?? false,
+    }),
+    [payload],
+  );
+}
+
 /** Cumulative curves as step paths, in display units. */
 export function curvePoints(book: BookOrder[]) {
   const prices = Array.from(new Set(book.map((o) => o.price))).sort((a, b) => a - b);
