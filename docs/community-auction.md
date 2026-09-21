@@ -120,6 +120,10 @@ railway variable set "SKIP_TICKERS=AAPLx,IBMx" --service uncross-activity
 railway logs --service uncross-activity   # expect: leaving AAPLx,IBMx to real participants
 ```
 
+Proven rather than assumed: set on 21 September at 02:43 UTC, the bot restarted
+and logged `seeding NVDAx,TSLAx` / `leaving AAPLx,IBMx to real participants`
+about 50 seconds later. Budget a minute for the redeploy.
+
 Doing it by ticker rather than by auction address is the whole point of the
 ordering. `SKIP_AUCTIONS` cannot be set until the auction exists and its
 address is known, which leaves a minute or two after opening in which the bot
