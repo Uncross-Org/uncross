@@ -195,6 +195,15 @@ async function settleNext(t, mint, a) {
 // settled with empty vaults, and sendV0 simulates first, so a refused close
 // costs nothing.
 const KEEP_TRADED = Number(opt("keep-traded", 6));
+// Auctions that must stay on chain whatever the reclaim policy says: the
+// community event's auction is a permanent, linkable record, and closing it
+// to recover 0.018 SOL would break every link pointing at it.
+// From the environment as well as the command line: on a hosted runner the
+// address is set as a variable, and a flag that only worked as an argv would
+// fail silently exactly when it mattered.
+const NEVER_CLOSE = new Set(
+  (process.env.NEVER_CLOSE ?? opt("never-close", "") ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+);
 const CLOSE_PER_TICK = Number(opt("close-per-tick", 4));
 const closeRefused = new Set();
 
@@ -210,6 +219,7 @@ async function reclaim(t, mint, auctions) {
     .filter((a) => a.status === "settled" && a.hasPayer && a.openSlot !== newest)
     .filter((a) => !traded.includes(a.pubkey.toBase58()))
     .filter((a) => !closeRefused.has(a.pubkey.toBase58()))
+    .filter((a) => !NEVER_CLOSE.has(a.pubkey.toBase58()))
     .sort((x, y) => x.openSlot - y.openSlot)
     .slice(0, CLOSE_PER_TICK);
 

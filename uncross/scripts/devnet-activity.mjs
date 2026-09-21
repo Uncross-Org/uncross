@@ -103,6 +103,17 @@ const [ORDERS_MIN, ORDERS_MAX] = opt("orders", "4-7")
   .split("-")
   .map(Number)
   .reduce((r, n) => (r.length ? [r[0], n] : [n, n]), []);
+// Auctions this bot must not touch. The community event's whole claim is that
+// real people filled that book, and it is false the moment this bot puts an
+// order in it. Set SKIP_AUCTIONS (or --skip-auctions) to the event auction's
+// address. It needs no undoing: the exclusion stops mattering once that
+// auction closes.
+const SKIP_AUCTIONS = new Set(
+  (process.env.SKIP_AUCTIONS ?? opt("skip-auctions", "") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
 
 const TICKERS = loadTickers()
   .tickers.filter((t) => ONLY_TICKERS.length === 0 || ONLY_TICKERS.includes(t.symbol))
@@ -149,6 +160,9 @@ async function seed(tk) {
     (a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot,
   );
   if (!open || open.orderCount >= ORDERS_MAX) return;
+  if (SKIP_AUCTIONS.has(open.pubkey.toBase58())) {
+    return log(`${tk.symbol}: leaving ${open.pubkey.toBase58()} to real participants`);
+  }
 
   const ref = await tk.ref();
   if (!ref) return log(`${tk.symbol}: no reference price, skipping`);

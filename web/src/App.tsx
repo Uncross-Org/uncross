@@ -6,6 +6,7 @@ import { Candles } from "./components/Candles";
 import { Countdown } from "./components/Countdown";
 import { CrankPanel } from "./components/CrankPanel";
 import { DepthChart } from "./components/DepthChart";
+import { EventBar } from "./components/EventBar";
 import { GetTestTokens } from "./components/GetTestTokens";
 import { Ladder } from "./components/Ladder";
 import { MyOrders } from "./components/MyOrders";
@@ -97,6 +98,9 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
         }
       : null;
   const { bid, ask } = bestBidAsk(book);
+  // Buyers willing to pay more than sellers are asking: normal here, alarming
+  // anywhere else, so the stats row explains it when it happens.
+  const crossedBook = bid != null && ask != null && bid >= ask;
   const vsRef = ref.fresh && ref.price != null && indicative && indicative.volume > 0 ? ((indicative.price - ref.price) / ref.price) * 100 : null;
 
   const suggestions = useMemo(() => {
@@ -151,6 +155,8 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
           </div>
         </header>
 
+        <EventBar ticker={ticker} onGo={setTicker} />
+
         {/* The numbers that matter, in a row: the cross, the book's edges, the reference. */}
         <div className="stats num">
           <div className="stat">
@@ -160,16 +166,37 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
               {indicative && indicative.volume > 0 ? `${fmtShares(indicative.volume)} sh ${crossed ? "crossed" : "executable"}` : book.length ? "book not crossing yet" : "no orders yet"}
             </span>
           </div>
+          {/* A bid above an ask is impossible in a continuous market and reads
+              as broken data. Here it is the mechanism: orders wait for the
+              cross instead of executing on arrival, so the two sides overlap
+              and that overlap is exactly what trades. Say so where it shows. */}
           <div className="stat">
             <span className="stat-l">Best bid</span>
             <span className="stat-v buy">{fmtPrice(bid)}</span>
-            <span className="stat-s">{book.filter((o) => o.side === "buy").length} buy orders</span>
+            <span className="stat-s">
+              {book.filter((o) => o.side === "buy").length} buy orders
+              {crossedBook ? " · above best ask" : ""}
+            </span>
           </div>
           <div className="stat">
             <span className="stat-l">Best ask</span>
             <span className="stat-v sell">{fmtPrice(ask)}</span>
-            <span className="stat-s">{book.filter((o) => o.side === "sell").length} sell orders</span>
+            <span className="stat-s">
+              {book.filter((o) => o.side === "sell").length} sell orders
+              {crossedBook ? " · below best bid" : ""}
+            </span>
           </div>
+          {crossedBook && (
+            <div className="stat stat-explain">
+              <span className="stat-l">Why the bid is above the ask</span>
+              <span className="stat-v overlap">
+                {indicative && indicative.volume > 0 ? `${fmtShares(indicative.volume)} sh` : "—"}
+              </span>
+              <span className="stat-s">
+                nothing executes on arrival — they overlap until the cross, and the overlap is what trades
+              </span>
+            </div>
+          )}
           <div className="stat">
             <span className="stat-l">Pyth · {tk.underlying}/USD · mainnet</span>
             <span className={`stat-v${ref.fresh ? "" : " muted"}`}>{ref.price != null ? fmtPrice(ref.price) : ref.kind === "none" ? "no feed" : "—"}</span>

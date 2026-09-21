@@ -24,6 +24,9 @@ export default defineRailway(() => {
     variables: {
       RPC_URLS: preserve(),
       KEYPAIR_DEPLOY: preserve(),
+      // Auctions whose rent must never be reclaimed: the community event's
+      // book stays on chain as a permanent, linkable record.
+      NEVER_CLOSE: preserve(),
     },
   });
 
@@ -44,6 +47,8 @@ export default defineRailway(() => {
       KEYPAIR_DEPLOY: preserve(),
       KEYPAIR_WALLET2: preserve(),
       KEYPAIR_MB_OWNERS: preserve(),
+      // Auctions this bot must leave alone — the community event's book.
+      SKIP_AUCTIONS: preserve(),
     },
   });
 
@@ -69,6 +74,10 @@ export default defineRailway(() => {
       KEYPAIR_WALLET2: preserve(),
       MAX_SOL: preserve(),
       MAX_GRANTS: preserve(),
+      // Which wallet's SOL goes out: wallet2 is the bot's funder and runs
+      // down with it, so an event points this at one that will still hold a
+      // balance hours later.
+      FUNDER: preserve(),
     },
   });
 

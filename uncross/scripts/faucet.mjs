@@ -64,7 +64,10 @@ const MAX_SOL = Number(opt("max-sol", 1.5));
 const ORIGINS = (opt("origins", "https://uncross.0xo.in,http://localhost:3100") || "").split(",").map((s) => s.trim());
 
 const deploy = loadKeypair("deploy"); // mint authority for both fixture mints
-const funder = loadKeypair("wallet2"); // pays the SOL and the ATA rent
+// Whose SOL goes out, and who pays the ATA rent. wallet2 is the bot's funder
+// and is drained by it; for an event, point this at a wallet with a balance
+// that will still be there in twelve hours (FUNDER=deploy).
+const funder = loadKeypair(opt("funder", "wallet2"));
 const fx = loadFixture();
 const tickers = loadTickers();
 const connection = makeConnection();

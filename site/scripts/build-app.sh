@@ -9,5 +9,9 @@ cd "$(dirname "$0")/../../web"
 # One ticker registry, copied rather than imported: Vercel uploads site/ only.
 cp ../uncross/scripts/tickers.json src/tickers.json
 cp ../uncross/scripts/tickers.json ../site/lib/uncross/tickers.json
+# The scheduled event, shared by the page, the dashboard and the script that
+# opens the auction, so they cannot disagree about when it starts.
+cp ../uncross/scripts/event.json src/event.json
+cp ../uncross/scripts/event.json ../site/lib/uncross/event.json
 npx tsc --noEmit -p .
 npx vite build --base=/app/ --outDir ../site/public/app --emptyOutDir

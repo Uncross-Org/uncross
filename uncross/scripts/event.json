@@ -1,0 +1,10 @@
+{
+  "name": "Community auction",
+  "ticker": "IBMx",
+  "startsAt": "2026-09-21T14:30:00Z",
+  "windowMins": 22,
+  "freezeMins": 2,
+  "auction": null,
+  "blurb": "One book, one price, everyone in it. Bring a devnet wallet — the app gives you test tokens.",
+  "live": true
+}

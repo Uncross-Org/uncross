@@ -1604,3 +1604,57 @@ input {
 .faucet-btn:disabled {
   opacity: 0.6;
 }
+/* The crossed-book explainer: same shape as a stat, but it is prose, so the
+   figure is the overlap and the accent marks it as the answer to a question. */
+.stat-explain {
+  background: var(--accent-soft);
+}
+.stat-v.overlap {
+  color: var(--accent);
+}
+
+/* The scheduled community auction, announced inside the app. */
+.event-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--accent-soft);
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+.event-bar strong {
+  color: var(--text);
+}
+.event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+.event-bar-live .event-dot {
+  background: var(--good);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  50% { opacity: 0.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-bar-live .event-dot { animation: none; }
+}
+.event-text { flex: 1; min-width: 0; }
+.event-go {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-weight: 600;
+  font-size: 13px;
+}
+@media (max-width: 860px) {
+  .event-bar { padding: 8px 14px; font-size: 12.5px; }
+}
