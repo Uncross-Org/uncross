@@ -8,3 +8,4 @@ test-ledger
 .multibatch-result.json
 scripts/.auction-index.json
 .vercel
+uncross/scripts/.signer-test.mjs
