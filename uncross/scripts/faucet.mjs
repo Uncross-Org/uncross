@@ -70,6 +70,12 @@ const IP_PER_HOUR = Number(opt("ip-per-hour", 500));
 /** Hard ceilings for the life of the process. */
 const MAX_GRANTS = Number(opt("max-grants", 300));
 const MAX_SOL = Number(opt("max-sol", 1.5));
+/**
+ * Tickers every grant funds, whatever was asked for: the event runs more than
+ * one auction and a participant must be able to sell in all of them.
+ */
+const EVENT_TICKERS = (opt("event-tickers", "AAPLx,IBMx") || "").split(",").map((s) => s.trim()).filter(Boolean);
+
 /** Browsers that may call this. */
 const ORIGINS = (opt("origins", "https://uncross.0xo.in,http://localhost:3100") || "").split(",").map((s) => s.trim());
 
@@ -91,11 +97,27 @@ const refuse = (why) => {
   stats.refused[why] = (stats.refused[why] ?? 0) + 1;
 };
 
-/** Everything a wallet needs for one order, in one transaction. */
-async function grant(owner, tk) {
-  const mint = new PublicKey(tk.devnetMint);
+/**
+ * Everything a wallet needs to trade in every auction of the event, in one
+ * transaction.
+ *
+ * One grant has to cover the whole sequence. The event runs AAPLx and then
+ * IBMx back to back, and a wallet holding only the first ticker's shares can
+ * buy in the second auction but never sell in it — which it would discover
+ * after the first cross, when the moment has passed and asking for help is
+ * the only way out. So shares are minted for every ticker in EVENT_TICKERS as
+ * well as whichever one was asked for.
+ */
+async function grant(owner, requested) {
   const quoteMint = new PublicKey(fx.quoteMint);
-  const [sol, t, q] = await getAccountsBatched(connection, [owner, tickerAta(owner, mint), quoteAta(owner, quoteMint)]);
+  // The requested ticker first, then the event's, without duplicates.
+  const symbols = [requested.symbol, ...EVENT_TICKERS].filter((s, i, all) => all.indexOf(s) === i);
+  const tks = symbols
+    .map((s) => tickers.tickers.find((t) => t.symbol === s))
+    .filter((t) => t?.devnetMint);
+
+  const keys = [owner, quoteAta(owner, quoteMint), ...tks.map((t) => tickerAta(owner, new PublicKey(t.devnetMint)))];
+  const [sol, q, ...tokenAccounts] = await getAccountsBatched(connection, keys);
 
   const ixs = [];
   const lamports = Math.round(SOL_PER_GRANT * LAMPORTS_PER_SOL);
@@ -105,21 +127,29 @@ async function grant(owner, tk) {
   if (solNeeded) ixs.push(SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: owner, lamports }));
 
   ixs.push(
-    createAssociatedTokenAccountIdempotentInstruction(funder.publicKey, tickerAta(owner, mint), owner, mint, TICKER_PROGRAM, ASSOCIATED_TOKEN_PROGRAM),
     createAssociatedTokenAccountIdempotentInstruction(funder.publicKey, quoteAta(owner, quoteMint), owner, quoteMint, QUOTE_PROGRAM, ASSOCIATED_TOKEN_PROGRAM),
   );
 
   const shareRaw = BigInt(Math.round(SHARES_PER_GRANT * 1e8));
   const quoteRaw = BigInt(Math.round(QUOTE_PER_GRANT * 1e6));
-  if (tokenAmountOf(t) < shareRaw) {
-    ixs.push(createMintToCheckedInstruction(mint, tickerAta(owner, mint), deploy.publicKey, shareRaw, 8, [], TICKER_PROGRAM));
-  }
+  const funded = [];
+  tks.forEach((t, i) => {
+    const mint = new PublicKey(t.devnetMint);
+    ixs.push(
+      createAssociatedTokenAccountIdempotentInstruction(funder.publicKey, tickerAta(owner, mint), owner, mint, TICKER_PROGRAM, ASSOCIATED_TOKEN_PROGRAM),
+    );
+    if (tokenAmountOf(tokenAccounts[i]) < shareRaw) {
+      ixs.push(createMintToCheckedInstruction(mint, tickerAta(owner, mint), deploy.publicKey, shareRaw, 8, [], TICKER_PROGRAM));
+    }
+    funded.push(t.symbol);
+  });
+
   if (tokenAmountOf(q) < quoteRaw) {
     ixs.push(createMintToCheckedInstruction(quoteMint, quoteAta(owner, quoteMint), deploy.publicKey, quoteRaw, 6, [], QUOTE_PROGRAM));
   }
 
-  const r = await sendV0(connection, funder, [deploy], ixs, { cuLimit: 250_000 });
-  return { sig: r.sig, sol: solNeeded ? SOL_PER_GRANT : 0 };
+  const r = await sendV0(connection, funder, [deploy], ixs, { cuLimit: 400_000 });
+  return { sig: r.sig, sol: solNeeded ? SOL_PER_GRANT : 0, funded };
 }
 
 const json = (res, code, body, origin) => {
@@ -228,14 +258,14 @@ const server = http.createServer(async (req, res) => {
   ipHits.set(ip, hits);
 
   try {
-    const { sig, sol } = await grant(owner, tk);
+    const { sig, sol, funded } = await grant(owner, tk);
     stats.grants++;
     stats.solPaid += sol;
-    log(`funded ${pubkey.slice(0, 8)}… ${tk.symbol}: ${sol} SOL, ${SHARES_PER_GRANT} ${tk.symbol}, ${QUOTE_PER_GRANT} fixture USDC — ${sig}`);
+    log(`funded ${pubkey.slice(0, 8)}…: ${sol} SOL, ${SHARES_PER_GRANT} each of ${funded.join("+")}, ${QUOTE_PER_GRANT} fixture USDC — ${sig}`);
     return json(res, 200, {
       ok: true,
       signature: sig,
-      granted: { sol, shares: SHARES_PER_GRANT, quote: QUOTE_PER_GRANT, ticker: tk.symbol },
+      granted: { sol, shares: SHARES_PER_GRANT, quote: QUOTE_PER_GRANT, tickers: funded },
     }, origin);
   } catch (e) {
     // Let them retry: the reservation is only meaningful if the grant landed.

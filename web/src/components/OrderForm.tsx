@@ -117,11 +117,28 @@ export function OrderForm({ tk, auction, phase, m, balances, quoteSymbol, sugges
       {suggestions.length > 0 && (
         <div className="chips">
           {suggestions.map((s) => (
-            <button key={s.label} className="chip num" onClick={() => setPriceStr(s.price.toFixed(2))}>
+            <button
+              key={s.label}
+              // The first chip is the best anchor this ticker has: Pyth where a
+              // feed exists, the last cross where none does. Mark it, so a
+              // newcomer knows which number to trust rather than guessing.
+              className={`chip num${s === suggestions[0] ? " chip-primary" : ""}`}
+              onClick={() => setPriceStr(s.price.toFixed(2))}
+            >
               {s.label} {fmtPrice(s.price)}
             </button>
           ))}
         </div>
+      )}
+      {/* A ticker with no feed is the point of this venue, not a gap in it.
+          Say so here, where someone is deciding what to type, rather than
+          leaving them with an empty field and no explanation. */}
+      {!tk.pythAccount && (
+        <p className="fine muted">
+          No oracle publishes {/^[AEIOU]/i.test(tk.underlying) ? "an" : "a"} {tk.underlying} price on Solana, so there is
+          no reference to copy — the only price for {tk.symbol} is the one this book makes.{" "}
+          {suggestions.length > 0 ? "The last cross is shown above." : "Name the price you would actually trade at."}
+        </p>
       )}
 
       <label className="field">

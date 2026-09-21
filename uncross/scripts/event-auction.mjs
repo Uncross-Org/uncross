@@ -1,20 +1,23 @@
-// Opens one auction for a scheduled event, on one ticker, with a window long
-// enough that someone arriving late can still take part.
+// Opens the auctions for a scheduled event: one ticker after another, with no
+// gap between them.
 //
-// The regular cadence is wrong for this: a twenty-minute window that started
-// before the announcement closes while people are still installing a wallet.
-// This opens a single auction on demand, with the window given in minutes and
-// converted using the slot rate measured seconds beforehand — devnet slot time
-// drifts, and a window asked for in minutes has to actually last that long.
+// The regular cadence is wrong for this. A twenty-minute window that started
+// before the announcement closes while people are still installing a wallet,
+// and a second auction opened by hand after the first crosses arrives minutes
+// late — by which time most of the audience has gone. So every auction in the
+// sequence is opened up front, each one's open slot set to the previous one's
+// close slot. The program refuses orders outside [open_slot, close_slot), so
+// an auction opened early simply waits, and the next one begins the moment
+// the last one ends with nobody touching anything.
 //
-//   node scripts/event-auction.mjs --ticker IBMx --window-mins 22 --freeze-mins 2
-//   node scripts/event-auction.mjs --ticker IBMx --window-mins 22 --dry-run
+//   node scripts/event-auction.mjs --sequence AAPLx:20,IBMx:20 --dry-run
+//   node scripts/event-auction.mjs --sequence AAPLx:20,IBMx:20 --freeze-mins 2
+//   node scripts/event-auction.mjs --sequence AAPLx:20,IBMx:20 --start-in-mins 5
 //
-// Prints the auction address. Nothing else in the venue needs to know about
-// it: the keeper sees a live auction for that ticker and so does not open a
-// competing one, and it crosses it when the window closes like any other.
-// Keep the bot away from it — that is the whole point of the event — by
-// leaving the ticker out of the bot's --tickers list while it runs.
+// Windows are given in minutes and converted with the slot rate measured
+// seconds beforehand, because devnet slot time drifts and a window asked for
+// in minutes has to last that many minutes. The dry run prints every computed
+// start and close time; check those before sending anything.
 
 import anchor from "@coral-xyz/anchor";
 import {
@@ -42,20 +45,34 @@ const opt = (n, d) => {
 };
 const flag = (n) => process.argv.includes(`--${n}`);
 
-const SYMBOL = opt("ticker", "IBMx");
-const WINDOW_MINS = Number(opt("window-mins", 22));
+// "AAPLx:20,IBMx:20" — ticker and window in minutes, in the order they run.
+const SEQUENCE = (opt("sequence", `${opt("ticker", "IBMx")}:${opt("window-mins", 22)}`) || "")
+  .split(",")
+  .map((part) => {
+    const [symbol, mins] = part.split(":");
+    return { symbol: symbol.trim(), mins: Number(mins) };
+  })
+  .filter((s) => s.symbol && s.mins > 0);
 const FREEZE_MINS = Number(opt("freeze-mins", 2));
+const START_IN_MINS = Number(opt("start-in-mins", 0));
 const DRY = flag("dry-run");
+
+if (SEQUENCE.length === 0) throw new Error("--sequence AAPLx:20,IBMx:20");
 
 const payer = loadKeypair(opt("payer", "deploy"));
 const fx = loadFixture();
 const { program, connection } = getProgram(payer);
 const ID = program.programId;
 const QUOTE = new PublicKey(fx.quoteMint);
-const tk = loadTickers().tickers.find((t) => t.symbol === SYMBOL);
-if (!tk?.devnetMint) throw new Error(`unknown ticker ${SYMBOL}`);
-const mint = new PublicKey(tk.devnetMint);
+const registry = loadTickers();
 const log = (...a) => console.log(new Date().toISOString(), ...a);
+
+for (const s of SEQUENCE) {
+  const tk = registry.tickers.find((t) => t.symbol === s.symbol);
+  if (!tk?.devnetMint) throw new Error(`unknown ticker ${s.symbol}`);
+  if (FREEZE_MINS >= s.mins) throw new Error(`${s.symbol}: freeze ${FREEZE_MINS}min must be shorter than the ${s.mins}min window`);
+  s.tk = tk;
+}
 
 /** Slots per second, measured now rather than assumed. */
 async function slotRate(sampleMs = 12000) {
@@ -64,47 +81,80 @@ async function slotRate(sampleMs = 12000) {
   await sleep(sampleMs);
   const b = await connection.getSlot("confirmed");
   const perSec = (b - a) / ((Date.now() - t0) / 1000);
-  // Devnet sits near 2.5 slots/s but stalls; refuse a reading that would make
-  // the window wildly wrong rather than opening a five-hour "twenty minutes".
-  if (!(perSec > 0.5 && perSec < 10)) throw new Error(`slot rate looks wrong: ${perSec.toFixed(2)}/s`);
+  // Devnet has been running near 6 slots/s but stalls; refuse a reading that
+  // would make the window wildly wrong rather than opening a five-hour
+  // "twenty minutes".
+  if (!(perSec > 0.5 && perSec < 12)) throw new Error(`slot rate looks wrong: ${perSec.toFixed(2)}/s`);
   return perSec;
 }
 
 const perSec = await slotRate();
-const windowSlots = Math.round(WINDOW_MINS * 60 * perSec);
+const now = await connection.getSlot("confirmed");
 const freezeSlots = Math.round(FREEZE_MINS * 60 * perSec);
-const slot = await connection.getSlot("confirmed");
-const auction = auctionPda(ID, mint, slot);
+log(`slot rate ${perSec.toFixed(2)}/s — freeze ${FREEZE_MINS}min = ${freezeSlots} slots`);
 
-log(`slot rate ${perSec.toFixed(2)}/s — ${WINDOW_MINS}min = ${windowSlots} slots, freeze ${FREEZE_MINS}min = ${freezeSlots} slots`);
-log(`${SYMBOL} auction ${auction.toBase58()}`);
-log(`opens at slot ${slot}, closes at ${slot + windowSlots}, ~${new Date(Date.now() + WINDOW_MINS * 60000).toISOString()}`);
-log(`cancellations close ~${new Date(Date.now() + (WINDOW_MINS - FREEZE_MINS) * 60000).toISOString()}`);
+// Each auction begins exactly where the previous one ends: no gap, and no
+// manual step between them.
+let cursor = now + Math.round(START_IN_MINS * 60 * perSec);
+const plan = SEQUENCE.map((s) => {
+  const openSlot = cursor;
+  const closeSlot = openSlot + Math.round(s.mins * 60 * perSec);
+  cursor = closeSlot;
+  const mint = new PublicKey(s.tk.devnetMint);
+  return {
+    ...s,
+    mint,
+    openSlot,
+    closeSlot,
+    auction: auctionPda(ID, mint, openSlot),
+    opensAt: new Date(Date.now() + ((openSlot - now) / perSec) * 1000),
+    closesAt: new Date(Date.now() + ((closeSlot - now) / perSec) * 1000),
+  };
+});
+
+console.log("");
+for (const p of plan) {
+  log(`${p.symbol.padEnd(6)} ${p.auction.toBase58()}`);
+  log(`${" ".repeat(7)}opens  ${p.opensAt.toISOString()}  (slot ${p.openSlot})`);
+  log(`${" ".repeat(7)}closes ${p.closesAt.toISOString()}  (slot ${p.closeSlot}), cancels close ${new Date(p.closesAt.getTime() - FREEZE_MINS * 60000).toISOString()}`);
+}
+console.log("");
 
 if (DRY) {
   log("dry run — nothing sent");
+  console.log(`SKIP_AUCTIONS=${plan.map((p) => p.auction.toBase58()).join(",")}`);
+  console.log(`NEVER_CLOSE=${plan.map((p) => p.auction.toBase58()).join(",")}`);
   process.exit(0);
 }
 
-const ix = await program.methods
-  .initializeAuction(new BN(slot), new BN(slot + windowSlots), new BN(freezeSlots), new BN(windowSlots), Array.from(Buffer.from(tk.pythFeedId.replace(/^0x/, ""), "hex")))
-  .accountsStrict({
-    payer: payer.publicKey,
-    auction,
-    tickerMint: mint,
-    quoteMint: QUOTE,
-    vaultTicker: vaultTickerAta(auction, mint),
-    vaultQuote: vaultQuoteAta(auction, QUOTE),
-    tickerTokenProgram: TICKER_PROGRAM,
-    quoteTokenProgram: QUOTE_PROGRAM,
-    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM,
-    systemProgram: SystemProgram.programId,
-  })
-  .instruction();
+for (const p of plan) {
+  const ix = await program.methods
+    .initializeAuction(
+      new BN(p.openSlot),
+      new BN(p.closeSlot),
+      new BN(freezeSlots),
+      new BN(p.closeSlot - p.openSlot),
+      Array.from(Buffer.from(p.tk.pythFeedId.replace(/^0x/, ""), "hex")),
+    )
+    .accountsStrict({
+      payer: payer.publicKey,
+      auction: p.auction,
+      tickerMint: p.mint,
+      quoteMint: QUOTE,
+      vaultTicker: vaultTickerAta(p.auction, p.mint),
+      vaultQuote: vaultQuoteAta(p.auction, QUOTE),
+      tickerTokenProgram: TICKER_PROGRAM,
+      quoteTokenProgram: QUOTE_PROGRAM,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM,
+      systemProgram: SystemProgram.programId,
+    })
+    .instruction();
+  const r = await sendV0(connection, payer, [], [ix]);
+  rememberAuction(p.auction);
+  log(`opened ${p.symbol} ${p.auction.toBase58()} ${r.sig}`);
+}
 
-const r = await sendV0(connection, payer, [], [ix]);
-rememberAuction(auction);
-log(`opened ${auction.toBase58()} ${r.sig}`);
-console.log(`\nEVENT_AUCTION=${auction.toBase58()}`);
-console.log(`link https://uncross.0xo.in/app?ticker=${SYMBOL}`);
-console.log(`explorer https://explorer.solana.com/address/${auction.toBase58()}?cluster=devnet`);
+const addrs = plan.map((p) => p.auction.toBase58()).join(",");
+console.log(`\nSKIP_AUCTIONS=${addrs}`);
+console.log(`NEVER_CLOSE=${addrs}`);
+plan.forEach((p) => console.log(`link  https://uncross.0xo.in/app?ticker=${p.symbol}`));

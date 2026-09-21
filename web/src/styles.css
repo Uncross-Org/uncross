@@ -1658,3 +1658,10 @@ input {
 @media (max-width: 860px) {
   .event-bar { padding: 8px 14px; font-size: 12.5px; }
 }
+/* The best anchor this ticker has, marked so a newcomer knows which number to
+   trust: Pyth where a feed exists, the last cross where none does. */
+.chip-primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
