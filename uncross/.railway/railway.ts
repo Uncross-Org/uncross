@@ -7,7 +7,7 @@ export const partial = "uncross-venue";
 
 export default defineRailway(() => {
   const keeper = service("uncross-keeper", {
-    start: "node scripts/keeper.mjs --cluster devnet --cadence 7000 --freeze 700 --interval 20 --close-per-tick 12",
+    start: "node scripts/keeper.mjs --cluster devnet --cadence 7000 --freeze 700 --interval 20 --close-per-tick 12 --keep-traded 3",
     replicas: 1,
     // Forced: the repo root also holds the Anchor program's Cargo.toml, and
     // Railpack's auto-detection built an image with no node binary when left
@@ -74,6 +74,9 @@ export default defineRailway(() => {
       KEYPAIR_WALLET2: preserve(),
       MAX_SOL: preserve(),
       MAX_GRANTS: preserve(),
+      // Participants on mobile networks can share one address behind CGNAT,
+      // so this is deliberately loose; the global caps are the real limit.
+      IP_PER_HOUR: preserve(),
       // Which wallet's SOL goes out: wallet2 is the bot's funder and runs
       // down with it, so an event points this at one that will still hold a
       // balance hours later.
