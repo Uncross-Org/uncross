@@ -72,7 +72,8 @@ import("./scripts/lib.mjs").then(async (L) => {
   const spl = await import("@solana/spl-token");
   const { PublicKey, SystemProgram, LAMPORTS_PER_SOL } = a.web3;
   const conn = L.makeConnection(), fx = L.loadFixture();
-  const deploy = L.loadKeypair("deploy"), funder = L.loadKeypair("wallet2");
+  // deploy pays, not wallet2: wallet2 funds the bot and runs down with it.
+  const deploy = L.loadKeypair("deploy"), funder = deploy;
   const tk = L.loadTickers().tickers.find(t => t.symbol === "IBMx");
   const mint = new PublicKey(tk.devnetMint), quote = new PublicKey(fx.quoteMint);
   const o = new PublicKey(pub);
