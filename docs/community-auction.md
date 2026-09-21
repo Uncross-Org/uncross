@@ -194,6 +194,22 @@ people — say what actually happened. Comparing the two participant lists also
 answers whether the same wallets came back for the second auction, which is
 worth reporting either way.
 
+**Then put the venue back.** Both of these hold the venue in its event shape
+and neither expires on its own:
+
+```sh
+railway variable set "SKIP_TICKERS=" --service uncross-activity   # bot resumes AAPLx and IBMx
+railway logs --service uncross-activity   # expect: seeding AAPLx,NVDAx,TSLAx,IBMx
+```
+
+Then take the reserved label out — delete `site/lib/uncross/reserved.ts` and
+`web/src/lib/reserved.ts` with their four call sites, or set `"live": false` in
+`scripts/event.json`, which switches off the label and the countdown together.
+The label also hides itself once the last window closes, so a missed cleanup
+degrades to a stale file rather than a page telling visitors about an auction
+that already happened — but the bot exclusion has no such fallback, and a
+venue whose two headline books never trade again is the worse failure.
+
 ## If it has to be postponed
 
 Cheap and quick, in this order:
