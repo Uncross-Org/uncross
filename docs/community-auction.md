@@ -18,6 +18,15 @@ orders; this is the one event where the books belong to strangers.
 Copy this as-is. It is the whole path, and it has been tested from a wallet
 that had never existed, in a fresh browser, with nobody helping.
 
+The evidence for that sentence is the run at 09:31 UTC on the day, wallet
+`41xVRY…`, order tx `3ikJMMB8…`, checked on chain rather than in the UI. Earlier
+runs of the same test were not evidence of anything: its final assertion
+matched the word "placed" anywhere on the page, which appears in the static
+copy, so it reported a pass on two runs in which no order was ever sent. Any
+earlier claim of a browser pass should be read as withdrawn; the harness now
+refuses to pass unless a successful program transaction from the fresh wallet
+exists on chain.
+
 > **Trade a tokenized stock at a fair price — Uncross, 8pm IST tonight**
 >
 > Uncross runs a call auction: instead of each person trading alone against a
@@ -151,6 +160,29 @@ Windows are converted from minutes using the slot rate measured seconds
 beforehand, because devnet slot time drifts — the dry run prints every start
 and close time it computed, so check those before sending. It prints
 `SKIP_AUCTIONS=` and `NEVER_CLOSE=` lines holding both addresses, ready to paste.
+
+**Keep that printout. It is the only reliable record of the two addresses.**
+Do not reach for `scripts/auction-index.mjs` (`listAuctions`) to find them
+again: on the morning of the event it returned an already-settled AAPLx auction
+from hours earlier when asked for the open one, because its index is a
+per-machine cache fed by the last fourteen program transactions and had not
+seen the auction the Railway keeper opened. If the printout is lost, scan the
+program directly — this is what actually found the open book:
+
+```sh
+cd uncross
+RPC_URLS="$HELIUS_DEVNET" node -e '
+import("./scripts/lib.mjs").then(async (L) => {
+  const c = L.makeConnection(), { program } = L.getProgram(L.loadKeypair("deploy"));
+  const slot = await c.getSlot("confirmed");
+  const bySym = Object.fromEntries(L.loadTickers().tickers.map((t) => [t.devnetMint, t.symbol]));
+  for (const x of await c.getProgramAccounts(program.programId, { filters: [{ dataSize: 2880 }] })) {
+    const a = L.decodeAuction(x.account.data);
+    if (Number(a.openSlot) <= slot && slot < Number(a.closeSlot))
+      console.log(bySym[a.tickerMint.toBase58()] ?? "?", x.pubkey.toBase58(), `closes slot ${a.closeSlot}`);
+  }
+});'
+```
 
 **14:26 — the backstop, and the reclaimer.** Two Railway variables, both taking
 the addresses just printed. `SKIP_AUCTIONS` is now belt-and-braces behind the
