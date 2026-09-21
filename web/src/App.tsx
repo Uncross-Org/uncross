@@ -6,6 +6,7 @@ import { Candles } from "./components/Candles";
 import { Countdown } from "./components/Countdown";
 import { CrankPanel } from "./components/CrankPanel";
 import { DepthChart } from "./components/DepthChart";
+import { GetTestTokens } from "./components/GetTestTokens";
 import { Ladder } from "./components/Ladder";
 import { MyOrders } from "./components/MyOrders";
 import { OrderForm } from "./components/OrderForm";
@@ -224,7 +225,15 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             )}
           </section>
 
-          <section className="card panel-order">
+          <section className="panel-order">
+            <GetTestTokens
+              tk={tk}
+              sol={balances.sol}
+              tickerRaw={balances.tickerRaw}
+              quoteRaw={balances.quoteRaw}
+              notify={notify}
+              onFunded={refresh}
+            />
             <OrderForm
               tk={tk}
               auction={current}

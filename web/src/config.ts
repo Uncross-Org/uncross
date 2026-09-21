@@ -98,3 +98,14 @@ export function tickerFromUrl(): TickerSymbol {
 
 export const explorerTx = (c: ClusterConfig, sig: string) => `https://explorer.solana.com/tx/${sig}${c.explorerSuffix}`;
 export const explorerAddr = (c: ClusterConfig, a: string) => `https://explorer.solana.com/address/${a}${c.explorerSuffix}`;
+
+/**
+ * The test-token faucet (uncross/scripts/faucet.mjs, on Railway).
+ *
+ * The fixture mints are ours, so a visitor cannot obtain shares or quote
+ * dollars anywhere else: without this a new wallet can watch an auction and
+ * nothing more. The signing keys live in that service's environment, never in
+ * this bundle — this is only its public address.
+ */
+export const FAUCET_URL = (import.meta.env.VITE_FAUCET_URL as string | undefined)?.replace(/\/$/, "") ||
+  "https://uncross-faucet-production.up.railway.app";

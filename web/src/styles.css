@@ -1566,3 +1566,41 @@ input {
     content: none;
   }
 }
+
+/* The faucet card: the first thing a new wallet needs, so it sits above the
+   order form and uses the accent rather than the neutral card border. */
+.panel-order {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.faucet-card {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-soft), transparent 60%), var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.faucet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.faucet-head h2 {
+  font-size: 16px;
+}
+.faucet-btn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--cta-fg);
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-weight: 600;
+  font-size: 15px;
+}
+.faucet-btn:disabled {
+  opacity: 0.6;
+}

@@ -87,6 +87,28 @@ export function makeConnection(commitment = "confirmed") {
   return new Connection(RPC_URL, { commitment, fetch: failoverFetch });
 }
 
+/**
+ * One line summarising rpcStats since process start: total requests, the
+ * rate in requests/min, and any 429s by method. `label` names the process
+ * (keeper, activity) so lines from each service can be told apart once both
+ * are collected into one soak log.
+ */
+export function rpcStatsLine(label) {
+  const mins = Math.max(1 / 60, (Date.now() - rpcStats.since) / 60_000);
+  const total = Object.values(rpcStats.requests).reduce((a, b) => a + b, 0);
+  const by = Object.entries(rpcStats.requests)
+    .sort((a, b) => b[1] - a[1])
+    .map(([m, n]) => `${m}=${n}`)
+    .join(" ");
+  const rl = Object.entries(rpcStats.rateLimited)
+    .map(([m, n]) => `${m}=${n}`)
+    .join(" ");
+  return (
+    `rpc stats [${label}] ${mins.toFixed(1)}min: ${total} req (${(total / mins).toFixed(2)}/min), ` +
+    `429s: ${rl || "none"}, failovers: ${rpcStats.failovers} — by method: ${by || "none"}`
+  );
+}
+
 export const TICKER_PROGRAM = TOKEN_2022_PROGRAM_ID;
 export const QUOTE_PROGRAM = TOKEN_PROGRAM_ID;
 export const ASSOCIATED_TOKEN_PROGRAM = new PublicKey(

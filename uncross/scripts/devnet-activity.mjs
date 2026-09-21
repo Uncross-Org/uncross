@@ -31,6 +31,7 @@ import {
   TICKER_PROGRAM,
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
+  rpcStatsLine,
 } from "./lib.mjs";
 import { listAuctions as listAuctionsIndexed } from "./auction-index.mjs";
 
@@ -192,6 +193,10 @@ async function seed(tk) {
   }
 }
 
+// One rpcStats line every ~5 passes (~5 minutes at the 60s loop interval),
+// so a soak run's request rate and 429 count can be read straight off the
+// deployed logs.
+let pass = 0;
 do {
   for (const tk of TICKERS) {
     try {
@@ -200,5 +205,7 @@ do {
       log(`${tk.symbol}: ${e.message}`);
     }
   }
+  pass++;
+  if (pass % 5 === 0) log(rpcStatsLine("activity"));
   if (process.argv.includes("--loop")) await sleep(60_000);
 } while (process.argv.includes("--loop"));

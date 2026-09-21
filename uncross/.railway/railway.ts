@@ -47,7 +47,32 @@ export default defineRailway(() => {
     },
   });
 
+  // The faucet holds the signing keys a browser must never see: it mints the
+  // fixture tokens (deploy is their mint authority) and pays the SOL from
+  // wallet2. It is a separate service so the keeper and the bot keep running
+  // untouched when it is redeployed or rate-limited.
+  const faucet = service("uncross-faucet", {
+    start: "node scripts/faucet.mjs",
+    replicas: 1,
+    build: {
+      builder: "NIXPACKS",
+      nixpacksPlan: { providers: ["node"] },
+    },
+    deploy: {
+      restartPolicyType: "ALWAYS",
+      restartPolicyMaxRetries: 10,
+      sleepApplication: false,
+    },
+    variables: {
+      RPC_URLS: preserve(),
+      KEYPAIR_DEPLOY: preserve(),
+      KEYPAIR_WALLET2: preserve(),
+      MAX_SOL: preserve(),
+      MAX_GRANTS: preserve(),
+    },
+  });
+
   return project("uncross-venue", {
-    resources: [keeper, activity],
+    resources: [keeper, activity, faucet],
   });
 });

@@ -27,7 +27,7 @@ import {
   loadIdl,
   loadTickers,
   rpcHosts,
-  rpcStats,
+  rpcStatsLine,
 } from "./lib.mjs";
 import { listAuctions as listAuctionsIndexed, rememberAuction } from "./auction-index.mjs";
 
@@ -271,12 +271,19 @@ async function tick() {
 
 log(`keeper endpoints: ${cfg.rpc ? new URL(cfg.rpc).host : rpcHosts().join(" -> ")}`);
 log(`keeper up: ${clusterName}, cadence ${CADENCE} slots, freeze ${FREEZE}, payer ${payer.publicKey.toBase58()}`);
+// One rpcStats line every ~5 minutes (STATS_EVERY ticks at the default 15s
+// interval), so a soak run's request rate and 429 count can be read straight
+// off the deployed logs rather than requiring a separate instrumented run.
+const STATS_EVERY = Math.max(1, Math.round(300 / Number(opt("interval", 15))));
+let tickCount = 0;
 for (;;) {
   try {
     await tick();
   } catch (e) {
     log("tick failed:", e.message);
   }
+  tickCount++;
+  if (tickCount % STATS_EVERY === 0) log(rpcStatsLine("keeper"));
   if (flag("once")) break;
   await sleep(Number(opt("interval", 15)) * 1000);
 }
