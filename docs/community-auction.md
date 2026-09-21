@@ -40,6 +40,19 @@ that had never existed, in a fresh browser, with nobody helping.
 > *above* the best ask: in a normal market that is impossible, here it just
 > means buyers and sellers overlap and that overlap is what trades.
 
+## Reachability
+
+Participants call the faucet at `uncross.0xo.in/api/faucet`, not at its
+Railway hostname. Some networks block `*.up.railway.app` — the machine this
+was built on does — and a participant on such a network would find the one
+action they need silently broken, with no error worth reading. The rewrite
+lives in `site/next.config.ts`.
+
+One consequence, measured: through that rewrite the faucet sees a Vercel edge
+address rather than the participant, so the per-IP limit cannot identify
+anyone and is set loose (500/hour) to avoid refusing real people. What bounds
+the damage is the per-wallet cooldown and the global caps.
+
 ## If the faucet fails for someone
 
 It is rate-limited: one grant per wallet every three hours, a per-IP hourly

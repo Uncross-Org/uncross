@@ -43,7 +43,7 @@ export function GetTestTokens({ tk, sol, tickerRaw, quoteRaw, notify, onFunded }
     if (!wallet.publicKey) return;
     setBusy(true);
     try {
-      const res = await fetch(`${FAUCET_URL}/faucet`, {
+      const res = await fetch(`${FAUCET_URL}/api/faucet`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ pubkey: wallet.publicKey.toBase58(), ticker: tk.symbol }),

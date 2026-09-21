@@ -55,8 +55,18 @@ const SHARES_PER_GRANT = Number(opt("shares", 12));
 const QUOTE_PER_GRANT = Number(opt("quote", 6000));
 /** One grant per wallet per this long. */
 const PUBKEY_COOLDOWN_MS = Number(opt("cooldown-mins", 180)) * 60_000;
-/** Per-IP grants allowed per hour. */
-const IP_PER_HOUR = Number(opt("ip-per-hour", 6));
+/**
+ * Per-IP grants allowed per hour.
+ *
+ * Deliberately loose. Browsers reach this through the site's /api/faucet
+ * rewrite, so the address seen here is the proxy's, not the participant's —
+ * measured: direct requests arrive as the real client, proxied ones as a
+ * Vercel edge. A tight limit would therefore refuse real participants at a
+ * shared address while stopping nobody. What actually bounds the damage is
+ * the per-wallet cooldown and the global caps below, and the worst case they
+ * allow is someone wasting a capped amount of devnet SOL.
+ */
+const IP_PER_HOUR = Number(opt("ip-per-hour", 500));
 /** Hard ceilings for the life of the process. */
 const MAX_GRANTS = Number(opt("max-grants", 300));
 const MAX_SOL = Number(opt("max-sol", 1.5));
@@ -136,8 +146,14 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === "/health") {
+    // Echo how this caller is identified for rate limiting. Behind the site's
+    // rewrite the hop chain matters: if every participant arrived as the same
+    // proxy address, the per-IP limit would refuse the event at that count.
+    const seenIp = String(req.headers["x-forwarded-for"] ?? "").split(",")[0].trim() || req.socket.remoteAddress || "?";
     return json(res, 200, {
       ok: true,
+      youLookLike: seenIp,
+      forwardedFor: String(req.headers["x-forwarded-for"] ?? "(none)"),
       upMins: Math.round((Date.now() - stats.since) / 60_000),
       grants: stats.grants,
       solPaid: Number(stats.solPaid.toFixed(4)),

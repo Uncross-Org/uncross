@@ -103,15 +103,28 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const crossedBook = bid != null && ask != null && bid >= ask;
   const vsRef = ref.fresh && ref.price != null && indicative && indicative.volume > 0 ? ((indicative.price - ref.price) / ref.price) * 100 : null;
 
+  // What this ticker last actually traded at. For a name with no Pyth feed —
+  // IBMx, the whole point of this venue — an empty book offers no price at
+  // all, and the first person to arrive has nothing to type. The previous
+  // auction's clearing price is real, on-chain, and the honest anchor.
+  const lastCross = useMemo(() => {
+    if (!m) return null;
+    const traded = (venue.auctions ?? [])
+      .filter((a) => a.status !== "open" && a.executableVolume > 0n)
+      .sort((x, y) => y.closeSlot - x.closeSlot)[0];
+    return traded ? programToPerShare(traded.clearingPrice, m) : null;
+  }, [venue.auctions, m]);
+
   const suggestions = useMemo(() => {
     const s: { label: string; price: number }[] = [];
     if (ref.fresh && ref.price != null) s.push({ label: "Pyth mainnet", price: ref.price });
     if (indicative && indicative.volume > 0 && !crossed) s.push({ label: "Cross", price: indicative.price });
+    if (lastCross != null) s.push({ label: "Last cross", price: lastCross });
     if (bid != null) s.push({ label: "Bid", price: bid });
     if (ask != null) s.push({ label: "Ask", price: ask });
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref.price, ref.fresh, indicative?.price, indicative?.volume, crossed, bid, ask]);
+  }, [ref.price, ref.fresh, indicative?.price, indicative?.volume, crossed, lastCross, bid, ask]);
   const loadingAuction = !!mint && venue.auctions === null && !venue.error;
   const secsLeft = current && slot != null && (phase === "open" || phase === "freeze") ? Math.max(0, (current.closeSlot - slot) * slotMs) : null;
 
