@@ -85,6 +85,12 @@ export default defineRailway(() => {
       // down with it, so an event points this at one that will still hold a
       // balance hours later.
       FUNDER: preserve(),
+      // Every grant funds all of these, not just the ticker asked for, so one
+      // trip to the faucet covers a multi-book event. Undeclared, an apply
+      // deletes it and the faucet silently falls back to its built-in default
+      // — which would strand anyone granted during the window in whichever
+      // book the default left out.
+      EVENT_TICKERS: preserve(),
     },
   });
 
