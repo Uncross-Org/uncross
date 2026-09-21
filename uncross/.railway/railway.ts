@@ -47,8 +47,12 @@ export default defineRailway(() => {
       KEYPAIR_DEPLOY: preserve(),
       KEYPAIR_WALLET2: preserve(),
       KEYPAIR_MB_OWNERS: preserve(),
-      // Auctions this bot must leave alone — the community event's book.
+      // Auctions this bot must leave alone — the community event's books.
       SKIP_AUCTIONS: preserve(),
+      // The same exclusion by ticker, which is what can be set before the
+      // auctions exist. Declared here so an apply cannot quietly delete it
+      // mid-event and put the bot back into a book it must stay out of.
+      SKIP_TICKERS: preserve(),
     },
   });
 

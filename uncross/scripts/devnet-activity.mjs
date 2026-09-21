@@ -114,14 +114,33 @@ const SKIP_AUCTIONS = new Set(
     .map((s) => s.trim())
     .filter(Boolean),
 );
+// The same exclusion, one level up, and the one that actually holds.
+// SKIP_AUCTIONS can only be set once the auction exists and its address is
+// known — which leaves a gap between opening the event book and the setting
+// taking effect, and this bot seeds a new book within a minute. A ticker needs
+// no address, so this can be set well beforehand: nothing this bot does can
+// reach either event book, whatever the timing. SKIP_AUCTIONS stays as the
+// narrower backstop.
+const SKIP_TICKERS = new Set(
+  (process.env.SKIP_TICKERS ?? opt("skip-tickers", "") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
 
 const TICKERS = loadTickers()
-  .tickers.filter((t) => ONLY_TICKERS.length === 0 || ONLY_TICKERS.includes(t.symbol))
+  .tickers.filter((t) => (ONLY_TICKERS.length === 0 || ONLY_TICKERS.includes(t.symbol)) && !SKIP_TICKERS.has(t.symbol))
   .map((t) => ({
     symbol: t.symbol,
     mint: new PublicKey(t.devnetMint),
     ref: t.pythAccount ? () => pythPrice(t.pythAccount) : () => jupiterPrice(t.mainnetMint),
   }));
+
+// Printed at startup so the exclusion is checkable from the logs. An exclusion
+// you cannot see is one you are trusting rather than verifying, and this one
+// carries the event's central claim.
+log(`seeding ${TICKERS.map((t) => t.symbol).join(",") || "(nothing)"}`);
+if (SKIP_TICKERS.size) log(`leaving ${[...SKIP_TICKERS].join(",")} to real participants`);
 
 async function multiplier(mint) {
   const info = (await withRetry(() => connection.getParsedAccountInfo(mint))).value.data.parsed.info;

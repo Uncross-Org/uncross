@@ -112,6 +112,26 @@ in tx `3bhMVV4E…zpyV3FF`, which left it holding 0.02 SOL, 12 AAPLx, 12 IBMx an
 
 Times are UTC.
 
+**14:00 — take the bot off both event tickers.** This comes first, before the
+auctions exist:
+
+```sh
+railway variable set "SKIP_TICKERS=AAPLx,IBMx" --service uncross-activity
+railway logs --service uncross-activity   # expect: leaving AAPLx,IBMx to real participants
+```
+
+Doing it by ticker rather than by auction address is the whole point of the
+ordering. `SKIP_AUCTIONS` cannot be set until the auction exists and its
+address is known, which leaves a minute or two after opening in which the bot
+can seed the event book — and it seeds a new book within a minute. A ticker
+needs no address, so this can be set half an hour early and nothing the bot
+does can reach either book, whatever the timing. Confirm the log line before
+moving on; an exclusion you have not seen take effect is not an exclusion.
+
+The cost is that AAPLx and IBMx sit quiet for the half hour before the event.
+That is the right trade: an empty book for thirty minutes is recoverable, a bot
+order in the community book is not.
+
 **14:25 — open both auctions.** Check the maths first, then send it:
 
 ```sh
@@ -128,18 +148,18 @@ beforehand, because devnet slot time drifts — the dry run prints every start
 and close time it computed, so check those before sending. It prints
 `SKIP_AUCTIONS=` and `NEVER_CLOSE=` lines holding both addresses, ready to paste.
 
-**14:26 — keep the bot and the reclaimer off it.** Two Railway variables, both
-taking the address just printed:
+**14:26 — the backstop, and the reclaimer.** Two Railway variables, both taking
+the addresses just printed. `SKIP_AUCTIONS` is now belt-and-braces behind the
+14:00 ticker exclusion, not the only thing standing between the bot and the
+book:
 
 ```sh
 railway variable set "SKIP_AUCTIONS=<both addresses>" --service uncross-activity
 railway variable set "NEVER_CLOSE=<both addresses>" --service uncross-keeper
 ```
 
-`SKIP_AUCTIONS` is what makes "real people filled this book" a true statement;
-without it the bot seeds the event auction within a minute. `NEVER_CLOSE` stops
-the keeper reclaiming its rent once settled, which would delete the account and
-break every link pointing at it.
+`NEVER_CLOSE` stops the keeper reclaiming its rent once settled, which would
+delete the account and break every link pointing at it.
 
 The keeper needs no other change: it sees a live auction for each event ticker
 and will not open a competing one, and it runs each cross when that window
