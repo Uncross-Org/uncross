@@ -14,6 +14,12 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useState } from "react";
 import { FAUCET_URL, type TickerConfig } from "../config";
+import { RESERVED } from "../lib/reserved";
+
+// The books one grant covers: the event tickers, which are what the faucet
+// mints for every grant. Read from event.json so this card and the faucet
+// cannot name different tickers.
+const EVENT_LIST = [...RESERVED];
 
 interface Props {
   tk: TickerConfig;
@@ -51,9 +57,15 @@ export function GetTestTokens({ tk, sol, tickerRaw, quoteRaw, notify, onFunded }
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body?.error ?? `the faucet returned ${res.status}`);
       const g = body.granted ?? {};
+      // Say everything the grant contained, from the faucet's own answer. One
+      // grant covers every event ticker, and someone told only about the book
+      // they are looking at goes back to the faucet before the second one —
+      // and is refused, because they were already funded.
+      const tickers: string[] = Array.isArray(g.tickers) && g.tickers.length ? g.tickers : [tk.symbol];
+      const shares = tickers.map((s) => `${g.shares} ${s}`).join(tickers.length > 2 ? ", " : " and ");
       notify(
         "ok",
-        `Funded: ${g.sol ? `${g.sol} SOL, ` : ""}${g.shares} ${tk.symbol} and ${Number(g.quote).toLocaleString("en-US")} test USDC`,
+        `Funded: ${g.sol ? `${g.sol} SOL, ` : ""}${shares}${tickers.length > 1 ? "," : ""} and ${Number(g.quote).toLocaleString("en-US")} test USDC`,
         body.signature,
       );
       setDone(true);
@@ -83,8 +95,9 @@ export function GetTestTokens({ tk, sol, tickerRaw, quoteRaw, notify, onFunded }
         {busy ? "Sending…" : done ? "Get more test tokens" : "Get test tokens"}
       </button>
       <p className="fine muted">
-        Sends devnet SOL for fees, {tk.symbol} shares to sell and test dollars to buy with. One grant per wallet every
-        three hours.
+        Sends devnet SOL for fees, {EVENT_LIST.length ? `${EVENT_LIST.join(" and ")} shares` : `${tk.symbol} shares`} to
+        sell and test dollars to buy with. One grant per wallet every three hours
+        {EVENT_LIST.length > 1 ? " — it covers both books, so you only need it once" : ""}.
       </p>
     </section>
   );
