@@ -6,13 +6,13 @@
   "auctions": [
     {
       "ticker": "AAPLx",
-      "startsAt": "2026-09-21T14:30:00Z",
+      "startsAt": "2026-09-22T14:30:00Z",
       "windowMins": 20,
       "note": "Apple has a live Pyth price on mainnet, so there is a reference to judge against."
     },
     {
       "ticker": "IBMx",
-      "startsAt": "2026-09-21T14:50:00Z",
+      "startsAt": "2026-09-22T14:50:00Z",
       "windowMins": 20,
       "note": "IBM has no Pyth price on Solana at all. The only price is the one this book makes."
     }

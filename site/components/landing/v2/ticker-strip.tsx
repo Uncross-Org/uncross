@@ -14,7 +14,6 @@ import { CLUSTER, TICKERS } from "@/lib/uncross/config";
 import { useVenueAll } from "@/lib/use-venue";
 import { fmtPrice } from "@/lib/uncross/format";
 import { programToPerShare } from "@/lib/uncross/units";
-import { isReserved, RESERVED_LABEL, RESERVED_SHORT } from "@/lib/uncross/reserved";
 
 const SLOT_MS = 400;
 
@@ -89,21 +88,9 @@ export function TickerStrip() {
       >
         <span className="text-[13px] font-semibold text-text">{c.symbol}</span>
         <span className="num text-[15px] font-semibold tabular-nums text-text">{c.price ?? "—"}</span>
-        {/* The chip has room for a word, not a sentence; the sentence is still
-            there for anyone hovering or reading with a screen reader. */}
-        {isReserved(c.symbol) ? (
-          <span
-            title={RESERVED_LABEL}
-            className="num rounded-md border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[11.5px] font-semibold text-accent"
-          >
-            {RESERVED_SHORT}
-            <span className="sr-only"> — {RESERVED_LABEL}</span>
-          </span>
-        ) : (
-          <span className={`num text-[11.5px] ${c.tone === "cross" ? "text-muted" : c.tone === "indicative" ? "text-accent" : "text-muted"}`}>
-            {c.line}
-          </span>
-        )}
+        <span className={`num text-[11.5px] ${c.tone === "cross" ? "text-muted" : c.tone === "indicative" ? "text-accent" : "text-muted"}`}>
+          {c.line}
+        </span>
       </li>
     ));
 

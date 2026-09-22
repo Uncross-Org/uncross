@@ -14,12 +14,12 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useState } from "react";
 import { FAUCET_URL, type TickerConfig } from "../config";
-import { RESERVED } from "../lib/reserved";
+import { EVENT_TICKERS } from "../lib/reserved";
 
 // The books one grant covers: the event tickers, which are what the faucet
 // mints for every grant. Read from event.json so this card and the faucet
 // cannot name different tickers.
-const EVENT_LIST = [...RESERVED];
+const EVENT_LIST = EVENT_TICKERS;
 
 interface Props {
   tk: TickerConfig;

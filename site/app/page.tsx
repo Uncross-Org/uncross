@@ -9,7 +9,6 @@
 
 import { getSnapshot } from "@/lib/snapshot";
 import { NavbarV2, FooterV2 } from "@/components/landing/v2/chrome";
-import { EventBanner } from "@/components/landing/v2/event-banner";
 import { HeroV2 } from "@/components/landing/v2/hero";
 import { TickerStrip } from "@/components/landing/v2/ticker-strip";
 import { ProblemV2 } from "@/components/landing/v2/problem";
@@ -27,7 +26,6 @@ export default async function Page() {
 
   return (
     <>
-      <EventBanner />
       <NavbarV2 />
       <HeroV2 snapshot={snapshot} />
       <TickerStrip />

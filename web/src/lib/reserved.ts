@@ -1,14 +1,12 @@
-// Which books are held back for the community event, and the one sentence that
-// says so. The dashboard's copy of site/lib/uncross/reserved.ts — both read
-// the event.json that scripts/build-app.sh copies out of the venue, so the
-// page and the chain cannot disagree about which books are held.
+// Which books the community event uses, read from the same event.json the
+// script that opens the auctions reads.
 //
-// Two books sit quiet before the event because the seeding bot has been taken
-// off them. Without this a trader opening the dashboard sees the two tickers
-// the announcement named showing no orders, and reads it as a broken venue
-// rather than a held one.
-//
-// The time check is what stops "tonight's auction" outliving tonight.
+// This no longer drives any label. The event is promoted off-site, so the
+// dashboard shows the auctions themselves rather than announcing them. What
+// remains is the one thing the UI still has to agree with the faucet about:
+// a single grant funds every ticker listed here, and the "get test tokens"
+// card has to name them all, or someone comes back for the second book and is
+// refused as already funded.
 
 import event from "../event.json";
 
@@ -20,14 +18,5 @@ interface Leg {
 
 const LEGS: Leg[] = (event.auctions ?? []) as Leg[];
 
-const endOf = (l: Leg) => new Date(l.startsAt).getTime() + l.windowMins * 60_000;
-const LAST_END = LEGS.length ? Math.max(...LEGS.map(endOf)) : 0;
-
-export const RESERVED_LABEL = "Reserved for tonight's community auction, 8pm IST / 14:30 UTC";
-export const RESERVED_SHORT = "Reserved";
-
-export const RESERVED: ReadonlySet<string> = new Set(event.live ? LEGS.map((l) => l.ticker) : []);
-
-export function isReserved(symbol: string, now: number = Date.now()): boolean {
-  return RESERVED.has(symbol) && now < LAST_END;
-}
+/** The tickers one grant covers, in the order they run. */
+export const EVENT_TICKERS: string[] = event.live ? LEGS.map((l) => l.ticker) : [];

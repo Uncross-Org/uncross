@@ -18,7 +18,6 @@ import { explorerAddr, explorerTx, PROGRAM_ID, tickerFromUrl, type ClusterConfig
 import { useBalances, useMultiplier, useNow, useOrders, usePyth, useSlotClock, useTheme, useVenue, useVenueAll } from "./hooks";
 import { auctionPhase } from "./lib/auction";
 import { bestBidAsk, bookOrders } from "./lib/book";
-import { isReserved, RESERVED_LABEL } from "./lib/reserved";
 import { fmtDuration, fmtPct, fmtPrice, fmtShares, shortAddr } from "./lib/format";
 import { referenceState } from "./lib/reference";
 import { programToPerShare, rawToShares } from "./lib/units";
@@ -170,15 +169,6 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
         </header>
 
         <EventBar ticker={ticker} onGo={setTicker} />
-
-        {/* Said before the numbers, not after: every stat below reads "—" for a
-            held book, and a trader who meets those first concludes the venue
-            is broken rather than waiting. */}
-        {isReserved(ticker) && (
-          <p className="reserved-note">
-            {RESERVED_LABEL} — the test bot has been taken off this book, so it stays empty until real orders arrive.
-          </p>
-        )}
 
         {/* The numbers that matter, in a row: the cross, the book's edges, the reference. */}
         <div className="stats num">

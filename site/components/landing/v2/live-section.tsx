@@ -20,7 +20,6 @@ import { explorerAddr } from "@/lib/uncross/config";
 import { fmtEt, fmtPrice, fmtShares } from "@/lib/uncross/format";
 import { programToPerShare, rawToShares } from "@/lib/uncross/units";
 import { useVenue } from "@/lib/use-venue";
-import { isReserved, RESERVED_LABEL } from "@/lib/uncross/reserved";
 
 const TICKER = "IBMx";
 
@@ -186,14 +185,6 @@ export function LiveSectionV2() {
                 )}
               </div>
             </div>
-            {/* This book is deliberately quiet until tonight, and an
-                unexplained empty chart reads as a broken venue. Say which it
-                is, right above the chart that looks wrong. */}
-            {isReserved(TICKER) && (
-              <p className="mt-3 rounded-lg border border-accent/40 bg-accent-soft px-3 py-2 text-[12.5px] font-semibold text-accent">
-                {RESERVED_LABEL} — the test bot has been taken off this book, so it stays empty until real orders arrive.
-              </p>
-            )}
             <div className="mt-3">
               <DepthChart book={book} indicative={indicative} loading={loading} height={300} />
             </div>

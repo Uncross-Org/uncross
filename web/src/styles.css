@@ -1197,24 +1197,6 @@ input {
   font-size: 11px;
   color: var(--muted);
 }
-/* A held book is not a dead one. Both states show no orders, so the reserved
-   row is marked in the accent rather than the muted grey the others use. */
-.side-state.side-reserved {
-  color: var(--accent);
-  font-weight: 600;
-}
-/* The same thing said in full, above the stats, for the selected ticker. */
-.reserved-note {
-  margin: 0 0 14px;
-  padding: 10px 14px;
-  border: 1px solid var(--accent);
-  border-radius: 10px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.45;
-}
 .side-foot {
   margin-top: auto;
   padding: 12px 16px;

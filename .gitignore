@@ -1,2 +1,6 @@
 .claude/
 .DS_Store
+
+# Brand working files: the renderer's safe-area check overlay is a diagnostic,
+# not a deliverable.
+brand/kit/x/header-safe-areas.png

@@ -7,7 +7,6 @@ import { TICKERS } from "../config";
 import type { Auction } from "../lib/auction";
 import { fmtPrice } from "../lib/format";
 import { programToPerShare } from "../lib/units";
-import { isReserved, RESERVED_LABEL, RESERVED_SHORT } from "../lib/reserved";
 
 interface Props {
   cluster: ClusterConfig;
@@ -60,15 +59,7 @@ export function Sidebar({ cluster, ticker, onSelect, all, loading, slot, open, o
                 </span>
                 <span className="side-px num">{loading ? "…" : (last ?? "—")}</span>
                 <span className="side-name">{tk.name}</span>
-                {/* A held book shows no orders; without this the row reads as
-                    a dead ticker rather than a reserved one. */}
-                {isReserved(t) ? (
-                  <span className="side-state num side-reserved" title={RESERVED_LABEL}>
-                    {RESERVED_SHORT.toLowerCase()}
-                  </span>
-                ) : (
-                  <span className="side-state num">{frozen ? "frozen" : running ? "taking orders" : crossed ? "last cross" : "no cross yet"}</span>
-                )}
+                <span className="side-state num">{frozen ? "frozen" : running ? "taking orders" : crossed ? "last cross" : "no cross yet"}</span>
               </button>
             </li>
           );
