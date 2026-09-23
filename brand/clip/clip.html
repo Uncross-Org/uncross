@@ -26,10 +26,10 @@
     <span style="color:var(--muted);font-weight:500">16 Sept —</span> <span style="color:var(--down)">no route at any size.</span></div>
   <div id="s1rule" class="fade" style="position:absolute;left:92px;right:92px;top:488px;height:2px;background:var(--line)"></div>
   <div id="s1b" class="fade" style="position:absolute;left:92px;top:520px;font-size:38px;font-weight:600">
-    <span style="color:var(--muted);font-weight:500">23 Sept —</span> it routes, at a price:</div>
+    <span style="color:var(--muted);font-weight:500">23 Sept —</span> it routes, at a cost:</div>
   <div id="rows" style="position:absolute;left:92px;right:92px;top:594px"></div>
   <div id="s1foot" class="fade eyebrow" style="position:absolute;left:92px;bottom:78px;font-size:17px;letter-spacing:.08em">
-    Jupiter quotes · buying with USDC · 50 bps · 23 Sept 06:57 UTC</div>
+    Jupiter quote and price · DexScreener pools · USDC, 50 bps · 23 Sept 17:32 UTC</div>
 </div>
 
 <!-- 2. The mechanism: a real book, curves meeting at one price. -->
@@ -57,13 +57,16 @@
 <script>
 const BOOK = __BOOK__;
 const LOCKUP = __LOCKUP__;
-const SIZES = [["$1","18.46%"],["$100","19.81%"],["$1,000","29.33%"],["$10,000","86.57%"]];
+// The 23 Sept 17:32 UTC reading, the one the landing page shows
+// (site/lib/liquidity-today.json). The cost of a real-size buy leads; the pool
+// behind it and the price it is quoted against follow.
+const ROWS = [["Buy $10,000", "84.09%", "price impact", true], ["IBMx pools hold", "$3,206", "", false], ["Jupiter's price", "$251.63", "", false]];
 
 // ---- scene 1 rows
-document.getElementById("rows").innerHTML = SIZES.map(([s,p],i) =>
-  `<div id="r${i}" class="fade num" style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding:12px 0">
-     <span style="font-size:34px;color:var(--text2)">Buy ${s}</span>
-     <span style="font-size:34px;font-weight:700;color:var(--down)">${p} <span style="font-size:22px;font-weight:500;color:var(--muted)">price impact</span></span></div>`).join("");
+document.getElementById("rows").innerHTML = ROWS.map(([label,value,unit,alarm],i) =>
+  `<div id="r${i}" class="fade num" style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding:14px 0">
+     <span style="font-size:36px;color:var(--text2)">${label}</span>
+     <span style="font-size:${alarm ? 44 : 36}px;font-weight:700;color:${alarm ? "var(--down)" : "var(--text)"}">${value}${unit ? ` <span style="font-size:22px;font-weight:500;color:var(--muted)">${unit}</span>` : ""}</span></div>`).join("");
 document.getElementById("lockup").innerHTML = LOCKUP;
 
 // ---- scene 2: the real book as step curves
@@ -144,7 +147,7 @@ window.render = (t) => {
   set("s1a", inLoop ? 0 : ease(win(t, .30, .55)));
   set("s1rule", inLoop ? 0 : ease(win(t, .55, .70)));
   set("s1b", inLoop ? 0 : ease(win(t, .60, .85)));
-  SIZES.forEach((_, i) => set("r" + i, inLoop ? 0 : ease(win(t, .80 + i * .07, 1.00 + i * .07))));
+  ROWS.forEach((_, i) => set("r" + i, inLoop ? 0 : ease(win(t, .80 + i * .09, 1.00 + i * .09))));
   set("s1foot", inLoop ? 0 : ease(win(t, 1.00, 1.25)));
   // scene 2: axes, then both curves drawn in from either side to meet on the cross
   const t2 = t - T.s2[0];
