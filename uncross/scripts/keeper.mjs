@@ -294,6 +294,34 @@ const NEVER_CLOSE = new Set(
   (process.env.NEVER_CLOSE ?? opt("never-close", "") ?? "").split(",").map((s) => s.trim()).filter(Boolean),
 );
 const CLOSE_PER_TICK = Number(opt("close-per-tick", 4));
+
+// An auction with an order from anyone but the bot is a participant's
+// settlement record, and is never closed. Closing it would erase the clearing
+// price and what each order paid; the order accounts survive, but only the
+// auction holds those. Its rent (0.0183 SOL) is the cost of keeping it. The
+// bot's owners are public keys in bot-owners.json; if that file is missing,
+// no auction with any order is closed at all, rather than guessing.
+const BOT_OWNERS = (() => {
+  try {
+    return new Set(JSON.parse(fs.readFileSync(new URL("./bot-owners.json", import.meta.url), "utf8")).owners);
+  } catch {
+    return null;
+  }
+})();
+/** Auction address -> number of orders from outside the bot, once known. */
+const outsiders = new Map();
+async function outsideOrders(a) {
+  const k = a.pubkey.toBase58();
+  if (outsiders.has(k)) return outsiders.get(k);
+  if (a.orderCount === 0) return 0;
+  if (!BOT_OWNERS) return a.orderCount;
+  const infos = await getAccountsBatched(connection, [...Array(a.orderCount).keys()].map((i) => orderPda(ID, a.pubkey, i)));
+  const n = infos.filter((info) => info && !BOT_OWNERS.has(new PublicKey(info.data.subarray(40, 72)).toBase58())).length;
+  // Settled auctions cannot gain orders, so the answer is final.
+  outsiders.set(k, n);
+  if (n) log(`keeping ${a.pubkey.toBase58()}: ${n} order${n === 1 ? "" : "s"} from outside the bot, a settlement record`);
+  return n;
+}
 const closeRefused = new Set();
 
 // A dormant ticker's auctions are opened on demand, not on cadence. Holding
@@ -318,10 +346,14 @@ async function reclaim(t, mint, auctions) {
     .filter((a) => !traded.includes(a.pubkey.toBase58()))
     .filter((a) => !closeRefused.has(a.pubkey.toBase58()))
     .filter((a) => !NEVER_CLOSE.has(a.pubkey.toBase58()))
-    .sort((x, y) => x.openSlot - y.openSlot)
-    .slice(0, CLOSE_PER_TICK);
-
+    .sort((x, y) => x.openSlot - y.openSlot);
+  const closable = [];
   for (const a of candidates) {
+    if (closable.length >= CLOSE_PER_TICK) break;
+    if ((await outsideOrders(a)) === 0) closable.push(a);
+  }
+
+  for (const a of closable) {
     if (DRY) {
       log(`DRY would close ${t.symbol} ${a.pubkey.toBase58()} (${a.executableVolume > 0n ? "traded" : "empty"})`);
       continue;
