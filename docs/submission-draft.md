@@ -35,7 +35,7 @@ A periodic call auction for tokenized stocks on Solana. Orders collect for a few
 
 A second finding about the asset class: **all 1,026 mints carry the identical set of eight Token-2022 extensions** — metadata pointer, permanent delegate, default account state, scaled-UI amount, pausable, confidential transfer, transfer hook and token metadata — under one authority. One fixture template reproduces any of them, which is how we could list the whole universe on devnet.
 
-Even a ticker that does have a pool can be close to untradeable. IBMx's pools hold $3,206 between them:
+Even a ticker that does have a pool can be close to untradeable. IBMx's pools held $3,206 between them at 17:32 UTC on 23 Sept: DexScreener's reported liquidity, summed over every pair that contains the IBMx mint. These are point-in-time readings from Jupiter's quote API:
 
 | Buy IBMx with USDC, 50 bps | 16 Sept | 23 Sept, 17:32 UTC |
 |---|---|---|
@@ -45,6 +45,8 @@ Even a ticker that does have a pool can be close to untradeable. IBMx's pools ho
 | $1 | no route | **0.69%** price impact |
 
 On 16 Sept Jupiter published a price of $247.14 for IBMx and would not route a buy at any size. A week later it routes every size, and reports 84.09% price impact on a $10,000 buy against pools holding $3,206. The IBMx price itself moved on 23 Sept, from $201.54 at 06:57 UTC to $251.63 at 17:32 UTC. That is 13% below the IBM stock price read at the first reading, $231.91, and 7% above it at the second, $234.99. The quote you can see is not the price you can trade at. There is no Pyth feed for IBM on Solana.
+
+The instability is the point. On the same day, the same $1 buy cost 18.46% in price impact at 06:57 UTC and 0.69% at 17:32 UTC. Anyone re-running these quotes will get different numbers again. With so little in the pools, a single trade or a change in liquidity is enough to move the quote.
 
 The deep end is fine: on 16 Sept NVDAx, whose pool held $2.15M, quoted 0.24% impact on a $10,000 buy. The problem is everything below it.
 
@@ -81,7 +83,7 @@ We read the real AAPLx mint off mainnet and built a devnet fixture matching all 
 - Candle high and low show the range of limit prices placed, not trades. One price trades per auction.
 - Issuers retain pause and seizure rights. A paused mint blocks refunds of that token.
 - Order accounts are not yet closed after settlement, so their rent is not returned. Designed, not shipped.
-- **Rent reclaim works, but the keeper does not always reach it.** `close_auction` returns an auction's rent once it is fully settled. The keeper, though, only acts on auctions in a locally cached working set, and a redeploy resets that cache, so auctions opened beforehand are never cleared and never become closeable. As of 23 Sept, 363 auction accounts hold 5.55 SOL of rent: 203 pre-date the reclaim upgrade and have no recorded payer, and 119 were orphaned this way, holding 1.82 SOL.
+- **The deployed keeper can strand auctions, and did.** `close_auction` returns an auction's rent once it is fully settled: 0.0183 SOL, for the auction account and its two vaults. The keeper running now builds its working set from a local cache, and each redeploy reset that cache, so auctions opened before a redeploy were never cleared. On 23 Sept, 119 auctions were stranded this way. We then recovered 120 auctions between 20:13 and 20:27 UTC: 118 of the 119, plus two opened on dormant tickers during testing. They returned 2.1994 SOL of rent for 0.0012 SOL in fees, and every close signature is in `docs/rent-recovery-2026-09-23.tsv`. The 119th cannot be recovered. It predates the reclaim upgrade, was cleared with no orders, and has no recorded payer, so its 0.0153 SOL stays locked. A keeper that finds its working set with a program scan instead of a cache is written and committed, but not yet deployed. Until it is, a redeploy can strand auctions again. As of 20:31 UTC on 23 Sept, 245 auction accounts hold 3.74 SOL. 202 of them, holding 3.09 SOL, settled before the reclaim upgrade, have no recorded payer, and can never be closed. 32 are settled and closeable, 10 are live, and one is the stranded auction above.
 
 ## Built with
 
@@ -111,7 +113,7 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 
 ▲ **Added: "No public auction with outside participants has happened yet."** Two were scheduled and neither ran. Nothing here should imply otherwise.
 
-▲ **Rent disclosure** is in present tense with figures read this morning. If the keeper fix and the orphan recovery land before Friday, this paragraph gets rewritten with the SOL actually returned.
+▲ **Rent disclosure rewritten from the recovery.** Every figure comes from chain: the counts from a read of every auction account before and after, and the SOL from each close transaction's balance change plus its fee. 53 of the 120 closes were sent by the keeper running on Railway, not by the recovery run. It picks up auctions from the program's recent transactions, so once the recovery cleared an auction, the Railway keeper could see it and close it itself. Both use the same wallet, and the rent went to the same place.
 
 ▲ **"Every 20 minutes" → "about every 19 minutes."** Measured: 7,000 slots at 6.04 slots/s is 19.3 minutes.
 
@@ -121,4 +123,4 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 - **The 1,026 is xStocks' own API, verified on chain.** It is far larger than the ~60 names at launch; the universe has grown. If a judge remembers "60 xStocks", the method line is what answers them.
 - **The site and this text now agree.** The landing page headline was corrected and deployed at 17:39 UTC on 23 Sept. It shows the same two dated IBMx readings and the same 17:32 figures as the table above.
 - **The IBMx figures are a moving target.** If you paste this days from now, they will be days old; the table's column header dates them, so they stay true as a record. If you want them current on the day you paste, ask and I will re-read and update both this text and the site together.
-- **The rent paragraph says 119 orphans; the keeper's dry run lists 118 to clear.** I have not reconciled the one-auction difference. The recovery run reports the exact count, SOL and signatures, and the paragraph gets rewritten from those.
+- **118 vs 119, reconciled.** 119 auctions were stranded: 118 whose window ended and were never cleared, plus one that was cleared with no orders and no recorded payer. The dry run listed 118 because the 119th had nothing left to clear. The old "1.82 SOL" was the auction accounts' own lamports for those 119. It left out the two vault accounts per auction, whose rent `close_auction` also returns, which is why 2.1994 SOL came back rather than about 1.8.
