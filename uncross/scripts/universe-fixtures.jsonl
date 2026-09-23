@@ -42,3 +42,61 @@
 {"symbol":"TMOx","name":"Thermo Fisher xStock","mainnetMint":"Xs8drBWy3Sd5QY3aifG9kt9KFs2K3PGZmx7jWrsrk57","devnetMint":"A7siUFGrKwos7ddWtrPkSovYzrfrcsTkAZzhHKgkKipV","multiplier":"1.0029896954311508","halted":false}
 {"symbol":"JNJx","name":"Johnson & Johnson xStock","mainnetMint":"XsGVi5eo1Dh2zUpic4qACcjuWGjNv8GCt3dm5XcX6Dn","devnetMint":"J5L9vo3ABUWTK9uD1Lrtw5oCmPuYbHMRQ3A9xW3nUFEh","multiplier":"1.0195885202077413","halted":false}
 {"symbol":"XRXx","name":"Xerox xStock","mainnetMint":"XsensupeZBdHxZtdnLptf1UfWpVyancWcit7qWFYZrJ","devnetMint":"45wQPSicHqx5JvzqKGrLNhhHckGSioQgUEmytSdHRpBP","multiplier":"1","halted":false}
+{"symbol":"WYFIx","name":"Whitefiber xStock","mainnetMint":"XsLkMYrJVUPJv23tH3PB167BV6kpdubPe5F3KfVvSFN","devnetMint":"BKHg5UuQujBuujsJkeGTpLjXscZFEGFkxwPMPDkM1jAF","multiplier":"1","halted":false}
+{"symbol":"BETRx","name":"Better Home & Finance xStock","mainnetMint":"Xsv3MnH24RsSJwcBvkPUMsDAZqszgmxnbWcUDbfzaYW","devnetMint":"yRi48xtci7gxsJm8Zgv7qNqrJs8MCXR7XsMGxcEXDnf","multiplier":"1","halted":false}
+{"symbol":"PCTx","name":"PureCycle Technologies xStock","mainnetMint":"XsyQipBmDKeSy78zCSMp4BY91Cd46Dx3q4eBoSqbBDX","devnetMint":"GJqp6Hka61WGrEiZGLHaJb5vU3CMagLgZRth7mm9SMPF","multiplier":"1","halted":false}
+{"symbol":"INDIx","name":"Indie Semiconductor xStock","mainnetMint":"XsHYm9cRdEJoogpxDSZVDa4g19fKqUFXWxKisLpEuVm","devnetMint":"3tZ2xcaWZEkPAfYXoXYp17m79Ao7jQ155gP2AZHUrDtz","multiplier":"1","halted":false}
+{"symbol":"PRIx","name":"Primerica xStock","mainnetMint":"XsMPKeJmiMCAxhuvDsYjhPrB1wXPwrBEH9zsWyr8k9C","devnetMint":"Dipr3SmPnMGg1jvw8kfKERQEECdgZAuhbXk4hEwGRvyP","multiplier":"1","halted":false}
+{"symbol":"ESIx","name":"Element Solutions xStock","mainnetMint":"XsC1G5XmzrxsAPwY1ScoJfggRmVJL6buaCsJtCHijDK","devnetMint":"2NHX9yvYSYgRxzofjeznyLoCTZ2Ag9kjfxWrqvATG35B","multiplier":"1.0015756893640968","halted":false}
+{"symbol":"WRLDx","name":"World Acceptance xStock","mainnetMint":"XsmjCXMpgsWWchGjczHfWz2aGKdYF7WiwPPurUd6c7W","devnetMint":"G3ub9CHs2mWM5CaZQ6RAqtRYJbHEEYJq7r7kuCRnYXjR","multiplier":"1","halted":false}
+{"symbol":"ACMx","name":"Aecom xStock","mainnetMint":"XssarKB8ahSVAexNm3dNnyY6NuJvEwTvajSiwuuGvXJ","devnetMint":"6q7aY78QDMhQ8ecLVKdGUsBiqTHfaGTWdWsbxCBYZm8i","multiplier":"1","halted":false}
+{"symbol":"SAROx","name":"StandardAero xStock","mainnetMint":"XsScSiWdZBvumincHmN2Prz9TFHgwojNh8g7BTWV2AR","devnetMint":"Dwu8q32QE57W8vJZdEWn2m2CBXWeLHA5SRddnRTPEiJF","multiplier":"1","halted":false}
+{"symbol":"THGx","name":"The Hanover Insurance xStock","mainnetMint":"XsdYFuC7QG4Daz8DAGzaQ9SXn1jt17Cwzm2vy7dKxty","devnetMint":"BReoDPKgrQYGk8vvsPKWt19DHLmM4FikpRAaRyXXYSBx","multiplier":"1","halted":false}
+{"symbol":"EMNx","name":"Eastman Chemical xStock","mainnetMint":"XsZv8AqbYCeK1Di8aetMUjhZgNUu4JxSRqeqn3M3UMQ","devnetMint":"3Kybsiu2zkrkZSkyVHJTurRDo55goyN99ZbqSBFDvw5M","multiplier":"1","halted":false}
+{"symbol":"AOSx","name":"A.O. Smith xStock","mainnetMint":"XscjvXEYWWaC82tYyJBuC7n6V1smXM783KgkocujVeG","devnetMint":"BS1kKgTZMetvmzFe1LT3BL7HJFWRx2iQQWN4TQrzdfam","multiplier":"1","halted":false}
+{"symbol":"AAONx","name":"AAON xStock","mainnetMint":"XsvFzSYaLgkoB2iHQiSMhf6e5bVcRThJZvRPiySbhjq","devnetMint":"CdkuqTj9uGVtkeeB2bWPf92h1jGh1YEpQCANZpmy33pD","multiplier":"1","halted":false}
+{"symbol":"PATHx","name":"UiPath xStock","mainnetMint":"Xs2Gj37vGmjQKW82m7GiuHmZwcY21xyFNCdCqC9n8pQ","devnetMint":"4efXv4qMK9k9eNyY2PPQzAuLQL8bNvZif4xC6g8YJau8","multiplier":"1","halted":false}
+{"symbol":"APPFx","name":"AppFolio xStock","mainnetMint":"XsjK8kemu9BnVjdG2VPZohznVA7e28AgFpXccnTBskb","devnetMint":"7ZBT7zsaMSiHXSbENuivrpPy5D8SGqzuUVxXY8P4qr3g","multiplier":"1","halted":false}
+{"symbol":"REXRx","name":"Rexford Industrial Realty xStock","mainnetMint":"XsyhJmtPtUEuWNz24bDGArYHfXUimBCwZmpoqWFJSm6","devnetMint":"2JD6ApSTHmd47Lp8kuVfLzDhmp6GHBtwKY7sHckCbhqm","multiplier":"1","halted":false}
+{"symbol":"CBSHx","name":"Commerce Bancshares xStock","mainnetMint":"XsR9hVB5M5oF5L5sMH5HvpLKyatAhKAkz5yqmf1qcdE","devnetMint":"HcchTH3kCCYrmEhpJMovsnKEn5JJBDvhhbYRySqhCcq9","multiplier":"1","halted":false}
+{"symbol":"IDAx","name":"Idacorp xStock","mainnetMint":"XsqgB2jeVP27dZYxN5VbCq7hLJAQ6wznb6gccpvApUt","devnetMint":"91ug3kyKW8JBAbUYdQWrywgCf7YBoHLwbDXXjiUMWaCR","multiplier":"1","halted":false}
+{"symbol":"WGSx","name":"GeneDx xStock","mainnetMint":"XsmPveq9vFqqCBfhBfDyfACu1W7bLVABkqaL3u8uFyy","devnetMint":"BcDufcE4FW3ebrBipDd799ZFBhc7wj4L91FR9bkZ3tnq","multiplier":"1","halted":false}
+{"symbol":"METCx","name":"Ramaco Resources xStock","mainnetMint":"Xs2UKGPTD9S19rXkSqwJ6ufxAtuCU9Ww3wQumk9MvCn","devnetMint":"8DX3y8HWh7ze2vANx29qTnheu37fricBB7uFLG4st5ya","multiplier":"1","halted":false}
+{"symbol":"QUBTx","name":"Quantum Computing xStock","mainnetMint":"XsRJiWgqGJrDaidERfWfdZkaxdA4VPjVEqN6XFctpp3","devnetMint":"C3gkNsWEFaTLmYAtGWiRkZ8DLpGH59gEqJnsn4dJdaDF","multiplier":"1","halted":false}
+{"symbol":"FLNCx","name":"Fluence Energy xStock","mainnetMint":"Xsc5BxL1ucvrQNXZqW3CT8M9gWTko1LPSLLkSVzGe9h","devnetMint":"J7gFRdXFarK8zijW7YNAkijMhSta8yr64ZJHUpMwfQi4","multiplier":"1","halted":false}
+{"symbol":"SFDx","name":"Smithfield Foods xStock","mainnetMint":"XsRduxXoGwvv3TLbfTNW4scDMum99BxFQTRcuASdnn6","devnetMint":"J57sAoF58MexDz86CFTwRJV4fvNiWBWDXH3PTjQ8X9Nh","multiplier":"1","halted":false}
+{"symbol":"AIx","name":"C3.ai xStock","mainnetMint":"Xs7QhN79WzM4hjfHbu2W46ZRkdyumim3ooJHhPxenoU","devnetMint":"J87nrkHnhVeng9waySJaZjA3GUY7RFYDea5DrVyVpru6","multiplier":"1","halted":false}
+{"symbol":"LNCx","name":"Lincoln National xStock","mainnetMint":"XsahEE3wXMm3X9QSKc2Xfkem7ZuARkc8hp3dZkuSEkS","devnetMint":"28MzWK6ExU6uzmrWP7z7HU2oAWXhLJPcZdrqEXk6mhyR","multiplier":"1","halted":false}
+{"symbol":"MOSx","name":"The Mosaic xStock","mainnetMint":"XsPti6oM1EuvpHdSxab8hTbiAtdye8ic7Zxobua3cdo","devnetMint":"5bFEiLwo5YoFTsDs2g7vty9aH8yHw3BYZkNeNRSovbjh","multiplier":"1","halted":false}
+{"symbol":"PRMBx","name":"Primo Brands xStock","mainnetMint":"XsTfps8qNmh6xuSxDNaN34JXokGdh5uLdqF9AQk8H4s","devnetMint":"A17hfnBmssp5VDF64JXbHu24Xhs82irNc1xtgU6uRfXv","multiplier":"1","halted":false}
+{"symbol":"MORNx","name":"Morningstar xStock","mainnetMint":"XsaA8DuUXy5XHGRCHjE5Z1YnmagxYv83MhGKCrEpbBE","devnetMint":"2e4LsVRJksu446wsunUKGAeVDxuWn24doct1uwPaA4Q9","multiplier":"1","halted":false}
+{"symbol":"Zx","name":"Zillow xStock","mainnetMint":"XsYo1hFTUk7pU4GdYxu67sEEHcw8CvdgkPzF9dRXqyh","devnetMint":"8NDCKCu49NUA8oFcZCcdS4yTeqb6T86Tx6chTSWs2HZ4","multiplier":"1","halted":false}
+{"symbol":"TKRx","name":"The Timken xStock","mainnetMint":"Xsxaxh59eNA2Rx87bKr7RCXEdbNVt6XrUK7ytPJ1g92","devnetMint":"8KFVy7N1Z9XYW4AW1C5d1abtKaYPraiNGXi4XTGrNnGK","multiplier":"1","halted":false}
+{"symbol":"PCTYx","name":"Paylocity xStock","mainnetMint":"Xs42zmFFZccbQpdQLe65WHRUesydnzsThjS5QSW4VHL","devnetMint":"4kZyRRiqVMGsMs3AkYxYPbW55scj6WGBPhinazViCFcF","multiplier":"1","halted":false}
+{"symbol":"KNSLx","name":"Kinsale Capital xStock","mainnetMint":"XsqaGwXHt2D7x845CqUdTmXkMGL5VwC7FkQDGanjFi7","devnetMint":"7jYiWrmAUjb6WEoDeVNPNWP27frdAFLw8BdNPzHZRRT4","multiplier":"1","halted":false}
+{"symbol":"TAPx","name":"Molson Coors Beverage xStock","mainnetMint":"XsjnZsnta154poqgmRNecPg8MDtkoviqF5v3cU486Ny","devnetMint":"EVFuToCSEfvTGFVDRN2uWM7wbgzi784WdUzqxZxAeDL2","multiplier":"1","halted":false}
+{"symbol":"NFGx","name":"National Fuel Gas xStock","mainnetMint":"XsEcrQmyJcwrP4LdMcThckeft9WRR6arQL3hm81dUqK","devnetMint":"EqbxJRE4h41HMVSoHbrqDR9vgLdmK6wbSeZhZoMEyXwL","multiplier":"1","halted":false}
+{"symbol":"XPx","name":"XP xStock","mainnetMint":"Xshu7bnG9vHqcb1Mx4YCNZipqVJrBfPL9Ka6o7UGCZo","devnetMint":"E6JgQYPsECuAHs8vCqKKmjKEwfgsZ8VZMnyabySR4Kwq","multiplier":"1","halted":false}
+{"symbol":"KMXx","name":"CarMax xStock","mainnetMint":"XsJYYovKpBRE59f75VroGQRbqywMv58A9qaxg5Bi8q6","devnetMint":"7AmkPdgC8VmCfPTinUwh3H7F5vWZHSLUKuNqgg475Dkc","multiplier":"1","halted":false}
+{"symbol":"BOKFx","name":"BOK Financial xStock","mainnetMint":"Xs5vVE5Btppjq4SxzivSiywf4EjBoL6aRJMAarjaJ2N","devnetMint":"276VBtzKAA1o6PdY5Fbxi5bBGoDivmpL3afWhs58zQFm","multiplier":"1","halted":false}
+{"symbol":"WALx","name":"Western Alliance Bancorp xStock","mainnetMint":"XsinBeptgdcLzGnrtH7s4gXjCJFK5HXdZA34oZgTHpm","devnetMint":"2JDJNrV311BzCkP3ohiYcCZ2FQG4VejLd1PXdLQY41rR","multiplier":"1","halted":false}
+{"symbol":"ATRx","name":"AptarGroup xStock","mainnetMint":"XsM9Fx4hgF9u1o8xJMPB1trBJBEikGAv5TUzicGxtFk","devnetMint":"Hh5scFqRezABjzMDLJrRjuUR1HkaPWeouYRadoGpCfNZ","multiplier":"1","halted":false}
+{"symbol":"AVAVx","name":"AeroVironment xStock","mainnetMint":"XsBBTUAnNsSfXLAF9bte8S3947fyf4z5SFBqBGHxR5K","devnetMint":"H5u782yyJoDWsiGqhbkpvVx79o6tmnHDrogFNxS3TUKJ","multiplier":"1","halted":false}
+{"symbol":"HLIx","name":"Houlihan Lokey xStock","mainnetMint":"Xspg1EH7rQNGRQ9nKW6gDSfpekZq1zm5j1MTcVZSwUj","devnetMint":"7DxAo755URVnjZXRDXp9rC2EGvP59beuTEr8G8DBaCub","multiplier":"1.0036761947632982","halted":false}
+{"symbol":"LADx","name":"Lithia Motors xStock","mainnetMint":"XsqGToMk34zBnhPFKgqJBsEWu4oxLxcre98eB141CvM","devnetMint":"B7zRUZjPK92p1B2SMLaPsEVEz1ff6oEP3AY31UCZNeNW","multiplier":"1","halted":false}
+{"symbol":"QRVOx","name":"Qorvo xStock","mainnetMint":"XsMa4WMzAvmgiK39y64BCc9rYmeBoty4aF7E43r6Sw1","devnetMint":"7cAuYcs4nqK8bP5Jr8xTuHLHXSLGD1fgZcqNLaVSQCvV","multiplier":"1","halted":false}
+{"symbol":"CNMx","name":"Core & Main xStock","mainnetMint":"XsKtGMgrVNWVRTRGP2kVGKFTippX6cWVknDv588Emf8","devnetMint":"3g8aHVvt7cQ5ksjoYTpRkhDLo3v8pUT6DqbdpMPxvj4f","multiplier":"1","halted":false}
+{"symbol":"NNNx","name":"NNN REIT xStock","mainnetMint":"Xs9CzAnDPsBBovnpxPJxa1bd7TXrBXcYD628QHcW5YH","devnetMint":"3cqFGUEXUtrBtr1963yahoqtybUAWVz7qW3rgYrrBw8z","multiplier":"1","halted":false}
+{"symbol":"UGIx","name":"UGI xStock","mainnetMint":"Xs4N372jzRFLH5cUatRnbnyFEPC7KpEjZQQtyUsuzTe","devnetMint":"BkUJWLK1TtkbyF5CLgBpAAt3pAnNZ9Lg5pN8QCRuB6FB","multiplier":"1","halted":false}
+{"symbol":"AXTAx","name":"Axalta Coating Systems xStock","mainnetMint":"XsnfK89SvEgTym2JGHYW52Ex4Pr4WDX48vFDG1g2vco","devnetMint":"7mN3YQem9hBnpWMN6StYVSHFbdwZMsUfKJsJTWfk9s3q","multiplier":"1","halted":false}
+{"symbol":"CAGx","name":"Conagra Brands xStock","mainnetMint":"XspahpqdDTxoL1XKPysDSyeMKVaKerguZQeBPqtmFjM","devnetMint":"vxYUNSFzMabiswxQTMYKUiEMuNDX6BfrJg1pNZUN8g4","multiplier":"1","halted":false}
+{"symbol":"VOYAx","name":"Voya Financial xStock","mainnetMint":"XshWbRxDTh2F3eKm7AMS8Zc5A6jArvAB4kWwvsWMZG8","devnetMint":"GRsERu7RzcMegWM216MXkvY1i14Sxvr5fR7ubPRTZKVu","multiplier":"1","halted":false}
+{"symbol":"CHRDx","name":"Chord Energy xStock","mainnetMint":"XsPMAKTg3shFYc1svXasdkmCJJdobvegcZgA9yKrtWN","devnetMint":"Db4eAL8CwANBLgzojtzWNM48zmZG3s9SurdMKcnjmsxc","multiplier":"1","halted":false}
+{"symbol":"ADCx","name":"Agree Realty xStock","mainnetMint":"XsBhE7XXLouCZ4FPESGHjZnJ2wsZEQY1tAf4iFTncUm","devnetMint":"AdBvbFZf8TyKyyLzrd7PxjVwpqFfVyvW3ZyQhuLy47DJ","multiplier":"1.0025532786885245","halted":false}
+{"symbol":"COLBx","name":"Columbia Banking System xStock","mainnetMint":"XsQXTfrY4PZxcSZmX4ESvJr7JDK615K1cvJZdYCQGdv","devnetMint":"8ZrJtmq7BuKz8kxBBdpgPjmBSznxoA9WTWybteZRmJUi","multiplier":"1","halted":false}
+{"symbol":"NCLHx","name":"Norwegian Cruise Line xStock","mainnetMint":"XsWSgzrjyVsQJZKTv82uCcvVPxHWTzbxo8C4u2uRTzm","devnetMint":"GEiQgTZBC66YjxD86t2YcbWTQk4r3Yku4fHWt941JZWV","multiplier":"1","halted":false}
+{"symbol":"FPSx","name":"Forgent Power Solutions xStock","mainnetMint":"XsvH4G2oumrBsL73QvVvc3pAw8KYWQJaACWsLtWrR9G","devnetMint":"HSL955CNfHvDmk6useGeoFNXqSwQnPKgPzHvLQA6UzJG","multiplier":"1","halted":false}
+{"symbol":"BRXx","name":"Brixmor Property xStock","mainnetMint":"XsUHRLCeyjXj1hxD24opbhvNaPkCjCzTktTodU61bnL","devnetMint":"Dywwjb66TpMPhe2Zkc1uTjGPTxwL8hsC1hzdkVPCzUox","multiplier":"1","halted":false}
+{"symbol":"FORMx","name":"FormFactor xStock","mainnetMint":"XsweEBLf9yJz58So3Z1WsJAzYFsbTQSdE4FeW7nQBH2","devnetMint":"Bkrw4Mgz4eKe9rpXRjEtHnsY53ijSnJKvydVVt9YBcLB","multiplier":"1","halted":false}
+{"symbol":"AALx","name":"American Airlines xStock","mainnetMint":"XsrisVGB3qU1p3KGR7fg4JuxHkeCpdPtByJpYLB4pbH","devnetMint":"2Q2kXDbvPeUPCPAyXCjLs9rcjpYb4iaSz49JGUXLcDZe","multiplier":"1","halted":false}
+{"symbol":"TPGx","name":"TPG xStock","mainnetMint":"XsFV5inndQLJnS5EMmjVMh7bJsqJgTYHY2pJGBC9ceo","devnetMint":"DVonBQ9WuoyfMmNe22uqCCAJaCWcv5A7eLnUetQsymzr","multiplier":"1","halted":false}

@@ -18,7 +18,7 @@ import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 
 const HERE = import.meta.dirname;
 const OUT = path.join(HERE, "universe-fixtures.jsonl");
@@ -67,19 +67,45 @@ async function hasMetadata(mint) {
   return !!v?.data?.parsed?.info?.extensions?.find((e) => e.extension === "tokenMetadata")?.state?.name;
 }
 
+// The mint's keypair is generated here and handed to create-token, so its
+// address is known — and logged — before anything is sent. A confirmation that
+// times out or is rate-limited (the public endpoint 429s under load) no longer
+// leaves an unknown mint behind: the next attempt checks the chain for this
+// exact address, and resends with the same keypair only if it is not there.
+const KEYS = path.join(os.tmpdir(), "uncross-fixture-keys");
+fs.mkdirSync(KEYS, { recursive: true });
+const minted = async (addr) => !!(await dev.getAccountInfo(new PublicKey(addr), "confirmed").catch(() => null));
+
 async function create(t, state) {
   if (!state.mint && pending.has(t.symbol)) {
-    // Recovered from a previous run: its metadata may already be written.
+    // Recovered from a previous run: it may already exist, with or without metadata.
     state.mint = pending.get(t.symbol);
-    state.meta = await hasMetadata(state.mint);
+    state.exists = await minted(state.mint);
+    state.meta = state.exists && (await hasMetadata(state.mint));
   }
   if (!state.mint) {
-    const out = await run(["create-token", "--program-2022", "--decimals", "8", "--enable-freeze",
-      "--default-account-state", "initialized", "--enable-permanent-delegate", "--enable-transfer-hook",
-      "--enable-pause", "--enable-confidential-transfers", "manual", "--enable-metadata",
-      "--ui-amount-multiplier", mult[t.symbol], "--fee-payer", DEPLOY, "-u", URL, "--output", "json"]);
-    state.mint = JSON.parse(out).commandOutput.address;
+    state.kp = Keypair.generate();
+    state.mint = state.kp.publicKey.toBase58();
+    state.keyfile = path.join(KEYS, `${state.mint}.json`);
+    fs.writeFileSync(state.keyfile, JSON.stringify(Array.from(state.kp.secretKey)));
     fs.appendFileSync(PENDING, JSON.stringify({ symbol: t.symbol, devnetMint: state.mint }) + "\n");
+    pending.set(t.symbol, state.mint);
+  }
+  if (!state.exists) {
+    state.exists = await minted(state.mint);
+    if (!state.exists) {
+      if (!state.keyfile) throw new Error(`${t.symbol}: pending mint ${state.mint} is not on chain and its keypair is gone`);
+      try {
+        await run(["create-token", state.keyfile, "--program-2022", "--decimals", "8", "--enable-freeze",
+          "--default-account-state", "initialized", "--enable-permanent-delegate", "--enable-transfer-hook",
+          "--enable-pause", "--enable-confidential-transfers", "manual", "--enable-metadata",
+          "--ui-amount-multiplier", mult[t.symbol], "--fee-payer", DEPLOY, "-u", URL, "--output", "json"]);
+      } catch (e) {
+        // Sent but unconfirmed is not failed: look before retrying.
+        if (!(await minted(state.mint))) throw e;
+      }
+      state.exists = true;
+    }
   }
   if (!state.meta) {
     await run(["initialize-metadata", state.mint, `${t.name} (devnet fixture)`, `${t.symbol}-fx`,
@@ -87,6 +113,7 @@ async function create(t, state) {
     state.meta = true;
   }
   fs.appendFileSync(OUT, JSON.stringify({ symbol: t.symbol, name: t.name, mainnetMint: t.mint, devnetMint: state.mint, multiplier: mult[t.symbol], halted: t.halted }) + "\n");
+  if (state.keyfile) fs.rmSync(state.keyfile, { force: true }); // a mint keypair has no authority once the mint exists
   return state.mint;
 }
 
@@ -95,7 +122,7 @@ const t0 = Date.now();
 await Promise.all(Array.from({ length: CONC }, async () => {
   while (next < todo.length) {
     const t = todo[next++];
-    const state = { mint: null, meta: false };
+    const state = { mint: null, meta: false, exists: false, kp: null, keyfile: null };
     for (let a = 0; a < 5; a++) {
       try { const m = await create(t, state); ok++; if (ok % 25 === 0 || todo.length <= 10) console.log(`${ok}/${todo.length} ${t.symbol} -> ${m}  (${((Date.now() - t0) / 1000).toFixed(0)}s)`); break; }
       catch (e) { if (a === 4) { fail++; console.log(`FAILED ${t.symbol} (mint ${state.mint ?? "not created"}, metadata ${state.meta}): ${e.message}`); } else await new Promise((z) => setTimeout(z, 2000 * (a + 1))); }
