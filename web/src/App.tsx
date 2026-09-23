@@ -21,6 +21,7 @@ import { auctionPhase } from "./lib/auction";
 import { bestBidAsk, bookOrders } from "./lib/book";
 import { fmtDuration, fmtPct, fmtPrice, fmtShares, shortAddr } from "./lib/format";
 import { referenceState } from "./lib/reference";
+import { useMyOrders } from "./lib/settlement";
 import { toConfig, useUniverse } from "./lib/universe";
 import { programToPerShare, rawToShares } from "./lib/units";
 
@@ -96,6 +97,9 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const orders = useOrders(connection, current, refreshKey);
   const mine = wallet.publicKey ? orders.filter((o) => o.owner.equals(wallet.publicKey!)) : [];
   const balances = useBalances(connection, wallet.publicKey, mint, quoteMint, refreshKey);
+  // Every order this wallet has placed, keyed to the order rather than to the
+  // ticker's newest auction, so a result outlives the next auction opening.
+  const myOrders = useMyOrders(wallet.publicKey?.toBase58() ?? null, refreshKey);
   const book = useMemo(() => (current && m ? bookOrders(current, m) : []), [current, m]);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -330,9 +334,19 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             {venue.auctions && <CrankPanel auctions={venue.auctions} slot={slot} pythFeed={tk.pythAccount} notify={notify} onDone={refresh} />}
           </section>
 
-          {current && phase && m != null && (
+          {m != null && (
             <div className="panel-mine">
-              <MyOrders tk={tk} auction={current} phase={phase} m={m} mine={mine} notify={notify} onChange={refresh} />
+              <MyOrders
+                tk={tk}
+                cluster={cluster}
+                auction={current}
+                phase={phase}
+                m={m}
+                mine={mine}
+                myOrders={myOrders.orders}
+                notify={notify}
+                onChange={refresh}
+              />
             </div>
           )}
 

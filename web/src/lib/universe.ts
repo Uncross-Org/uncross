@@ -6,7 +6,7 @@
 // once, so it never weighs down the first load.
 
 import { useEffect, useState } from "react";
-import type { TickerConfig, TickerSymbol } from "../config";
+import { UNIVERSE_ENABLED, type TickerConfig, type TickerSymbol } from "../config";
 
 export interface ListedTicker {
   symbol: TickerSymbol;
@@ -53,6 +53,8 @@ export function toConfig(t: ListedTicker): TickerConfig {
 export function useUniverse(): { list: ListedTicker[] | null; bySymbol: Map<string, ListedTicker> } {
   const [list, setList] = useState<ListedTicker[] | null>(null);
   useEffect(() => {
+    // Without the listing the app is the ten tickers on cadence, as before it.
+    if (!UNIVERSE_ENABLED) return;
     let live = true;
     void loadUniverse().then((l) => live && setList(l));
     return () => {

@@ -94,6 +94,7 @@ export function tickerFromUrl(): TickerSymbol {
   if (typeof window === "undefined") return "AAPLx";
   const t = new URLSearchParams(window.location.search).get("ticker");
   // Any listed ticker, not only the ten compiled in; the listing is checked once it loads.
+  if (!UNIVERSE_ENABLED) return t && TICKERS.includes(t) ? t : "AAPLx";
   return t && /^[A-Za-z0-9.]{1,16}$/.test(t) ? t : "AAPLx";
 }
 
@@ -111,4 +112,9 @@ export const explorerAddr = (c: ClusterConfig, a: string) => `https://explorer.s
  * *.up.railway.app (ours does) and a participant on one of those would find
  * the single action they need silently broken.
  */
+/** The whole xStocks listing — search across every ticker, and opening an
+ *  auction on a dormant one. Off unless the build sets VITE_UNIVERSE=1: opening
+ *  an auction needs the faucet's /auction/open, which ships separately. */
+export const UNIVERSE_ENABLED = env.VITE_UNIVERSE === "1";
+
 export const FAUCET_URL = (import.meta.env.VITE_FAUCET_URL as string | undefined)?.replace(/\/$/, "") ?? "";
