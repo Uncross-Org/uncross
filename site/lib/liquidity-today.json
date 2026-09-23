@@ -1,0 +1,175 @@
+{
+ "measuredAt": "2026-09-23T17:32:11Z",
+ "slippageBps": 50,
+ "source": "Jupiter lite-api swap/v1/quote and price/v3, buying with USDC",
+ "tickers": [
+  {
+   "symbol": "AAPLx",
+   "mint": "XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp",
+   "jupiterPriceUsd": 336.9499970084768,
+   "stockPriceUsd": 337.375,
+   "poolLiquidityUsd": 671301.2963653354,
+   "quotes": [
+    {
+     "sizeUsd": 100,
+     "ok": true,
+     "priceImpactPct": "0.0021141403145111841079123526",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 1000,
+     "ok": true,
+     "priceImpactPct": "0.0023021233699736352335209572",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 10000,
+     "ok": true,
+     "priceImpactPct": "0.0030590187258770627441082027",
+     "hops": 2,
+     "error": null
+    }
+   ],
+   "tvlUsd": 408786.81,
+   "volume24hUsd": 272871.28
+  },
+  {
+   "symbol": "NVDAx",
+   "mint": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+   "jupiterPriceUsd": 224.76853597174718,
+   "stockPriceUsd": 224.24,
+   "poolLiquidityUsd": 2980811.7552910927,
+   "quotes": [
+    {
+     "sizeUsd": 100,
+     "ok": true,
+     "priceImpactPct": "0",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 1000,
+     "ok": true,
+     "priceImpactPct": "0.0005622344710430298430840724",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 10000,
+     "ok": true,
+     "priceImpactPct": "0",
+     "hops": 2,
+     "error": null
+    }
+   ],
+   "tvlUsd": 3015888.01,
+   "volume24hUsd": 7479569.79
+  },
+  {
+   "symbol": "IBMx",
+   "mint": "XspwhyYPdWVM8XBHZnpS9hgyag9MKjLRyE3tVfmCbSr",
+   "jupiterPriceUsd": 251.6329103053676,
+   "stockPriceUsd": 234.99,
+   "poolLiquidityUsd": 1608.3227424600107,
+   "quotes": [
+    {
+     "sizeUsd": 1,
+     "ok": true,
+     "priceImpactPct": "0.0068940135507594582405303735",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 100,
+     "ok": true,
+     "priceImpactPct": "0.0192693389129214867975907561",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 1000,
+     "ok": true,
+     "priceImpactPct": "0.1344771241424743508209626201",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 10000,
+     "ok": true,
+     "priceImpactPct": "0.8409383058115818507716227414",
+     "hops": 2,
+     "error": null
+    }
+   ],
+   "tvlUsd": 3205.68,
+   "volume24hUsd": 105.28
+  },
+  {
+   "symbol": "XOMx",
+   "mint": "XsaHND8sHyfMfsWPj6kSdd5VwvCayZvjYgKmmcNL5qh",
+   "jupiterPriceUsd": 158.8473631578456,
+   "stockPriceUsd": 160.495,
+   "poolLiquidityUsd": 8878.791170258826,
+   "quotes": [
+    {
+     "sizeUsd": 100,
+     "ok": true,
+     "priceImpactPct": "0.0208074507459162600054317648",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 1000,
+     "ok": true,
+     "priceImpactPct": "0.0271697834805415149369968557",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 10000,
+     "ok": true,
+     "priceImpactPct": "0.1124164533966644466937447872",
+     "hops": 2,
+     "error": null
+    }
+   ],
+   "tvlUsd": 17550.87,
+   "volume24hUsd": 8756.19
+  },
+  {
+   "symbol": "JPMx",
+   "mint": "XsMAqkcKsUewDrzVkait4e5u4y8REgtyS7jWgCpLV2C",
+   "jupiterPriceUsd": 336.40551269185875,
+   "stockPriceUsd": 337.415,
+   "poolLiquidityUsd": 960.2825734473402,
+   "quotes": [
+    {
+     "sizeUsd": 100,
+     "ok": true,
+     "priceImpactPct": "0.028294302762285945845719298",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 1000,
+     "ok": true,
+     "priceImpactPct": "0.959176757745458870009686514",
+     "hops": 1,
+     "error": null
+    },
+    {
+     "sizeUsd": 10000,
+     "ok": true,
+     "priceImpactPct": "0.9154287093340626595792261264",
+     "hops": 2,
+     "error": null
+    }
+   ],
+   "tvlUsd": 1798.17,
+   "volume24hUsd": 2116.47
+  }
+ ],
+ "poolSource": "DexScreener, summed over every pair containing the mint (same method as the 16 Sept capture)"
+}

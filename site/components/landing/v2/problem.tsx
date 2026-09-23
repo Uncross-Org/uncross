@@ -2,11 +2,17 @@
 // hero and the mechanism. The section sits on a tinted surface rather than an
 // inverted one — with a light hero above it, a dark slab from here through the
 // liquidity table read as a second theme starting, not as emphasis. What sets
-// it apart now is layout: the figure at full width, the three refused sizes as
-// a ledger beside it. Content is unchanged — the live mainnet capture, worded
-// as "no route", never "impossible to trade".
+// it apart now is layout: the figure at full width, a ledger of buy sizes
+// beside it.
+//
+// Every figure carries its date. The section first said, in the present tense,
+// that Jupiter would not route IBMx at any size. That was true on 16 Sept and
+// false a week later, when it routed every size at up to 84% price impact. Both
+// readings stand, dated, because the swing between them is the stronger
+// evidence: a quote on a pool this thin says little about the next trade.
 
 import capture from "@/lib/liquidity-capture.json";
+import today from "@/lib/liquidity-today.json";
 import { Container } from "@/components/container";
 import { Reveal } from "@/components/landing/motion";
 
@@ -41,8 +47,28 @@ function Impact({ q }: { q?: Quote }) {
   return <td className={`num px-4 py-3 ${p >= 1 ? "font-semibold text-ask" : "text-text"}`}>{p.toFixed(2)}%</td>;
 }
 
+const fmtUtc = (iso: string) => {
+  const d = new Date(iso);
+  // "Sept", to match how every other date on this page is written.
+  const month = d.toLocaleString("en-GB", { month: "short", timeZone: "UTC" }).replace(/^Sep$/, "Sept");
+  return `${d.getUTCDate()} ${month}, ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} UTC`;
+};
+const pct = (q?: { ok: boolean; priceImpactPct: string | null }) =>
+  q?.ok && q.priceImpactPct != null ? `${(Number(q.priceImpactPct) * 100).toFixed(2)}%` : "no route";
+
 export function ProblemV2() {
-  const rows = capture.tickers as Row[];
+  // The table shows the latest dated reading; the 16 Sept capture stays as
+  // history, in the IBMx ledger and the footnote.
+  const rows = today.tickers.map((t) => ({
+    symbol: t.symbol,
+    tvlUsd: t.tvlUsd,
+    volume24hUsd: t.volume24hUsd,
+    jupiterRefPriceUsd: t.jupiterPriceUsd,
+    quotes: t.quotes,
+  })) as Row[];
+  const readAt = fmtUtc(today.measuredAt);
+  const ibmThen = capture.tickers.find((t) => t.symbol === "IBMx")!;
+  const ibmNow = today.tickers.find((t) => t.symbol === "IBMx")!;
   const captured = new Date(capture.capturedAt as string).toLocaleString("en-US", {
     timeZone: "America/New_York",
     month: "short",
@@ -70,25 +96,27 @@ export function ProblemV2() {
               247.14
             </div>
             <p className="mt-4 max-w-[30ch] text-[22px] leading-snug font-medium text-text md:text-[28px]">
-              Jupiter publishes this price for IBMx. Ask it to buy, and it finds no route.
+              On 16 Sept Jupiter published this price for IBMx, and would not route a buy at any size.
             </p>
           </div>
           <div>
-            {/* The three refusals as a ledger: rules, not cards. */}
-            <div className="eyebrow border-b border-line pb-3">Buy IBMx at that price</div>
-            {[
-              ["$10,000", "no route"],
-              ["$100", "no route"],
-              ["$1", "no route"],
-            ].map(([size, r]) => (
-              <div key={size} className="flex items-baseline justify-between border-b border-line py-4">
-                <span className="num text-[16px] text-text-2">Buy {size}</span>
-                <span className="num text-[18px] font-semibold text-ask">{r}</span>
+            {/* Two dated readings, same sizes: the swing is the point. */}
+            <div className="grid grid-cols-[1fr_6.5rem_8.5rem] items-baseline gap-x-4 border-b border-line pb-3">
+              <span className="eyebrow">Buy IBMx</span>
+              <span className="eyebrow text-right">16 Sept</span>
+              <span className="eyebrow text-right">{readAt}</span>
+            </div>
+            {[10000, 1000, 100, 1].map((size) => (
+              <div key={size} className="grid grid-cols-[1fr_6.5rem_8.5rem] items-baseline gap-x-4 border-b border-line py-3.5">
+                <span className="num text-[16px] text-text-2">Buy {usd0(size)}</span>
+                <span className="num text-right text-[16px] font-semibold text-ask">{pct(ibmThen.quotes.find((q) => q.sizeUsd === size))}</span>
+                <span className="num text-right text-[16px] font-semibold text-ask">{pct(ibmNow.quotes.find((q) => q.sizeUsd === size))}</span>
               </div>
             ))}
             <p className="mt-4 text-[13.5px] leading-relaxed text-muted">
-              A pool holding $1,666 sits behind that price. &quot;No route&quot; is Jupiter&apos;s router declining to
-              route the trade at 50 bps slippage — a direct pool swap might fill, at a worse price.
+              A week later Jupiter routes every size — and reports {pct(ibmNow.quotes.find((q) => q.sizeUsd === 10000))} price impact on a
+              $10,000 buy, against pools holding {usd0(ibmNow.tvlUsd)}. On 23 Sept the IBMx price itself moved from $201.54 at 06:57 UTC
+              to {usd2(ibmNow.jupiterPriceUsd)} at {readAt.split(", ")[1]}. The quote you can see is not the price you can trade at.
             </p>
           </div>
         </Reveal>
@@ -98,8 +126,8 @@ export function ProblemV2() {
             A price you can see is not a price you can trade.
           </h2>
           <p className="mt-3 max-w-[64ch] text-[16px] text-text-2 md:text-[17px]">
-            A live buy quote against the real mainnet pools for five xStocks, at three sizes. The venue runs on devnet;
-            these reads are mainnet, and they are of other people&apos;s liquidity, not ours.
+            Buy quotes against the real mainnet pools for five xStocks, at three sizes, read {readAt}. The venue runs on
+            devnet; these reads are mainnet, and they are of other people&apos;s liquidity, not ours.
           </p>
           <div className="mt-8 overflow-x-auto rounded-2xl border border-line bg-surface shadow-[0_12px_40px_-24px_rgba(11,14,20,0.25)]">
             <table className="w-full min-w-[640px] text-[14px]">
@@ -130,8 +158,9 @@ export function ProblemV2() {
             </table>
           </div>
           <p className="mt-4 max-w-[70ch] text-[13px] text-muted">
-            Quotes from Jupiter&apos;s aggregator at 50 bps slippage, buying with USDC; pool figures from DexScreener.
-            A single capture, not a running feed. There is no Pyth price account for IBM on Solana at all.
+            On 16 Sept the same read found IBMx unroutable at every size, JPMx at $1,000 and $10,000, and XOMx at
+            $10,000. Quotes from Jupiter&apos;s aggregator at 50 bps slippage, buying with USDC; pool figures from
+            DexScreener. Dated readings, not a running feed. There is no Pyth price account for IBM on Solana at all.
           </p>
         </Reveal>
       </Container>
