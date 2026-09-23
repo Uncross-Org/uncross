@@ -1023,17 +1023,92 @@ input {
   font-size: 16px;
 }
 
-/* wallet adapter button to match */
+/* wallet adapter button to match.
+   The adapter gives the "Select Wallet" trigger and every row inside its modal
+   the same .wallet-adapter-button class. Painting that class violet turned the
+   modal into a stack of full-bleed violet slabs, so the accent now belongs to
+   the trigger alone and the rows are styled as a list below. */
 .wallet-adapter-button {
-  height: 36px !important;
   font-family: var(--font) !important;
+}
+.wallet-adapter-button-trigger {
+  height: 36px !important;
   font-size: 13px !important;
   border-radius: 10px !important;
   padding: 0 14px !important;
   background: var(--accent) !important;
 }
-.wallet-adapter-button-trigger {
-  background: var(--accent) !important;
+
+/* The modal itself: the adapter hardcodes a dark panel with white text, which
+   is wrong in light theme. Take the site's surface and text tokens instead. */
+.wallet-adapter-modal-wrapper {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px -20px rgba(11, 14, 20, 0.45) !important;
+  font-family: var(--font) !important;
+}
+.wallet-adapter-modal-title {
+  color: var(--text) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  padding: 44px 28px 22px !important;
+}
+.wallet-adapter-modal-button-close {
+  background: var(--surface-2) !important;
+}
+.wallet-adapter-modal-button-close svg {
+  fill: var(--text-2) !important;
+}
+.wallet-adapter-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 20px !important;
+  box-sizing: border-box;
+}
+.wallet-adapter-modal-list .wallet-adapter-button {
+  height: auto !important;
+  min-height: 52px;
+  padding: 10px 14px !important;
+  gap: 12px;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  transition: background 0.12s, border-color 0.12s;
+}
+.wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):hover {
+  background: var(--surface-2) !important;
+  border-color: var(--border-strong) !important;
+}
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon img {
+  width: 28px !important;
+  height: 28px !important;
+  margin-right: 0 !important;
+}
+/* "Detected" is status, not a second name: quiet and small. */
+.wallet-adapter-modal-list .wallet-adapter-button span {
+  color: var(--muted);
+  font-size: 12px !important;
+  font-weight: 500;
+  opacity: 1 !important;
+}
+.wallet-adapter-modal-list-more {
+  color: var(--text-2) !important;
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 14px 20px 20px !important;
+}
+.wallet-adapter-modal-list-more svg {
+  fill: var(--text-2) !important;
+}
+.wallet-adapter-modal-middle,
+.wallet-adapter-modal-middle-button {
+  color: var(--text) !important;
 }
 .wallet-adapter-button-start-icon img,
 .wallet-adapter-button-start-icon {
