@@ -10,3 +10,6 @@ brand/video/raw/
 # Clip render intermediates: 210 PNG frames and the data-injected page.
 brand/clip/frames/
 brand/clip/.clip.rendered.html
+# Entry-path harness evidence: screenshots and the last fresh wallet, per run.
+uncross/scripts/entry-*.png
+uncross/scripts/entry-wallet.txt

@@ -60,10 +60,16 @@ const db = load();
 const now = Date.now();
 const lines = [];
 
+// Every line carries the slot and clock time its balance was read at. Without
+// that, a figure quoted from an earlier run is indistinguishable from a live
+// one — which is exactly how a two-hour-old balance got reported as current.
+const readSlot = await c.getSlot("confirmed");
+const readAt = new Date(now).toISOString().slice(11, 19);
+
 for (const name of WALLETS) {
   let sol;
   try {
-    sol = (await c.getBalance(loadKeypair(name).publicKey)) / 1e9;
+    sol = (await c.getBalance(loadKeypair(name).publicKey, "confirmed")) / 1e9;
   } catch (e) {
     lines.push(`WARN ${name} could not be read: ${e.message}`);
     continue;
@@ -85,7 +91,7 @@ for (const name of WALLETS) {
   const trusted = spanH >= MIN_SPAN_HOURS;
 
   const detail =
-    `${sol.toFixed(4)} SOL, long ${fmtRate(long)} over ${spanH.toFixed(1)}h (${hist.length} samples)` +
+    `${sol.toFixed(4)} SOL @slot ${readSlot} ${readAt}Z, long ${fmtRate(long)} over ${spanH.toFixed(1)}h (${hist.length} samples)` +
     `, short ${fmtRate(short)}` +
     `, runway ${runwayH == null ? "n/a" : `${runwayH.toFixed(1)}h`}` +
     (trusted ? "" : " [trend still forming]");

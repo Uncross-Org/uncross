@@ -28,8 +28,9 @@ import {
   loadTickers,
   rpcHosts,
   rpcStatsLine,
+  getAccountsBatched,
+  withRetry,
 } from "./lib.mjs";
-import { listAuctions as listAuctionsIndexed, rememberAuction } from "./auction-index.mjs";
 
 const { AnchorProvider, Program, Wallet, BN } = anchor;
 const { Connection, PublicKey, SystemProgram } = anchor.web3;
@@ -94,13 +95,82 @@ async function pythAccountFor(feedHex) {
   return best?.key ?? SystemProgram.programId;
 }
 
-// Reads auctions by address through the shared index rather than
-// getProgramAccounts, which the public devnet RPC rate-limits into
-// uselessness once more than one consumer polls it. See
-// scripts/auction-index.mjs for the measurements.
-async function listAuctions(mint) {
-  return listAuctionsIndexed(connection, ID, mint);
+// The keeper's working set is the chain itself.
+//
+// It used to be a list of addresses cached in a file on the service's own disk,
+// fed by scanning the program's last fourteen transactions. A Railway redeploy
+// wiped that file, and every auction opened before the redeploy dropped out of
+// the working set: it was never cleared, never settled, and its rent could
+// never come back. 119 auctions holding 1.82 SOL were stranded that way.
+//
+// Now every auction account the program owns is found with one
+// getProgramAccounts call — keys only, no data — at startup and every
+// SCAN_MS after. Each tick then reads the current state of that set in batches
+// of 100. Nothing is persisted, so a redeploy starts from the chain and cannot
+// lose anything. Settled auctions with no recorded payer can never change or
+// be closed, so once seen they are no longer re-read each tick.
+const AUCTION_SIZE = 2880;
+const SCAN_MS = Number(opt("scan-ms", 120_000));
+const DRY = flag("dry-run");
+let known = new Set();
+const terminal = new Set();
+let lastScan = 0;
+
+async function scan() {
+  const r = await withRetry(() =>
+    connection.getProgramAccounts(ID, { commitment: "confirmed", dataSlice: { offset: 0, length: 0 }, filters: [{ dataSize: AUCTION_SIZE }] }),
+  );
+  const fresh = new Set(r.map((x) => x.pubkey.toBase58()));
+  // Keep anything opened since the scan started; the RPC may not index it yet.
+  for (const k of known) if (!fresh.has(k) && recentlyOpened.has(k)) fresh.add(k);
+  known = fresh;
+  for (const k of terminal) if (!known.has(k)) terminal.delete(k);
+  lastScan = Date.now();
+  log(`working set rebuilt from a program scan: ${known.size} auction accounts on chain`);
 }
+
+const recentlyOpened = new Set();
+function remember(address) {
+  const k = typeof address === "string" ? address : address.toBase58();
+  known.add(k);
+  recentlyOpened.add(k);
+}
+
+async function snapshot() {
+  if (Date.now() - lastScan > SCAN_MS || known.size === 0) {
+    try {
+      await scan();
+    } catch (e) {
+      // A failed scan is not fatal: the set from the last scan is still valid,
+      // because an auction's address is fixed for its life.
+      log(`program scan failed, keeping the ${known.size} known: ${e.message}`);
+    }
+  }
+  const keys = [...known].filter((k) => !terminal.has(k)).map((k) => new PublicKey(k));
+  const out = [];
+  for (let i = 0; i < keys.length; i += 100) {
+    const chunk = keys.slice(i, i + 100);
+    const infos = await getAccountsBatched(connection, chunk);
+    infos.forEach((info, j) => {
+      const k = chunk[j].toBase58();
+      if (!info) {
+        known.delete(k);
+        recentlyOpened.delete(k);
+        return;
+      }
+      if (info.data.length !== AUCTION_SIZE || !info.owner.equals(ID)) return;
+      const a = { pubkey: chunk[j], ...decodeAuction(info.data) };
+      if (a.status === "settled" && !a.hasPayer) terminal.add(k);
+      out.push(a);
+    });
+  }
+  return out;
+}
+
+// A name for logs. Active tickers come from the registry; anything else — a
+// dormant ticker someone opened an auction on — is named by its mint.
+const SYMBOL = new Map(cfg.tickers.map((t) => [t.mint, t.symbol]));
+const describe = (mintKey) => ({ symbol: SYMBOL.get(mintKey) ?? `${mintKey.slice(0, 6)}…` });
 
 async function openAuction(t, mint, slot) {
   const auction = auctionPda(ID, mint, slot);
@@ -119,15 +189,18 @@ async function openAuction(t, mint, slot) {
       systemProgram: SystemProgram.programId,
     })
     .instruction();
+  if (DRY) return log(`DRY would open ${t.symbol} ${auction.toBase58()} slots ${slot}..${slot + CADENCE}`);
   const r = await sendV0(connection, payer, [], [ix]);
-  // The keeper knows this address first-hand, so record it straight away: the
-  // index never has to discover an auction we opened ourselves.
-  rememberAuction(auction);
+  // Known first-hand, so it joins the working set before any scan sees it.
+  remember(auction);
   log(`${t.symbol} opened ${auction.toBase58()} slots ${slot}..${slot + CADENCE} (freeze ${FREEZE})`, r.sig);
 }
 
 async function clear(t, mint, a) {
-  const pyth = await pythAccountFor(t.feed);
+  if (DRY) return log(`DRY would clear ${t.symbol} ${a.pubkey.toBase58()} (${a.orderCount} orders, window ended at slot ${a.closeSlot})`);
+  // The auction records its own feed, so this works for a ticker the keeper
+  // has no config for. An all-zero feed means no oracle.
+  const pyth = await pythAccountFor(a.pythFeedId);
   const ix = await program.methods
     .computeClearing()
     .accountsStrict({ caller: payer.publicKey, auction: a.pubkey, tickerMint: mint, pythPriceFeed: pyth })
@@ -143,6 +216,7 @@ async function clear(t, mint, a) {
 
 async function settleNext(t, mint, a) {
   if (a.orderCount === 0) return;
+  if (DRY) return log(`DRY would settle ${t.symbol} ${a.pubkey.toBase58()} (${a.orderCount - a.settledCount} of ${a.orderCount} left)`);
   const pdas = [...Array(a.orderCount).keys()].map((i) => orderPda(ID, a.pubkey, i));
   const infos = await connection.getMultipleAccountsInfo(pdas, "confirmed");
   const pending = [];
@@ -224,6 +298,10 @@ async function reclaim(t, mint, auctions) {
     .slice(0, CLOSE_PER_TICK);
 
   for (const a of candidates) {
+    if (DRY) {
+      log(`DRY would close ${t.symbol} ${a.pubkey.toBase58()} (${a.executableVolume > 0n ? "traded" : "empty"})`);
+      continue;
+    }
     const ix = await program.methods
       .closeAuction()
       .accountsStrict({
@@ -251,10 +329,20 @@ async function reclaim(t, mint, auctions) {
 
 async function tick() {
   const slot = await connection.getSlot("confirmed");
-  for (const t of cfg.tickers) {
-    if (ONLY && t.symbol !== ONLY) continue;
-    const mint = new PublicKey(t.mint);
-    const auctions = await listAuctions(mint);
+  const all = await snapshot();
+  const byMint = new Map();
+  for (const a of all) {
+    const k = a.tickerMint.toBase58();
+    if (!byMint.has(k)) byMint.set(k, []);
+    byMint.get(k).push(a);
+  }
+
+  // Crank every auction on chain, whatever its ticker. A dormant ticker's
+  // auction, opened by a visitor, is cleared, settled and closed exactly like
+  // one the keeper opened on cadence — otherwise it would strand its rent.
+  for (const [mintKey, auctions] of byMint) {
+    const mint = new PublicKey(mintKey);
+    const t = describe(mintKey);
     for (const a of auctions) {
       try {
         if (a.status === "open" && slot >= a.closeSlot) await clear(t, mint, a);
@@ -268,10 +356,15 @@ async function tick() {
     } catch (e) {
       log(`${t.symbol} reclaim error: ${e.message}`);
     }
-    const live = auctions.some((a) => a.status === "open" && slot < a.closeSlot);
+  }
+
+  // Open on cadence only for the active set.
+  for (const t of cfg.tickers) {
+    if (ONLY && t.symbol !== ONLY) continue;
+    const live = (byMint.get(t.mint) ?? []).some((a) => a.status === "open" && slot < a.closeSlot);
     if (!live && !flag("no-open")) {
       try {
-        await openAuction(t, mint, slot);
+        await openAuction(t, new PublicKey(t.mint), slot);
       } catch (e) {
         log(`${t.symbol} could not open auction: ${e.message}`);
       }
