@@ -4,3 +4,6 @@
 # Brand working files: the renderer's safe-area check overlay is a diagnostic,
 # not a deliverable.
 brand/kit/x/header-safe-areas.png
+
+# Raw recorder frames: hundreds of JPEGs, regenerable, not deliverables.
+brand/video/raw/

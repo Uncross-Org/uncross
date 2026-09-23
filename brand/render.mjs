@@ -37,6 +37,8 @@ export async function renderAll(jobs, port = 9800) {
 
   for (const j of jobs) {
     await send("Emulation.setDeviceMetricsOverride", { width: j.width, height: j.height, deviceScaleFactor: j.scale ?? 1, mobile: false }, sessionId);
+    // Transparent jobs keep their alpha, so an overlay can sit over video.
+    await send("Emulation.setDefaultBackgroundColorOverride", j.transparent ? { color: { r: 0, g: 0, b: 0, a: 0 } } : {}, sessionId);
     await send("Page.navigate", { url: "data:text/html;charset=utf-8," + encodeURIComponent(j.html) }, sessionId);
     await sleep(j.settle ?? 450);
     const { data } = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false }, sessionId);
