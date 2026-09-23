@@ -1,0 +1,161 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,700;112,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
+<style>
+  /* The site's light tokens (site/app/globals.css), plus the candle up/down. */
+  :root { --bg:#fbfbfd; --text:#0b0e14; --text2:#3a4150; --muted:#5d6474; --line:#e4e7ee;
+          --accent:#5b3df5; --up:#089981; --down:#f23645; }
+  html,body { margin:0; width:1080px; height:1080px; background:var(--bg); overflow:hidden;
+    font-family:'Geist',ui-sans-serif,system-ui,sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; }
+  .scene { position:absolute; inset:0; opacity:0; }
+  .eyebrow { font-family:'Geist Mono',monospace; font-weight:600; font-size:21px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .display { font-family:'Archivo',sans-serif; font-stretch:112%; font-weight:800; letter-spacing:-.02em; }
+  .num { font-variant-numeric:tabular-nums; }
+  .fade { opacity:0; }
+</style></head>
+<body>
+
+<!-- 1. The published price, and what trading it costs. Every figure static: a
+        count-up shows wrong values on the way, and these must never read wrong. -->
+<div class="scene" id="s1">
+  <div style="position:absolute;left:92px;top:118px" class="eyebrow">IBMx · price published by Jupiter · 16 Sept</div>
+  <div style="position:absolute;left:84px;top:150px;font-size:212px;line-height:1" class="display num">
+    <span style="font-size:.42em;vertical-align:.95em;color:var(--muted);margin-right:6px">$</span>247.14</div>
+  <div id="s1a" class="fade" style="position:absolute;left:92px;top:410px;font-size:42px;font-weight:600">
+    <span style="color:var(--muted);font-weight:500">16 Sept —</span> <span style="color:var(--down)">no route at any size.</span></div>
+  <div id="s1rule" class="fade" style="position:absolute;left:92px;right:92px;top:488px;height:2px;background:var(--line)"></div>
+  <div id="s1b" class="fade" style="position:absolute;left:92px;top:520px;font-size:38px;font-weight:600">
+    <span style="color:var(--muted);font-weight:500">23 Sept —</span> it routes, at a price:</div>
+  <div id="rows" style="position:absolute;left:92px;right:92px;top:594px"></div>
+  <div id="s1foot" class="fade eyebrow" style="position:absolute;left:92px;bottom:78px;font-size:17px;letter-spacing:.08em">
+    Jupiter quotes · buying with USDC · 50 bps · 23 Sept 06:57 UTC</div>
+</div>
+
+<!-- 2. The mechanism: a real book, curves meeting at one price. -->
+<div class="scene" id="s2">
+  <div style="position:absolute;left:92px;top:96px" class="eyebrow" id="s2eyebrow"></div>
+  <div style="position:absolute;left:92px;top:132px;font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1.05">Buyers and sellers<br>meet at one price.</div>
+  <svg id="chart" width="1080" height="1080" style="position:absolute;inset:0"></svg>
+</div>
+
+<!-- 3. The claim, plainly. -->
+<div class="scene" id="s3">
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center">
+    <div class="display" style="font-size:118px;line-height:1.0">One price<br>for <span style="color:var(--accent)">everyone.</span></div>
+  </div>
+</div>
+
+<!-- 4. Logo end card. -->
+<div class="scene" id="s4">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div id="lockup" style="width:330px;height:400px"></div>
+    <div style="margin-top:46px;font-size:27px;font-weight:600;color:var(--text2);letter-spacing:.01em">uncross.0xo.in</div>
+  </div>
+</div>
+
+<script>
+const BOOK = __BOOK__;
+const LOCKUP = __LOCKUP__;
+const SIZES = [["$1","18.46%"],["$100","19.81%"],["$1,000","29.33%"],["$10,000","86.57%"]];
+
+// ---- scene 1 rows
+document.getElementById("rows").innerHTML = SIZES.map(([s,p],i) =>
+  `<div id="r${i}" class="fade num" style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding:12px 0">
+     <span style="font-size:34px;color:var(--text2)">Buy ${s}</span>
+     <span style="font-size:34px;font-weight:700;color:var(--down)">${p} <span style="font-size:22px;font-weight:500;color:var(--muted)">price impact</span></span></div>`).join("");
+document.getElementById("lockup").innerHTML = LOCKUP;
+
+// ---- scene 2: the real book as step curves
+const P = BOOK.clearingPrice, V = BOOK.volume;
+const buys = BOOK.orders.filter(o => o.side === "buy"), sells = BOOK.orders.filter(o => o.side === "sell");
+const lims = BOOK.orders.map(o => o.limit);
+const X0 = Math.floor(Math.min(...lims) - 0.4), X1 = Math.ceil(Math.max(...lims) + 0.4);
+const YMAX = Math.ceil(Math.max(buys.reduce((a,o)=>a+o.qty,0), sells.reduce((a,o)=>a+o.qty,0)) / 2) * 2;
+const box = { l:150, r:990, t:330, b:880 };
+const sx = x => box.l + (x - X0) / (X1 - X0) * (box.r - box.l);
+const sy = y => box.b - y / YMAX * (box.b - box.t);
+const demandAt = p => buys.filter(o => o.limit >= p).reduce((a,o)=>a+o.qty,0);   // buyers still willing at p
+const supplyAt = p => sells.filter(o => o.limit <= p).reduce((a,o)=>a+o.qty,0);   // sellers already willing at p
+
+// Demand is a descending staircase, supply an ascending one.
+const dPts = []; { const xs = [...new Set([X0, ...buys.map(o=>o.limit), P, X1])].sort((a,b)=>a-b);
+  for (const x of xs) { const lo = demandAt(x), hi = demandAt(x + 1e-9); dPts.push([x, lo]); if (hi !== lo) dPts.push([x, hi]); } }
+const sPts = []; { const xs = [...new Set([X0, ...sells.map(o=>o.limit), P, X1])].sort((a,b)=>a-b);
+  for (const x of xs) { const lo = supplyAt(x - 1e-9), hi = supplyAt(x); sPts.push([x, lo]); if (hi !== lo) sPts.push([x, hi]); } }
+const near = (a,b) => Math.abs(a-b) < 1e-7;
+const cutAt = (pts) => pts.findIndex(([x,y]) => near(x,P) && near(y,V));
+const dCut = cutAt(dPts), sCut = cutAt(sPts);
+const path = pts => pts.map(([x,y],i) => `${i?"L":"M"}${sx(x).toFixed(2)},${sy(y).toFixed(2)}`).join("");
+const dIn = dPts.slice(0, dCut + 1), dOut = dPts.slice(dCut);
+const sIn = sPts.slice(sCut).reverse(), sOut = sPts.slice(0, sCut + 1).reverse();
+
+const ticks = []; for (let x = X0; x <= X1; x++) ticks.push(x);
+const yt = []; for (let y = 0; y <= YMAX; y += YMAX / 4) yt.push(y);
+const svg = document.getElementById("chart");
+svg.innerHTML = `
+  <g id="axes" opacity="0">
+    ${yt.map(y => `<line x1="${box.l}" x2="${box.r}" y1="${sy(y)}" y2="${sy(y)}" stroke="#eceef3" stroke-width="2"/>
+       <text x="${box.l - 18}" y="${sy(y) + 8}" text-anchor="end" font-family="Geist Mono" font-size="20" fill="#5d6474">${y}</text>`).join("")}
+    ${ticks.map(x => `<text x="${sx(x)}" y="${box.b + 44}" text-anchor="middle" font-family="Geist Mono" font-size="21" fill="#5d6474">$${x}</text>`).join("")}
+    <text x="${box.l - 18}" y="${box.t - 26}" text-anchor="end" font-family="Geist Mono" font-size="17" fill="#5d6474" letter-spacing="2">IBMx</text>
+    <g font-family="Geist" font-size="24" font-weight="600">
+      <circle cx="${box.r - 250}" cy="${box.t - 34}" r="8" fill="var(--up)"/><text x="${box.r - 234}" y="${box.t - 26}" fill="#0b0e14">Buyers</text>
+      <circle cx="${box.r - 110}" cy="${box.t - 34}" r="8" fill="var(--down)"/><text x="${box.r - 94}" y="${box.t - 26}" fill="#0b0e14">Sellers</text>
+    </g>
+  </g>
+  <path id="dFill" d="${path(dPts)}L${sx(X1)},${sy(0)}L${sx(X0)},${sy(0)}Z" fill="#089981" opacity="0"/>
+  <path id="sFill" d="${path(sPts)}L${sx(X1)},${sy(0)}L${sx(X0)},${sy(0)}Z" fill="#f23645" opacity="0"/>
+  <path id="dIn"  d="${path(dIn)}"  fill="none" stroke="var(--up)"   stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <path id="sIn"  d="${path(sIn)}"  fill="none" stroke="var(--down)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <path id="dOut" d="${path(dOut)}" fill="none" stroke="var(--up)"   stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity="0"/>
+  <path id="sOut" d="${path(sOut)}" fill="none" stroke="var(--down)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity="0"/>
+  <g id="cross" opacity="0">
+    <line x1="${sx(P)}" x2="${sx(P)}" y1="${sy(V)}" y2="${box.b}" stroke="var(--accent)" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/>
+    <circle cx="${sx(P)}" cy="${sy(V)}" r="17" fill="var(--accent)" opacity=".18"/>
+    <circle cx="${sx(P)}" cy="${sy(V)}" r="10" fill="var(--accent)" stroke="#fff" stroke-width="4"/>
+    <g transform="translate(${sx(P) + 30},${sy(V) - 150})">
+      <rect x="0" y="0" width="300" height="124" rx="16" fill="var(--accent)"/>
+      <text x="24" y="40" font-family="Geist Mono" font-weight="600" font-size="17" letter-spacing="2" fill="#dcd6ff">CLEARS AT</text>
+      <text x="22" y="100" font-family="Archivo" font-stretch="112%" font-weight="800" font-size="56" fill="#fff" class="num">$${P.toFixed(2)}</text>
+    </g>
+  </g>`;
+document.getElementById("s2eyebrow").textContent =
+  `One IBMx auction · ${BOOK.orders.length} orders · devnet · ${new Date(BOOK.closedAt).toLocaleDateString("en-GB",{day:"numeric",month:"short",timeZone:"UTC"})}`;
+for (const id of ["dIn","sIn","dOut","sOut"]) { const el = document.getElementById(id), L = el.getTotalLength(); el.dataset.len = L; el.style.strokeDasharray = `${L} ${L}`; el.style.strokeDashoffset = L; }
+
+// ---- timeline (seconds)
+// Curves hold the most screen time (2.6s); the impact table gets a full second
+// of readable hold, the tagline about half a second.
+const T = { s1:[0.00,2.40], s2:[2.40,5.00], s3:[5.00,5.95], s4:[5.95,7.00] }, FADE = 0.2, END = 7.00;
+const clamp = v => Math.max(0, Math.min(1, v));
+const ease = v => v < .5 ? 4*v*v*v : 1 - Math.pow(-2*v + 2, 3) / 2;
+const win = (t, a, b) => clamp((t - a) / (b - a));
+const vis = (t, [a, b], first, last) => Math.min(first ? 1 : clamp((t - a) / FADE), last ? 1 : clamp((b - t) / FADE));
+const set = (id, o) => { document.getElementById(id).style.opacity = o; };
+
+window.render = (t) => {
+  // Scenes crossfade; the last one fades back into the first so the clip loops.
+  const loop = clamp((t - (END - 0.25)) / 0.25);
+  set("s1", Math.max(vis(t, T.s1, true, false), loop));
+  set("s2", vis(t, T.s2)); set("s3", vis(t, T.s3)); set("s4", vis(t, T.s4, false, true) * (1 - loop));
+  // scene 1 builds
+  const inLoop = loop > 0;
+  set("s1a", inLoop ? 0 : ease(win(t, .30, .55)));
+  set("s1rule", inLoop ? 0 : ease(win(t, .55, .70)));
+  set("s1b", inLoop ? 0 : ease(win(t, .60, .85)));
+  SIZES.forEach((_, i) => set("r" + i, inLoop ? 0 : ease(win(t, .80 + i * .07, 1.00 + i * .07))));
+  set("s1foot", inLoop ? 0 : ease(win(t, 1.00, 1.25)));
+  // scene 2: axes, then both curves drawn in from either side to meet on the cross
+  const t2 = t - T.s2[0];
+  document.getElementById("axes").setAttribute("opacity", ease(win(t2, .05, .35)));
+  const draw = ease(win(t2, .30, 1.35));
+  for (const id of ["dIn","sIn"]) { const el = document.getElementById(id); el.style.strokeDashoffset = el.dataset.len * (1 - draw); }
+  const tail = ease(win(t2, 1.35, 1.70));
+  for (const id of ["dOut","sOut"]) { const el = document.getElementById(id); el.setAttribute("opacity", tail); el.style.strokeDashoffset = el.dataset.len * (1 - tail); }
+  document.getElementById("dFill").setAttribute("opacity", .08 * tail);
+  document.getElementById("sFill").setAttribute("opacity", .08 * tail);
+  document.getElementById("cross").setAttribute("opacity", ease(win(t2, 1.40, 1.62)));
+};
+window.render(0);
+</script></body></html>

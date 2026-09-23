@@ -1,0 +1,70 @@
+{
+ "auction": "FxFiSWaDsuYrPTvSSQqqffyEuCxSQmQW1nWXqcbWn5wC",
+ "ticker": "IBMx",
+ "closedAt": "2026-09-16T02:46:40.000Z",
+ "clearingPrice": 248.099414,
+ "volume": 5.11158439,
+ "units": "price per token, quantity in tokens — the same units as Jupiter's quoted price",
+ "orders": [
+  {
+   "side": "buy",
+   "limit": 246.612555,
+   "qty": 1.9303864
+  },
+  {
+   "side": "sell",
+   "limit": 247.580548,
+   "qty": 0.59093461
+  },
+  {
+   "side": "buy",
+   "limit": 249.300667,
+   "qty": 2.38343627
+  },
+  {
+   "side": "sell",
+   "limit": 248.849598,
+   "qty": 2.52132101
+  },
+  {
+   "side": "buy",
+   "limit": 248.099414,
+   "qty": 2.00917768
+  },
+  {
+   "side": "buy",
+   "limit": 247.988021,
+   "qty": 0.71897044
+  },
+  {
+   "side": "sell",
+   "limit": 245.197191,
+   "qty": 2.44252973
+  },
+  {
+   "side": "buy",
+   "limit": 248.103082,
+   "qty": 0.71897044
+  },
+  {
+   "side": "sell",
+   "limit": 247.488984,
+   "qty": 2.07812005
+  },
+  {
+   "side": "buy",
+   "limit": 247.246092,
+   "qty": 2.67890357
+  },
+  {
+   "side": "sell",
+   "limit": 249.237677,
+   "qty": 2.43268082
+  },
+  {
+   "side": "buy",
+   "limit": 247.047149,
+   "qty": 1.40839416
+  }
+ ]
+}

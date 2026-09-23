@@ -7,3 +7,6 @@ brand/kit/x/header-safe-areas.png
 
 # Raw recorder frames: hundreds of JPEGs, regenerable, not deliverables.
 brand/video/raw/
+# Clip render intermediates: 210 PNG frames and the data-injected page.
+brand/clip/frames/
+brand/clip/.clip.rendered.html
