@@ -7,6 +7,7 @@
 //
 // Cadence is in slots (~0.4s each): 750 is a five-minute demo window, 9000 is
 // hourly. The program stores it; nothing else changes between the two.
+import fs from "node:fs";
 import anchor from "@coral-xyz/anchor";
 import {
   loadKeypair,
@@ -112,9 +113,19 @@ async function pythAccountFor(feedHex) {
 const AUCTION_SIZE = 2880;
 const SCAN_MS = Number(opt("scan-ms", 120_000));
 const DRY = flag("dry-run");
-// Crank one auction and nothing else: for testing a lifecycle end to end
-// without also touching every other auction on chain.
-const ONLY_AUCTION = opt("only-auction", null);
+// Crank the named auctions and nothing else: one, for testing a lifecycle end
+// to end without touching every other auction on chain; or a list (comma-
+// separated, or @file with one address per line), for recovering a known set
+// without racing another keeper over the live books. Named auctions are closed
+// once settled whatever the retention policy says — the operator chose them —
+// and with --once the run repeats until every named auction is closed or can
+// go no further.
+const ONLY_AUCTION = (() => {
+  const v = opt("only-auction", null);
+  if (!v) return null;
+  const list = v.startsWith("@") ? fs.readFileSync(v.slice(1), "utf8").split(/\s+/) : v.split(",");
+  return new Set(list.map((x) => x.trim()).filter(Boolean));
+})();
 let known = new Set();
 const terminal = new Set();
 let lastScan = 0;
@@ -149,7 +160,7 @@ async function snapshot() {
       log(`program scan failed, keeping the ${known.size} known: ${e.message}`);
     }
   }
-  const keys = (ONLY_AUCTION ? [ONLY_AUCTION] : [...known].filter((k) => !terminal.has(k))).map((k) => new PublicKey(k));
+  const keys = (ONLY_AUCTION ? [...ONLY_AUCTION] : [...known]).filter((k) => !terminal.has(k)).map((k) => new PublicKey(k));
   const out = [];
   for (let i = 0; i < keys.length; i += 100) {
     const chunk = keys.slice(i, i + 100);
@@ -158,6 +169,7 @@ async function snapshot() {
       const k = chunk[j].toBase58();
       if (!info) {
         known.delete(k);
+        ONLY_AUCTION?.delete(k);
         recentlyOpened.delete(k);
         return;
       }
@@ -294,9 +306,9 @@ const KEEP_TRADED_DORMANT = Number(opt("keep-traded-dormant", 1));
 
 async function reclaim(t, mint, auctions) {
   if (flag("no-close")) return;
-  const active = SYMBOL.has(mint.toBase58());
+  const active = SYMBOL.has(mint.toBase58()) && !ONLY_AUCTION;
   const newest = active ? auctions.reduce((m, a) => Math.max(m, a.openSlot), 0) : null;
-  const traded = auctions
+  const traded = ONLY_AUCTION ? [] : auctions
     .filter((a) => a.executableVolume > 0n)
     .sort((x, y) => y.openSlot - x.openSlot)
     .slice(0, active ? KEEP_TRADED : KEEP_TRADED_DORMANT)
@@ -400,6 +412,14 @@ for (;;) {
   }
   tickCount++;
   if (tickCount % STATS_EVERY === 0) log(rpcStatsLine("keeper"));
-  if (flag("once")) break;
+  if (flag("once")) {
+    // A named set runs pass after pass until nothing in it can move: every
+    // auction closed, or left settled with no payer, refused, or protected.
+    const left = ONLY_AUCTION ? [...ONLY_AUCTION].filter((k) => !terminal.has(k) && !closeRefused.has(k) && !NEVER_CLOSE.has(k)) : [];
+    if (DRY || !left.length || tickCount >= Number(opt("max-passes", 40))) {
+      if (left.length) log(`${left.length} named auctions still open after ${tickCount} passes`);
+      break;
+    }
+  }
   await sleep(Number(opt("interval", 15)) * 1000);
 }
