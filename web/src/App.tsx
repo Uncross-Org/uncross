@@ -38,7 +38,7 @@ interface Toast {
 const PHASE_SHORT: Record<string, string> = {
   upcoming: "Opens soon",
   open: "Taking orders",
-  freeze: "Frozen",
+  freeze: "Closing — no more cancelling",
   "awaiting-cross": "Ready to cross",
   cleared: "Crossed",
   settled: "Settled",
@@ -137,6 +137,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
         all={all.auctions}
         loading={all.loading}
         slot={slot}
+        slotMs={slotMs}
         open={sideOpen}
         onClose={() => setSideOpen(false)}
       />
@@ -251,7 +252,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             </div>
             {view === "candles" ? (
               m != null && venue.auctions ? (
-                <Candles auctions={venue.auctions} m={m} slot={slot} slotMs={slotMs} now={now} />
+                <Candles auctions={venue.auctions} m={m} slot={slot} slotMs={slotMs} now={now} theme={theme} />
               ) : (
                 <div className="empty">Loading auctions…</div>
               )

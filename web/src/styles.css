@@ -20,6 +20,10 @@
   --sell: #c8501c;
   --buy-btn: #1f6fcf;
   --sell-btn: #c8501c;
+  /* Candle direction only: green up, red down, as on any exchange. Kept apart
+     from --buy/--sell, which mean bid and ask and colour the book. */
+  --up: #089981;
+  --down: #f23645;
   --good: #0f8a5f;
   --warn: #a86a00;
   --warn-soft: rgba(168, 106, 0, 0.1);
@@ -50,6 +54,8 @@
   --sell: #d95926;
   --buy-btn: #3987e5;
   --sell-btn: #d95926;
+  --up: #22ab94;
+  --down: #f7525f;
   --good: #2fc48c;
   --warn: #e0a126;
   --warn-soft: rgba(224, 161, 38, 0.13);
@@ -1258,6 +1264,11 @@ input {
 .side-px {
   grid-area: px;
   font-weight: 600;
+}
+/* No trade yet, or a trade old enough to be history rather than a price. */
+.side-px-muted {
+  color: var(--muted);
+  font-weight: 500;
 }
 .side-name {
   grid-area: name;

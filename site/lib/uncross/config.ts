@@ -95,3 +95,15 @@ export const TICKERS: TickerSymbol[] = registry.tickers.map((t) => t.symbol);
 
 export const explorerTx = (sig: string) => `https://explorer.solana.com/tx/${sig}${CLUSTER.explorerSuffix}`;
 export const explorerAddr = (a: string) => `https://explorer.solana.com/address/${a}${CLUSTER.explorerSuffix}`;
+
+/**
+ * Milliseconds per devnet slot, for turning slot distances into countdowns and
+ * ages. Measured on 22–23 September 2026 at 6.04–6.14 slots/s (163–166 ms).
+ *
+ * It used to be 400, Solana's nominal target, in three places on this page.
+ * Devnet runs about 2.4 times faster than that, so the hero countdown showed a
+ * 19-minute window as roughly 46 minutes and a 50-minute-old cross read as
+ * "2h ago". Still a constant rather than a live measurement: close enough to
+ * be honest, and devnet's rate drifts by a few per cent.
+ */
+export const DEVNET_SLOT_MS = 166;

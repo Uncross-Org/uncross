@@ -10,15 +10,14 @@
 // Nothing here is made up: a ticker with no cross yet says so.
 
 import { useEffect, useMemo, useState } from "react";
-import { CLUSTER, TICKERS } from "@/lib/uncross/config";
+import { CLUSTER, TICKERS, DEVNET_SLOT_MS } from "@/lib/uncross/config";
 import { useVenueAll } from "@/lib/use-venue";
 import { fmtPrice } from "@/lib/uncross/format";
 import { programToPerShare } from "@/lib/uncross/units";
 
-const SLOT_MS = 400;
 
 function ago(slots: number): string {
-  const s = Math.max(0, Math.round((slots * SLOT_MS) / 1000));
+  const s = Math.max(0, Math.round((slots * DEVNET_SLOT_MS) / 1000));
   if (s < 60) return `${s}s ago`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
@@ -74,7 +73,7 @@ export function TickerStrip() {
             tone: "indicative",
           };
         }
-        return { symbol, name, price: null, line: loading ? "reading…" : "no cross yet", tone: "none" };
+        return { symbol, name, price: null, line: loading ? "reading…" : "no trades yet", tone: "none" };
       }),
     [auctions, slot, loading],
   );

@@ -16,7 +16,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Container } from "@/components/container";
 import { SectionHead } from "@/components/landing/sections";
 import { DepthChart } from "@/components/landing/depth-chart";
-import { explorerAddr } from "@/lib/uncross/config";
+import { explorerAddr, DEVNET_SLOT_MS } from "@/lib/uncross/config";
 import { fmtEt, fmtPrice, fmtShares } from "@/lib/uncross/format";
 import { programToPerShare, rawToShares } from "@/lib/uncross/units";
 import { useVenue } from "@/lib/use-venue";
@@ -26,7 +26,7 @@ const TICKER = "IBMx";
 const PHASE_LABEL: Record<string, string> = {
   upcoming: "Opening",
   open: "Taking orders",
-  freeze: "Frozen — no more cancelling",
+  freeze: "Closing — no more cancelling",
   "awaiting-cross": "Awaiting the cross",
   cleared: "Cleared",
   settled: "Settled",
@@ -121,7 +121,7 @@ export function LiveSectionV2() {
   }, []);
 
   const slotsLeft = current && slot != null ? Math.max(0, current.closeSlot - slot) : null;
-  const secsLeft = slotsLeft == null ? null : Math.round((slotsLeft * 400) / 1000);
+  const secsLeft = slotsLeft == null ? null : Math.round((slotsLeft * DEVNET_SLOT_MS) / 1000);
   const open = reduced || inView;
 
   // overflow-x-clip, because the lid is a 3D object: while it is still shut,
@@ -177,7 +177,7 @@ export function LiveSectionV2() {
                 </div>
               </div>
               <div className="num text-right text-[13px] text-text-2">
-                <span className="text-muted">{phase === "freeze" ? "freeze window" : "next cross"}</span>
+                <span className="text-muted">{phase === "freeze" ? "closing" : "next cross"}</span>
                 {secsLeft != null && (
                   <span className="ml-2 font-semibold text-text">
                     {secsLeft > 60 ? `${Math.floor(secsLeft / 60)}m ${String(secsLeft % 60).padStart(2, "0")}s` : `${secsLeft}s`}

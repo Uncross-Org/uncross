@@ -166,7 +166,7 @@ export function MyOrders({ tk, auction, phase, m, mine, notify, onChange }: Prop
                         <button
                           className="btn btn-ghost sm"
                           disabled={!canCancel || busy !== null}
-                          title={canCancel ? "Cancel and refund" : "Cancellations are closed during the freeze window"}
+                          title={canCancel ? "Cancel and refund" : "Closing — no more cancelling"}
                           onClick={() => cancel(o)}
                         >
                           {busy === o.orderIndex ? "…" : "Cancel"}

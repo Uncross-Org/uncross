@@ -10,7 +10,7 @@
 // backfilled. Times are estimated from the slot clock (slots have no
 // timestamps on the account), and the caption says so.
 
-import { createChart, CandlestickSeries, CrosshairMode, HistogramSeries, type IChartApi, type UTCTimestamp } from "lightweight-charts";
+import { createChart, CandlestickSeries, CrosshairMode, HistogramSeries, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Auction } from "../lib/auction";
 import { fmtInt } from "../lib/format";
@@ -22,6 +22,8 @@ interface Props {
   slot: number | null;
   slotMs: number;
   now: number;
+  /** Only used to rebuild the chart when the theme flips. */
+  theme: string;
 }
 
 interface Candle {
@@ -76,9 +78,11 @@ const RANGES = [
   ["all", Infinity],
 ] as const;
 
-export function Candles({ auctions, m, slot, slotMs, now }: Props) {
+export function Candles({ auctions, m, slot, slotMs, now, theme }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const volRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const [range, setRange] = useState<number>(24);
   const [hover, setHover] = useState<Candle | null>(null);
   // The slot clock ticks every second; rebuilding candles on every tick would
@@ -107,12 +111,12 @@ export function Candles({ auctions, m, slot, slotMs, now }: Props) {
       localization: { priceFormatter: (p: number) => `$${p.toFixed(2)}` },
     });
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: css("--buy"),
-      downColor: css("--sell"),
-      borderUpColor: css("--buy"),
-      borderDownColor: css("--sell"),
-      wickUpColor: css("--buy"),
-      wickDownColor: css("--sell"),
+      upColor: css("--up"),
+      downColor: css("--down"),
+      borderUpColor: css("--up"),
+      borderDownColor: css("--down"),
+      wickUpColor: css("--up"),
+      wickDownColor: css("--down"),
       priceFormat: { type: "price", precision: 2, minMove: 0.01 },
     });
     series.setData(candles.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })));
@@ -126,7 +130,7 @@ export function Candles({ auctions, m, slot, slotMs, now }: Props) {
       candles.map((c) => ({
         time: c.time,
         value: c.volume,
-        color: c.close >= c.open ? alpha(css("--buy"), 0.45) : alpha(css("--sell"), 0.45),
+        color: c.close >= c.open ? alpha(css("--up"), 0.45) : alpha(css("--down"), 0.45),
       })),
     );
     chart.subscribeCrosshairMove((p) => {
@@ -134,11 +138,38 @@ export function Candles({ auctions, m, slot, slotMs, now }: Props) {
       setHover(candles.find((c) => c.time === p.time) ?? null);
     });
     chartRef.current = chart;
+    seriesRef.current = series;
+    volRef.current = vol;
     return () => {
       chart.remove();
       chartRef.current = null;
+      seriesRef.current = null;
+      volRef.current = null;
     };
   }, [candles]);
+
+  // A theme switch recolours the chart in place rather than rebuilding it: a
+  // rebuild lost the zoom and squashed every candle to the right edge. The read
+  // waits a frame because this component's effects run before App's, which is
+  // where data-theme is set — read immediately, it picked up the previous
+  // theme's colours and drew a light grid on a dark background.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const chart = chartRef.current, series = seriesRef.current, vol = volRef.current;
+      if (!chart || !series || !vol) return;
+      const text = css("--muted"), line = css("--border"), up = css("--up"), down = css("--down");
+      chart.applyOptions({
+        layout: { textColor: text },
+        grid: { vertLines: { color: line }, horzLines: { color: line } },
+        rightPriceScale: { borderColor: line },
+        timeScale: { borderColor: line },
+      });
+      series.applyOptions({ upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down });
+      vol.applyOptions({ color: text });
+      vol.setData(candles.map((c) => ({ time: c.time, value: c.volume, color: c.close >= c.open ? alpha(up, 0.45) : alpha(down, 0.45) })));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [theme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const chart = chartRef.current;

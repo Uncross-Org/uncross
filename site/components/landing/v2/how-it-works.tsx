@@ -87,7 +87,7 @@ function Picture({ step, reduced }: { step: number; reduced: boolean }) {
       <div className="relative flex h-full flex-col justify-center overflow-hidden rounded-lg">
         <Scales orientation="diagonal" size={10} />
         <div className="relative px-4 py-8 text-center">
-          <div className="eyebrow text-amber">Frozen</div>
+          <div className="eyebrow text-amber">Closing</div>
           <div className="mt-2 text-[15px] font-semibold text-text">Orders still accepted. Cancelling is closed.</div>
           <div className="num mt-1 text-[12px] text-muted">the last 700 slots before the cross</div>
         </div>

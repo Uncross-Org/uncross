@@ -5,6 +5,7 @@
 // screenshot: it is the same chart the dashboard draws, from the same devnet
 // read, and it moves when an order lands.
 
+import { DEVNET_SLOT_MS } from "@/lib/uncross/config";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "motion/react";
@@ -20,7 +21,7 @@ import type { Snapshot } from "@/lib/snapshot";
 const PHASE: Record<string, string> = {
   upcoming: "Opening",
   open: "Taking orders",
-  freeze: "Frozen — no cancelling",
+  freeze: "Closing — no more cancelling",
   "awaiting-cross": "Crossing",
   cleared: "Cleared",
   settled: "Settled",
@@ -29,7 +30,7 @@ const PHASE: Record<string, string> = {
 function LiveBook() {
   const { book, indicative, phase, current, slot, loading, stale } = useVenue("AAPLx");
   const running = phase === "open" || phase === "freeze" || phase === "upcoming";
-  const secs = running && current && slot != null ? Math.max(0, Math.round(((current.closeSlot - slot) * 400) / 1000)) : null;
+  const secs = running && current && slot != null ? Math.max(0, Math.round(((current.closeSlot - slot) * DEVNET_SLOT_MS) / 1000)) : null;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_24px_80px_-32px_rgba(11,14,20,0.35)]">

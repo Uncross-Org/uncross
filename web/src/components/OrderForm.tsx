@@ -203,7 +203,7 @@ export function OrderForm({ tk, auction, phase, m, balances, quoteSymbol, sugges
         {side === "buy"
           ? "Everyone fills at one price. If it clears below your max, you pay less and the rest comes back."
           : "Everyone fills at one price. If it clears above your min, you receive more."}
-        {phase === "freeze" && " Freeze window: orders placed now can't be cancelled."}
+        {phase === "freeze" && " Closing — orders placed now can't be cancelled."}
       </p>
 
       {!wallet.publicKey ? (
