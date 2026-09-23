@@ -2,8 +2,9 @@
 
 **Draft for review. Nothing has been entered on the site.**
 
-Every figure below was read live on 23 Sept 2026 between 06:57 and 06:58 UTC,
-except where a different date is stated beside it. Review notes at the end mark
+The universe figures were read on 23 Sept 2026 at 06:57 UTC. The IBMx quotes
+were read at 17:32 UTC the same day, the same reading the landing page now
+shows. Any other date is stated beside its figure. Review notes at the end mark
 each change from the version live on the project page.
 
 ---
@@ -34,16 +35,16 @@ A periodic call auction for tokenized stocks on Solana. Orders collect for a few
 
 A second finding about the asset class: **all 1,026 mints carry the identical set of eight Token-2022 extensions** — metadata pointer, permanent delegate, default account state, scaled-UI amount, pausable, confidential transfer, transfer hook and token metadata — under one authority. One fixture template reproduces any of them, which is how we could list the whole universe on devnet.
 
-Even a ticker that does have a pool can be close to untradeable. IBMx has one, holding $1,533:
+Even a ticker that does have a pool can be close to untradeable. IBMx's pools hold $3,206 between them:
 
-| Buy IBMx with USDC, 50 bps | 16 Sept | 23 Sept |
+| Buy IBMx with USDC, 50 bps | 16 Sept | 23 Sept, 17:32 UTC |
 |---|---|---|
-| $1 | no route | routes · **18.46%** price impact |
-| $100 | no route | routes · **19.81%** price impact |
-| $1,000 | no route | routes · **29.33%** price impact |
-| $10,000 | no route | routes · **86.57%** price impact |
+| $10,000 | no route | **84.09%** price impact |
+| $1,000 | no route | **13.45%** price impact |
+| $100 | no route | **1.93%** price impact |
+| $1 | no route | **0.69%** price impact |
 
-On 16 Sept Jupiter published a price of $247.14 for IBMx and would not route a buy at any size. A week later it routes every size, but reports 18% price impact on a $1 buy and 87% on $10,000 — and the token itself trades at $201.54 while IBM stock is $231.91, 13% below. The quote you can see is not the price you can trade at. There is no Pyth feed for IBM on Solana.
+On 16 Sept Jupiter published a price of $247.14 for IBMx and would not route a buy at any size. A week later it routes every size, and reports 84.09% price impact on a $10,000 buy against pools holding $3,206. The IBMx price itself moved on 23 Sept, from $201.54 at 06:57 UTC to $251.63 at 17:32 UTC. That is 13% below the IBM stock price read at the first reading, $231.91, and 7% above it at the second, $234.99. The quote you can see is not the price you can trade at. There is no Pyth feed for IBM on Solana.
 
 The deep end is fine: on 16 Sept NVDAx, whose pool held $2.15M, quoted 0.24% impact on a $10,000 buy. The problem is everything below it.
 
@@ -96,9 +97,11 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 
 ▲ **Added: the identical eight-extension set** as a finding about the asset class.
 
-▲ **Corrected: "no route" for IBMx.** The live version says Jupiter returns no route "for a trade of even $1". That was true on 16 Sept and is false today: Jupiter routes every size. Replaced with a dated two-column table, so both readings stand as what they were. Figures re-measured at 06:57 UTC today; they had not moved since the first reading at 01:20.
+▲ **Corrected: "no route" for IBMx.** The live version says Jupiter returns no route "for a trade of even $1". That was true on 16 Sept and is false today: Jupiter routes every size. Replaced with a dated two-column table, so both readings stand as what they were.
 
-▲ **Every price now carries its date.** $247.14 is the 16 Sept figure; $201.54 is today's. The live version presents $247.14 undated.
+▲ **IBMx figures updated to the 17:32 UTC reading, the one the landing page shows.** They moved a long way within the day. At 06:57 the impact was 18.46% on $1, 19.81% on $100, 29.33% on $1,000 and 86.57% on $10,000, with the token at $201.54. At 17:32 it was 0.69%, 1.93%, 13.45% and 84.09%, with the token at $251.63. Only the $10,000 figure held, so the text leads with it, and the table is ordered largest first. The pool figure is now $3,206: DexScreener's liquidity summed over every IBMx pair, the method the 16 Sept capture used. The earlier draft said $1,533. I have not confirmed how that figure was read, so I have not used it.
+
+▲ **Every price now carries its date and time.** $247.14 is the 16 Sept figure; $201.54 and $251.63 are today's, at 06:57 and 17:32 UTC. The live version presents $247.14 undated.
 
 ▲ **Added: browser-wallet signing** with today's on-chain signature. The README still lists this under "Not yet tested" and needs that line deleted when this goes in.
 
@@ -116,4 +119,6 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 
 **Things you should check before pasting:**
 - **The 1,026 is xStocks' own API, verified on chain.** It is far larger than the ~60 names at launch; the universe has grown. If a judge remembers "60 xStocks", the method line is what answers them.
-- **The live landing page still says "no route"** in its headline. The submission and the site will disagree until the site is corrected, which is the next deploy after the event.
+- **The site and this text now agree.** The landing page headline was corrected and deployed at 17:39 UTC on 23 Sept. It shows the same two dated IBMx readings and the same 17:32 figures as the table above.
+- **The IBMx figures are a moving target.** If you paste this days from now, they will be days old; the table's column header dates them, so they stay true as a record. If you want them current on the day you paste, ask and I will re-read and update both this text and the site together.
+- **The rent paragraph says 119 orphans; the keeper's dry run lists 118 to clear.** I have not reconciled the one-auction difference. The recovery run reports the exact count, SOL and signatures, and the paragraph gets rewritten from those.
