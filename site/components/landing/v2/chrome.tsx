@@ -13,6 +13,7 @@ import { motion } from "motion/react";
 import { Container } from "@/components/container";
 import { ModeToggle } from "@/components/mode-toggle";
 import { PROGRAM_ID, explorerAddr } from "@/lib/uncross/config";
+import { BrandMark } from "@/components/brand-mark";
 
 const GITHUB = "https://github.com/Uncross-Org/uncross";
 const LINKS = [
@@ -37,11 +38,7 @@ function usePrefersReducedMotion() {
 function Wordmark() {
   return (
     <span className="display flex items-center gap-2.5 text-[22px] leading-none font-bold text-text" style={{ fontStretch: "125%" }}>
-      <span
-        aria-hidden="true"
-        className="inline-block size-[18px] bg-linear-135 from-bid from-50% to-ask to-50%"
-        style={{ clipPath: "polygon(0 0, 100% 0, 0 100%, 100% 100%)" }}
-      />
+      <BrandMark className="h-[20px] w-[24px] shrink-0" />
       Uncross
     </span>
   );

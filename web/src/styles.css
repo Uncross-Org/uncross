@@ -1208,10 +1208,10 @@ input {
   text-decoration: none;
 }
 .mark {
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(135deg, var(--buy) 50%, var(--sell) 50%);
-  clip-path: polygon(0 0, 100% 0, 0 100%, 100% 100%);
+  width: 22px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
 }
 .side-close,
 .side-toggle {

@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import type { ClusterConfig, TickerSymbol } from "../config";
 import type { Auction } from "../lib/auction";
 import { fmtPrice } from "../lib/format";
+import { BrandMark } from "./BrandMark";
 import type { ListedTicker } from "../lib/universe";
 import { programToPerShare } from "../lib/units";
 
@@ -113,7 +114,7 @@ export function Sidebar({ cluster, universe, ticker, onSelect, all, loading, slo
     <aside className={`side${open ? " side-open" : ""}`} aria-label="Tickers">
       <div className="side-head">
         <a className="wordmark" href="/" title="Back to the site">
-          <span className="mark" aria-hidden />
+          <BrandMark className="mark" />
           Uncross
         </a>
         <button className="icon-btn side-close" onClick={onClose} aria-label="Close ticker list">
