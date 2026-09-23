@@ -163,12 +163,16 @@ export async function fetchAuctions(conn: Connection, programId: PublicKey, tick
   try {
     const r = await fetch("/api/venue", { cache: "no-store" });
     if (r.ok) {
-      const payload = (await r.json()) as { auctions?: { address: string; data?: string }[] };
+      const payload = (await r.json()) as { auctions?: { address: string; data?: string }[]; stale?: boolean; error?: string | null };
       const list = (payload.auctions ?? [])
         .filter((w) => typeof w.data === "string")
         .map((w) => decodeAuction(new PublicKey(w.address), Uint8Array.from(atob(w.data as string), (c) => c.charCodeAt(0))))
         .filter((a) => a.tickerMint.equals(tickerMint));
-      if (list.length > 0) return list.sort((a, b) => b.openSlot - a.openSlot);
+      // The route now lists every listed mint from one authoritative scan, so a
+      // healthy empty answer means this ticker has no auctions — most listed
+      // tickers are dormant. Only a failed or stale read falls through to the
+      // direct scan, which the public RPC rate-limits.
+      if (list.length > 0 || (!payload.stale && !payload.error)) return list.sort((a, b) => b.openSlot - a.openSlot);
     }
   } catch {
     // fall through to the direct scan

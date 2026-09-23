@@ -93,7 +93,8 @@ export const TICKERS: TickerSymbol[] = registry.tickers.map((t) => t.symbol);
 export function tickerFromUrl(): TickerSymbol {
   if (typeof window === "undefined") return "AAPLx";
   const t = new URLSearchParams(window.location.search).get("ticker");
-  return t && TICKERS.includes(t) ? t : "AAPLx";
+  // Any listed ticker, not only the ten compiled in; the listing is checked once it loads.
+  return t && /^[A-Za-z0-9.]{1,16}$/.test(t) ? t : "AAPLx";
 }
 
 export const explorerTx = (c: ClusterConfig, sig: string) => `https://explorer.solana.com/tx/${sig}${c.explorerSuffix}`;

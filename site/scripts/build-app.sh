@@ -13,5 +13,10 @@ cp ../uncross/scripts/tickers.json ../site/lib/uncross/tickers.json
 # opens the auction, so they cannot disagree about when it starts.
 cp ../uncross/scripts/event.json src/event.json
 cp ../uncross/scripts/event.json ../site/lib/uncross/event.json
+# Every listed ticker. The server needs it to name any auction it finds; the
+# dashboard fetches it on demand for search, so it never enters the app bundle.
+cp ../uncross/scripts/universe.json ../site/lib/uncross/universe.json
 npx tsc --noEmit -p .
 npx vite build --base=/app/ --outDir ../site/public/app --emptyOutDir
+# After the build: --emptyOutDir clears this folder first.
+cp ../uncross/scripts/universe.json ../site/public/app/universe.json

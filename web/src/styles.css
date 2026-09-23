@@ -1232,6 +1232,10 @@ input {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* The list scrolls, not the sidebar, so the search box stays in view. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 .side-item {
   width: 100%;
@@ -1750,4 +1754,92 @@ input {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* ------------------------------------------------------------ ticker search
+   Every listed xStock is reachable, so the list is a search, not a scroll. */
+.side-search {
+  padding: 4px 12px 8px;
+}
+.side-search input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+.side-search input::placeholder {
+  color: var(--muted);
+}
+.side-search input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  background: var(--surface);
+}
+/* Listed but nothing running: available, not dead. */
+.side-state.side-listed {
+  color: var(--accent);
+  font-weight: 600;
+}
+.side-empty {
+  padding: 14px 16px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.side-more {
+  padding: 10px 16px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.side-more .num {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ open an auction */
+.open-auction {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 20px 16px;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+.open-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.open-head h2 {
+  font-size: 16px;
+}
+.tag.tag-listed {
+  margin-left: 0;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.open-copy {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.open-btn {
+  align-self: flex-start;
+}
+@media (max-width: 640px) {
+  .open-auction {
+    margin: 0 16px 14px;
+  }
+  .open-btn {
+    align-self: stretch;
+  }
 }

@@ -166,21 +166,43 @@ export function useVenue(conn: Connection, mint: PublicKey | null) {
   const [error, setError] = useState<string | null>(null);
   const key = mint?.toBase58() ?? null;
 
+  // Auctions known by address — one this visitor just opened — kept in view
+  // until the cached venue read (refreshed every 10s) includes them.
+  const adopted = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     setAuctions(null);
     setError(null);
+    adopted.current = new Set();
   }, [key, conn]);
 
   const reload = useCallback(async () => {
     if (!key) return;
+    let list: Auction[] = [];
+    let failed: unknown = null;
     try {
-      const list = await fetchAuctions(conn, PROGRAM, new PublicKey(key));
-      setAuctions(list);
-      setError(null);
+      list = await fetchAuctions(conn, PROGRAM, new PublicKey(key));
     } catch (e) {
-      setError(errMsg(e));
+      failed = e;
     }
+    for (const k of adopted.current) {
+      if (list.some((a) => a.address.toBase58() === k)) continue;
+      const info = await conn.getAccountInfo(new PublicKey(k), "confirmed").catch(() => null);
+      if (info) list = [decodeAuction(new PublicKey(k), info.data), ...list];
+      else adopted.current.delete(k);
+    }
+    if (failed && list.length === 0) return setError(errMsg(failed));
+    setAuctions(list.sort((a, b) => b.openSlot - a.openSlot));
+    setError(null);
   }, [conn, key]);
+
+  const adopt = useCallback(
+    async (address: string) => {
+      adopted.current.add(address);
+      await reload();
+    },
+    [reload],
+  );
 
   usePoll(reload, 30_000, [reload]);
 
@@ -224,7 +246,7 @@ export function useVenue(conn: Connection, mint: PublicKey | null) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conn, currentKey, refreshCurrent]);
 
-  return { auctions, current, error, reload, refreshCurrent, lastUpdate };
+  return { auctions, current, error, reload, refreshCurrent, lastUpdate, adopt };
 }
 
 /** Every ticker's auctions from the site's cached venue read, for the parts of

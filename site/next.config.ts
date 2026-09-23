@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
         destination: `${process.env.FAUCET_ORIGIN ?? "https://uncross-faucet-production.up.railway.app"}/faucet`,
       },
       {
+        source: "/api/auction/open",
+        destination: `${process.env.FAUCET_ORIGIN ?? "https://uncross-faucet-production.up.railway.app"}/auction/open`,
+      },
+      {
         source: "/api/faucet/health",
         destination: `${process.env.FAUCET_ORIGIN ?? "https://uncross-faucet-production.up.railway.app"}/health`,
       },

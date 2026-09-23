@@ -9,6 +9,7 @@ import { DepthChart } from "./components/DepthChart";
 import { EventBar } from "./components/EventBar";
 import { GetTestTokens } from "./components/GetTestTokens";
 import { Ladder } from "./components/Ladder";
+import { OpenAuction } from "./components/OpenAuction";
 import { MyOrders } from "./components/MyOrders";
 import { OrderForm } from "./components/OrderForm";
 import { PastAuctions } from "./components/PastAuctions";
@@ -20,6 +21,7 @@ import { auctionPhase } from "./lib/auction";
 import { bestBidAsk, bookOrders } from "./lib/book";
 import { fmtDuration, fmtPct, fmtPrice, fmtShares, shortAddr } from "./lib/format";
 import { referenceState } from "./lib/reference";
+import { toConfig, useUniverse } from "./lib/universe";
 import { programToPerShare, rawToShares } from "./lib/units";
 
 // The dashboard as an app shell: tickers down the side, the selected
@@ -51,7 +53,21 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const [ticker, setTicker] = useState<TickerSymbol>(tickerFromUrl);
   const [sideOpen, setSideOpen] = useState(false);
   const [view, setView] = useState<"candles" | "depth">("candles");
-  const tk = cluster.tickers[ticker];
+  const universe = useUniverse();
+  const listed = universe.bySymbol.get(ticker) ?? null;
+  // The ten on cadence are compiled in; every other listed ticker resolves from
+  // the listing once it loads. Until then the page says so rather than showing
+  // another ticker's data.
+  const tk = useMemo(
+    () =>
+      cluster.tickers[ticker] ??
+      (listed
+        ? toConfig(listed)
+        : { symbol: ticker, name: universe.list ? "is not listed" : "Loading…", underlying: ticker, mint: null, pythAccount: null, pythFeedId: "0".repeat(64), hermesQuery: ticker }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cluster, ticker, listed?.devnetMint, universe.list === null],
+  );
+  const onCadence = !!cluster.tickers[ticker] || !!listed?.active;
   const mint = useMemo(() => (tk.mint ? new PublicKey(tk.mint) : null), [tk.mint]);
   const quoteMint = useMemo(() => new PublicKey(cluster.quoteMint), [cluster.quoteMint]);
 
@@ -132,6 +148,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
     <div className="shell">
       <Sidebar
         cluster={cluster}
+        universe={universe.list}
         ticker={ticker}
         onSelect={setTicker}
         all={all.auctions}
@@ -170,6 +187,12 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
         </header>
 
         <EventBar ticker={ticker} onGo={setTicker} />
+
+        {/* A dormant ticker: listed, nothing running. The way to start a book is
+            the first thing on the page, not a disabled button further down. */}
+        {!onCadence && tk.mint && venue.auctions !== null && !(current && slot != null && current.status === "open" && slot < current.closeSlot) && (
+          <OpenAuction tk={tk} halted={!!listed?.halted} notify={notify} onOpened={(a) => void venue.adopt(a)} />
+        )}
 
         {/* The numbers that matter, in a row: the cross, the book's edges, the reference. */}
         <div className="stats num">
@@ -302,7 +325,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             ) : loadingAuction ? (
               <CountdownSkeleton />
             ) : (
-              <div className="card empty">No auction yet for {tk.symbol}.</div>
+              <div className="card empty">{onCadence ? `Opening the next ${tk.symbol} auction…` : `No auction running for ${tk.symbol} — open one above.`}</div>
             )}
             {venue.auctions && <CrankPanel auctions={venue.auctions} slot={slot} pythFeed={tk.pythAccount} notify={notify} onDone={refresh} />}
           </section>

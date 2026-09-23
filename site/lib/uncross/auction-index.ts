@@ -17,6 +17,7 @@
 
 import { Connection, PublicKey } from "@solana/web3.js";
 import { AUCTION_SIZE, decodeAuction, type Auction } from "./auction";
+import universe from "./universe.json";
 import { CLUSTER, type TickerSymbol } from "./config";
 
 /**
@@ -42,9 +43,13 @@ export const SEED_AUCTIONS: string[] = [
   "CS8E5j7f8CpGDgEnYoXSuAJghqUfQbbp6VrLZ5o82exG",
 ];
 
-const MINT_TO_TICKER: Record<string, TickerSymbol> = Object.fromEntries(
-  Object.values(CLUSTER.tickers).map((t) => [t.mint, t.symbol]),
-);
+// Every listed ticker, not just the ten on cadence: an auction a visitor opens
+// on a dormant ticker has to be named, or the route drops it and the app never
+// shows the book they just opened.
+const MINT_TO_TICKER: Record<string, TickerSymbol> = Object.fromEntries([
+  ...(universe.tickers as { devnetMint: string; symbol: string }[]).map((t) => [t.devnetMint, t.symbol]),
+  ...Object.values(CLUSTER.tickers).map((t) => [t.mint, t.symbol]),
+]);
 
 export const tickerOf = (a: Auction): TickerSymbol | null => MINT_TO_TICKER[a.tickerMint.toBase58()] ?? null;
 
@@ -109,18 +114,27 @@ export async function listRecentAuctions(
   perTicker: number,
 ): Promise<RawAuction[] | null> {
   try {
+    // One scan for the whole program, not one per ticker: with every xStock
+    // listed, a scan per ticker would be over a thousand calls per read. The
+    // slice runs from the open slot (offset 8) to the end of the ticker mint
+    // (offset 80 + 32), 104 bytes an auction.
+    const slim = await conn.getProgramAccounts(programId, {
+      commitment: "confirmed",
+      dataSlice: { offset: 8, length: 104 },
+      filters: [{ dataSize: AUCTION_SIZE }],
+    });
+    const byMint = new Map<string, { key: string; openSlot: number }[]>();
+    for (const a of slim) {
+      const b = Buffer.from(a.account.data);
+      const mint = new PublicKey(b.subarray(72, 104)).toBase58();
+      if (!MINT_TO_TICKER[mint]) continue;
+      const list = byMint.get(mint) ?? [];
+      list.push({ key: a.pubkey.toBase58(), openSlot: Number(b.readBigUInt64LE(0)) });
+      byMint.set(mint, list);
+    }
     const picked: string[] = [];
-    for (const mint of Object.keys(MINT_TO_TICKER)) {
-      const slim = await conn.getProgramAccounts(programId, {
-        commitment: "confirmed",
-        dataSlice: { offset: 8, length: 8 },
-        filters: [{ dataSize: AUCTION_SIZE }, { memcmp: { offset: 80, bytes: mint } }],
-      });
-      slim
-        .map((a) => ({ key: a.pubkey.toBase58(), openSlot: Number(Buffer.from(a.account.data).readBigUInt64LE(0)) }))
-        .sort((x, y) => y.openSlot - x.openSlot)
-        .slice(0, perTicker)
-        .forEach((a) => picked.push(a.key));
+    for (const list of byMint.values()) {
+      list.sort((x, y) => y.openSlot - x.openSlot).slice(0, perTicker).forEach((a) => picked.push(a.key));
     }
     return await readAuctions(conn, picked, programId);
   } catch {

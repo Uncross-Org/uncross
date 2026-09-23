@@ -20,6 +20,8 @@ import { Connection, Keypair, PublicKey, VersionedTransaction } from "@solana/we
 
 const BASE = process.argv[2] ?? "https://uncross.0xo.in";
 const TICKER = process.argv[3] ?? "AAPLx";
+// --open: the ticker is dormant, so the visitor has to open its auction first.
+const OPEN = process.argv.includes("--open");
 const PORT = 9700;
 const PROGRAM_ID = "Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP";
 const OUT = path.dirname(new URL(import.meta.url).pathname);
@@ -159,6 +161,23 @@ await shot("entry-funded");
 let hasBalance = false;
 for (let i = 0; i < 30 && !hasBalance; i++) { await sleep(2000); hasBalance = await ev(`/6,?000/.test(document.body.innerText)`); }
 await step("balances reached the order form", hasBalance === true);
+
+if (OPEN) {
+  await step("the page offers to open an auction for the dormant ticker", (await ev(`!!document.querySelector(".open-auction")`)) === true);
+  const openText = await ev(`(() => { const b = [...document.querySelectorAll(".open-auction button")].find(x => /open an auction/i.test(x.innerText) && !x.disabled); if (!b) return null; b.click(); return b.innerText.trim(); })()`);
+  await step("clicked open", !!openText, String(openText));
+  let opened = null, openErr = null;
+  for (let i = 0; i < 30 && !opened && !openErr; i++) {
+    await sleep(1500);
+    const r = JSON.parse(await ev(`JSON.stringify({ ok: (document.body.innerText.match(/${TICKER} (auction opened|already has an auction running)[^\\n]*/) || [])[0] || null, err: (document.body.innerText.match(/could not open[^\\n]*|not a listed ticker[^\\n]*|opened an auction recently[^\\n]*|maximum number of on-demand[^\\n]*/) || [])[0] || null })`));
+    opened = r.ok; openErr = r.err;
+  }
+  await step("the auction was opened", !!opened, opened || `error shown: ${openErr ?? "timed out"}`);
+  let ready = false;
+  for (let i = 0; i < 20 && !ready; i++) { await sleep(1500); ready = await ev(`!document.querySelector(".open-auction") && /Taking orders/.test(document.querySelector(".pill")?.innerText || "")`); }
+  await step("the new book is shown and taking orders", ready === true);
+  await shot("entry-opened");
+}
 
 const priced = await ev(`(() => {
   const chip = [...document.querySelectorAll(".chip")].find(c => /cross|bid|pyth/i.test(c.innerText));

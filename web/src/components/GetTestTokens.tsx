@@ -21,6 +21,8 @@ import { EVENT_TICKERS } from "../lib/reserved";
 // cannot name different tickers.
 const EVENT_LIST = EVENT_TICKERS;
 
+const joinAnd = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+
 interface Props {
   tk: TickerConfig;
   /** Null while balances are still loading. */
@@ -79,6 +81,8 @@ export function GetTestTokens({ tk, sol, tickerRaw, quoteRaw, notify, onFunded }
   }
 
   const missing = [needsSol && "devnet SOL", needsTicker && `${tk.symbol} shares`, needsQuote && "test dollars"].filter(Boolean);
+  // What the faucet actually sends: the ticker being viewed, then the event's.
+  const granted = [tk.symbol, ...EVENT_LIST].filter((s, i, all) => all.indexOf(s) === i);
 
   return (
     <section className="card faucet-card" aria-label="Get test tokens">
@@ -95,9 +99,8 @@ export function GetTestTokens({ tk, sol, tickerRaw, quoteRaw, notify, onFunded }
         {busy ? "Sending…" : done ? "Get more test tokens" : "Get test tokens"}
       </button>
       <p className="fine muted">
-        Sends devnet SOL for fees, {EVENT_LIST.length ? `${EVENT_LIST.join(" and ")} shares` : `${tk.symbol} shares`} to
-        sell and test dollars to buy with. One grant per wallet every three hours
-        {EVENT_LIST.length > 1 ? " — it covers both books, so you only need it once" : ""}.
+        Sends devnet SOL for fees, {joinAnd(granted)} shares to sell and test dollars to buy with. One grant per wallet
+        every three hours.
       </p>
     </section>
   );
