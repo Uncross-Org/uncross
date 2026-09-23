@@ -165,8 +165,13 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
   every transfer, which the escrow accounting does not handle, so they are not
   supported. Their mints were verified live, and custody works, but the fee
   would leave escrow short.
-- **Order deposits are not reclaimed.** Each order creates a small account
-  whose rent, paid by the trader, stays locked. Auction rent is reclaimed:
+- **Order accounts are never closed, by design.** Each order creates an account
+  whose rent, 0.00121412 SOL, is paid by the trader and not returned. It is the
+  durable settlement record: it keeps the owner, limit, quantity, escrow and
+  filled quantity after the auction closes, and its transaction history holds
+  the settlement transfers, so any participant can rebuild their own outcome
+  from chain. Closing it was designed as a rent optimisation and cancelled for
+  that reason; the rent is what the guarantee costs. Auction rent is reclaimed:
   since 16 September `close_auction` returns an auction's rent and both vaults'
   rent to whoever paid it, but only once every order is settled and both vaults
   are exactly empty; it refuses anything else. On devnet it refused an auction

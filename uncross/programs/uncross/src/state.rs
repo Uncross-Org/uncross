@@ -104,6 +104,14 @@ impl Auction {
     pub const SIZE: usize = 8 + std::mem::size_of::<Auction>();
 }
 
+/// An order account is never closed, and no instruction should be added to
+/// close one. It is the durable settlement record: it keeps the owner, limit,
+/// quantity, escrow and filled quantity after the auction account is closed
+/// and its rent returned, and every settlement transaction touches it, so a
+/// participant can rebuild what they were paid and refunded from its history.
+/// Closing it to return its rent (0.00121412 SOL) was designed as an
+/// optimisation and cancelled on 23 Sept 2026 for that reason. The rent is the
+/// price of the guarantee.
 #[account]
 pub struct Order {
     pub auction: Pubkey,
