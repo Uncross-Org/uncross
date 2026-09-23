@@ -112,6 +112,9 @@ async function pythAccountFor(feedHex) {
 const AUCTION_SIZE = 2880;
 const SCAN_MS = Number(opt("scan-ms", 120_000));
 const DRY = flag("dry-run");
+// Crank one auction and nothing else: for testing a lifecycle end to end
+// without also touching every other auction on chain.
+const ONLY_AUCTION = opt("only-auction", null);
 let known = new Set();
 const terminal = new Set();
 let lastScan = 0;
@@ -146,7 +149,7 @@ async function snapshot() {
       log(`program scan failed, keeping the ${known.size} known: ${e.message}`);
     }
   }
-  const keys = [...known].filter((k) => !terminal.has(k)).map((k) => new PublicKey(k));
+  const keys = (ONLY_AUCTION ? [ONLY_AUCTION] : [...known].filter((k) => !terminal.has(k))).map((k) => new PublicKey(k));
   const out = [];
   for (let i = 0; i < keys.length; i += 100) {
     const chunk = keys.slice(i, i + 100);
@@ -281,13 +284,22 @@ const NEVER_CLOSE = new Set(
 const CLOSE_PER_TICK = Number(opt("close-per-tick", 4));
 const closeRefused = new Set();
 
+// A dormant ticker's auctions are opened on demand, not on cadence. Holding
+// back its newest one — right for an active ticker, whose newest auction is
+// the current book — would mean its only auction never closed and its rent
+// never came back. So the newest is kept only for active tickers, and a
+// dormant ticker keeps just its latest traded auction, as the record of the
+// price it last crossed at.
+const KEEP_TRADED_DORMANT = Number(opt("keep-traded-dormant", 1));
+
 async function reclaim(t, mint, auctions) {
   if (flag("no-close")) return;
-  const newest = auctions.reduce((m, a) => Math.max(m, a.openSlot), 0);
+  const active = SYMBOL.has(mint.toBase58());
+  const newest = active ? auctions.reduce((m, a) => Math.max(m, a.openSlot), 0) : null;
   const traded = auctions
     .filter((a) => a.executableVolume > 0n)
     .sort((x, y) => y.openSlot - x.openSlot)
-    .slice(0, KEEP_TRADED)
+    .slice(0, active ? KEEP_TRADED : KEEP_TRADED_DORMANT)
     .map((a) => a.pubkey.toBase58());
   const candidates = auctions
     .filter((a) => a.status === "settled" && a.hasPayer && a.openSlot !== newest)
@@ -359,6 +371,7 @@ async function tick() {
   }
 
   // Open on cadence only for the active set.
+  if (ONLY_AUCTION) return;
   for (const t of cfg.tickers) {
     if (ONLY && t.symbol !== ONLY) continue;
     const live = (byMint.get(t.mint) ?? []).some((a) => a.status === "open" && slot < a.closeSlot);
