@@ -40,6 +40,33 @@ Announced publicly ahead of time, run on devnet on the regular AAPLx and IBMx bo
 
 The Pyth check recorded "stale" for AAPLx and "wrong owner" for IBMx, which has no Pyth account ([What Pyth is used for](/pyth/role/#what-actually-happens-on-devnet)).
 
+## The refund-path fix, 24 Sept
+
+`cancel_and_refund` now requires a paused ticker mint, or a refund path already chosen ([Honest limitations](/trust/limitations/#found-and-fixed-on-24-september-the-refund-path-could-void-a-cross)). Tested with `uncross/scripts/refund-guard-test.mjs` on the dormant CRCLx fixture, whose mint could be paused without touching a live book.
+
+| Step | Signature |
+|---|---|
+| Program upgrade (last-deployed slot 503490825) | [`3aE7J9JC…LC42YEKY`](https://explorer.solana.com/tx/3aE7J9JCgKadPp9Eqgo49oen7m9P6mgqhdvjHAZUATAKoeFcVNcu96kQUon9juRVufbbXa9pxdodHsVMLC42YEKY?cluster=devnet) |
+
+**The case the path exists for.** Auction [`ChSD9Wr6…ZHK7ZftG`](https://explorer.solana.com/address/ChSD9Wr6Y3znirE6dBVBS6jvnmL4deoC6MGsZHK7ZftG?cluster=devnet).
+
+| Step | Signature |
+|---|---|
+| Mint paused and auction crossed, one transaction (4 shares at 205) | [`EvBMugfE…nkSscS9w`](https://explorer.solana.com/tx/EvBMugfEncBcSwcgKowDN84AF4HUqQF6T2cry4w6AAer1PbZ7FJcgbHEvwCxy7cxqwMZzqWXFc4tkTonkSscS9w?cluster=devnet) |
+| `settle_batch` while paused: fails, Token-2022 `0x43` | [`4AzbxeEA…RSdSwjwX`](https://explorer.solana.com/tx/4AzbxeEA2yEW3c4494HQTn7Cddw9ojQXZaETnmP6tTiXa3Pw2Tt8egga7gR3za3vKaBwPYnqexcoRaG7RSdSwjwX?cluster=devnet) |
+| `cancel_and_refund` for the buy, sent by a stranger while paused: succeeds | [`RKDH7XZM…nmMNoxu9`](https://explorer.solana.com/tx/RKDH7XZMBZ3cRUnkNCskhoJR44aGRiuHgaZRVVokkW9NMMg1rA75oLT5a8USP9pFdKoL6jsPYhkqTFinmMNoxu9?cluster=devnet) |
+| Mint resumed | [`594sz2k5…zbHR1q4X`](https://explorer.solana.com/tx/594sz2k5mQJwMvrHc5aPWv8jWukJKCKFEy8V2Gh1JQc4yvXAjL1fZsTNRhB1m9wc9M8PaJM8mXhQiuCizbHR1q4X?cluster=devnet) |
+| `cancel_and_refund` for the sell after resume, path already chosen: succeeds | [`jRM3XCiY…zejUx2Gw`](https://explorer.solana.com/tx/jRM3XCiYEfAevvd1eUCtktGjs7LxSynvDepKnNnqX3gwtUvFLzUvbaFCLpM1Xyg36xhq8thaQ4gZb3kzejUx2Gw?cluster=devnet) |
+
+**Refusals.** Each was sent with preflight skipped, so it landed on chain as a failed transaction with `RefundNotAllowed` (6024).
+
+| Case | Signature |
+|---|---|
+| Mid-window (auction `3EhBRJBu…74mqix`) | [`3B4HuV4K…KioU2vtf`](https://explorer.solana.com/tx/3B4HuV4KYJRo2XbF9DAtUHsSHZQgC8EXE3mritTDBFetKk7xtcD5zGMPMvU3tYFSRZuVgHZzg36qBwvAKioU2vtf?cluster=devnet) |
+| Crossed and unsettled, sent by a stranger | [`5t5XBj7c…sfwFMq9z`](https://explorer.solana.com/tx/5t5XBj7cCjnemuAzGVPcnw2LrCaJuyem8iSWUYwNnyV9oK2jpNsaoC7F92SNwnpSsW7TgDeNxHdty5n1sfwFMq9z?cluster=devnet) |
+| Crossed and unsettled, sent by a participant | [`5n2tcn6C…aCJxUomA`](https://explorer.solana.com/tx/5n2tcn6CxSmsyGyetTmXAbKnwpgtCo4eHE5YxUjxBxuCH6nyfa7m9KoKTknwYi6LFoiXkF4tQtV3HVbcaCJxUomA?cluster=devnet) |
+| Partly settled: one order clear-settled in the same transaction (auction `GyjX3r7r…4JqQENG`) | [`5vfnRZ2H…spQt9vv6`](https://explorer.solana.com/tx/5vfnRZ2HJrciqCNno6QptBmBAsYKZdFqnMdmtFFcxniBTcTyU9J4LuVJMizPGKAVssF9pHiZNyjWxqBBspQt9vv6?cluster=devnet) |
+
 ## A real browser wallet on the live site, 24 Sept
 
 A wallet that had never existed, in a fresh browser, through Wallet Standard. It took a faucet grant and placed two orders through the page.
@@ -118,7 +145,7 @@ The functions the UI calls on click were driven end to end against devnet on the
 
 ## Rent recovery, 23 Sept
 
-120 `close_auction` transactions, returning 2.1994 SOL: the 118 recovered stranded auctions plus two opened on dormant tickers during testing. Every one is listed, with the auction, the rent returned and who sent it, in [`docs/rent-recovery-2026-09-23.tsv`](https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/docs/rent-recovery-2026-09-23.tsv). See [Honest limitations](/trust/limitations/#stranded-auction-rent-found-and-mostly-recovered).
+120 `close_auction` transactions, returning 2.1994 SOL: the 118 recovered stranded auctions plus two opened on dormant tickers during testing. Every one is listed, with the auction, the rent returned and who sent it, in [`docs/rent-recovery-2026-09-23.tsv`](https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/docs/rent-recovery-2026-09-23.tsv). See [Honest limitations](/trust/limitations/#stranded-auction-rent-found-and-mostly-recovered).
 
 | | Signature |
 |---|---|
@@ -129,4 +156,4 @@ The functions the UI calls on click were driven end to end against devnet on the
 
 The docs site's build check extracts every Explorer transaction link on every page. It asks a devnet RPC for each signature's status, with transaction history search on, and fails if any is not found. The cancel refused with `PastFreezeWindow` above is a transaction that landed and failed, which is how a refusal is recorded on chain. It is expected to show an error.
 
-<p class="sources">Sources: <code>docs/submission-draft.md</code> (community auction, commit <code>70ca5d4</code>), checked against the auction accounts, their order accounts and transactions on devnet; <code>docs/phase1.md</code>, <code>docs/phase2.md</code>, <code>docs/submission-draft.md</code>, <code>README.md</code>, <code>docs/rent-recovery-2026-09-23.tsv</code>.</p>
+<p class="sources">Sources: <code>docs/submission-draft.md</code> (community auction, commit <code>70ca5d4</code>), <code>docs/phase2.md</code> (refund-path fix, commit <code>532dcb7</code>), checked against the auction accounts, their order accounts and transactions on devnet; <code>docs/phase1.md</code>, <code>docs/phase2.md</code>, <code>docs/submission-draft.md</code>, <code>README.md</code>, <code>docs/rent-recovery-2026-09-23.tsv</code>.</p>

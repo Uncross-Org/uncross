@@ -24,6 +24,17 @@ The test was run twice: first on the original program (Phase 1, AAPLx fixture), 
 
 A repeat `cancel_and_refund` on an already-refunded order was also checked. It is a no-op, so there is no double refund.
 
+## Re-run after the refund-path fix (24 Sept)
+
+On 24 September `cancel_and_refund` was restricted to a paused ticker mint, or a refund path already chosen ([Honest limitations](/trust/limitations/#found-and-fixed-on-24-september-the-refund-path-could-void-a-cross)). The pause case was run again on the fixed program, on the dormant CRCLx fixture:
+
+- settlement failed while paused;
+- a stranger refunded the buyer while paused;
+- the seller was refunded after the mint resumed, allowed because the refund path had already been chosen;
+- every balance ended where it started, and both vaults ended at zero.
+
+Signatures are in [Transaction index](/trust/transactions/#the-refund-path-fix-24-sept).
+
 ## What it shows, and what it doesn't
 
 **Shows:** the program fails safely under a pause. Nothing is half-settled, dollar refunds work during the pause, and every balance is recoverable the moment it lifts.

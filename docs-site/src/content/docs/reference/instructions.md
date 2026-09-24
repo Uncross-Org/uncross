@@ -12,7 +12,7 @@ Program: `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP` on devnet, written with 
 | `cancel_order` | the order's owner only | slot < close slot − freeze slots |
 | `compute_clearing` | anyone | slot ≥ close slot |
 | `settle_batch` | anyone | after the cross |
-| `cancel_and_refund` | anyone | after the cross, before any ordinary settlement |
+| `cancel_and_refund` | anyone | after the cross, before any ordinary settlement, and only while the ticker mint is paused or once the refund path is chosen |
 | `close_auction` | anyone | fully settled, vaults empty |
 
 ## `initialize_auction`
@@ -57,10 +57,12 @@ Arguments: `order_indices`, 1 to 12 of them (`BatchTooLarge`). Remaining account
 
 ## `cancel_and_refund`
 
-Same arguments, accounts and per-order checks as `settle_batch`, on the **refund** path. Requires the settle path to be none or already refund, and sets it to refund.
+Same arguments, accounts and per-order checks as `settle_batch`, on the **refund** path.
 
+- **Checked first:** the ticker mint is paused, or the auction's settle path is already refund. Otherwise it fails with `RefundNotAllowed`. The second case lets sellers' shares be refunded after the issuer resumes. There is no caller restriction beyond this.
+- Then requires the settle path to be none or already refund, and sets it to refund.
 - Returns each order's full original escrow, ignoring its computed fill, and marks it refunded and settled.
-- No caller restriction, and no check that the mint is paused. See [Honest limitations](/trust/limitations/#whether-the-auction-settles-or-refunds).
+- The pause check was added on 24 September. Before it, anyone could choose this path after a cross ([Honest limitations](/trust/limitations/#found-and-fixed-on-24-september-the-refund-path-could-void-a-cross)).
 
 ## `close_auction`
 
@@ -77,4 +79,4 @@ Same arguments, accounts and per-order checks as `settle_batch`, on the **refund
 | `ORACLE_MAX_AGE_SECS` | 90 | freshness window for a Pyth price |
 | `MAX_CONF_BPS` | 200 | confidence cap: 2% of the price |
 
-<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/uncross/programs/uncross/src/lib.rs"><code>lib.rs</code></a>, <code>state.rs</code>, <code>oracle.rs</code>, <code>errors.rs</code>, <code>web/src/lib/tx.ts</code>.</p>
+<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/uncross/programs/uncross/src/lib.rs"><code>lib.rs</code></a>, <code>state.rs</code>, <code>oracle.rs</code>, <code>errors.rs</code>, <code>web/src/lib/tx.ts</code>.</p>

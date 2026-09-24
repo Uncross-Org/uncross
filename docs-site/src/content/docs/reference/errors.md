@@ -31,6 +31,7 @@ Anchor numbers a program's custom errors from 6000. Explorer shows a failed Uncr
 | 6021 | 0x1785 | `VaultNotEmpty` | auction can only be closed once both vaults are empty | `close_auction` |
 | 6022 | 0x1786 | `WrongRentRecipient` | rent can only be returned to the account that paid it | `close_auction` |
 | 6023 | 0x1787 | `UnknownRentPayer` | auction predates rent tracking and cannot be closed | `close_auction` |
+| 6024 | 0x1788 | `RefundNotAllowed` | the refund path is only for when settlement cannot run: the mint must be paused | `cancel_and_refund`, unless the ticker mint is paused or the refund path is already chosen. Added 24 Sept; checked before any other refund check, so a mid-window or partly settled refund now returns this rather than `NotYetCleared` or `SettlementPathLocked`. |
 
 "Settlement" means both `settle_batch` and `cancel_and_refund`.
 
@@ -43,4 +44,4 @@ Anchor numbers a program's custom errors from 6000. Explorer shows a failed Uncr
 
 The app turns the common ones into a sentence. For example, `PastFreezeWindow` reads "Cancellations are closed during the freeze window." When an order loses a race for its order index (`OrderIndexMismatch`), the app retries once on its own.
 
-<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/uncross/programs/uncross/src/errors.rs"><code>errors.rs</code></a> (order, names and messages), <code>lib.rs</code> (where each is raised), <code>docs/phase2.md</code> (<code>SettlementPathLocked</code> = 6019 observed on chain), <code>web/src/lib/tx.ts</code>.</p>
+<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/uncross/programs/uncross/src/errors.rs"><code>errors.rs</code></a> (order, names and messages), <code>lib.rs</code> (where each is raised), <code>docs/phase2.md</code> (<code>SettlementPathLocked</code> = 6019 observed on chain), <code>web/src/lib/tx.ts</code>.</p>

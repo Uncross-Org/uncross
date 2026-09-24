@@ -85,10 +85,10 @@ The passing path has not run on chain, because Pyth publishes no fresh price on 
 | `records_why_the_gate_refused` | the recorded verdict for every refusal path |
 | `oracle_breaks_price_tie` | rule 3 in the clearing logic |
 
-Run with `cargo test -p uncross` on 24 Sept 2026 against the program at commit `f7245ea`: 25 passed, 0 failed. That is the 24 tests in the program's source plus Anchor's generated program-ID test.
+Run with `cargo test -p uncross` on 24 Sept 2026 against the program at commit `532dcb7`: 25 passed, 0 failed. That is the 24 tests in the program's source plus Anchor's generated program-ID test.
 
 ## Not read
 
 Pyth's EMA price and previous publish time are in the account layout. The gate does not read them.
 
-<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/uncross/programs/uncross/src/oracle.rs"><code>oracle.rs</code></a> (<code>check_price</code>, <code>GATE_*</code>, <code>effective_multiplier</code>, tests), <a href="https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/uncross/programs/uncross/src/lib.rs#L214-L262"><code>lib.rs</code> compute_clearing</a>, <code>docs/pyth.md</code> §4–5, <code>docs/phase2.md</code>.</p>
+<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/uncross/programs/uncross/src/oracle.rs"><code>oracle.rs</code></a> (<code>check_price</code>, <code>GATE_*</code>, <code>effective_multiplier</code>, tests), <a href="https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/uncross/programs/uncross/src/lib.rs#L214-L262"><code>lib.rs</code> compute_clearing</a>, <code>docs/pyth.md</code> §4–5, <code>docs/phase2.md</code>.</p>

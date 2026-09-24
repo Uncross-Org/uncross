@@ -5,7 +5,7 @@ description: Which file in the repository backs which part of these docs, and ho
 
 Every claim in these docs comes from the program's source, the app's source, a committed research or test log, or a direct read of devnet made while writing. Nothing is inferred beyond those. Every page ends with the sources it rests on.
 
-Source links point to commit [`f7245ea`](https://github.com/Uncross-Org/uncross/tree/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c) of [github.com/Uncross-Org/uncross](https://github.com/Uncross-Org/uncross), so they keep pointing at the code these docs describe.
+Source links point to commit [`532dcb7`](https://github.com/Uncross-Org/uncross/tree/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73) of [github.com/Uncross-Org/uncross](https://github.com/Uncross-Org/uncross), so they keep pointing at the code these docs describe.
 
 ## Code
 
@@ -46,7 +46,8 @@ Source links point to commit [`f7245ea`](https://github.com/Uncross-Org/uncross/
 - The clearing rule replayed over 40 other auctions: all 39 that had crossed matched.
 - The MSTRx fixture mint's extensions and multiplier.
 - The 24 Sept community auction: both auction accounts replayed, every order account's owner checked against the bot's 42 test wallets (`uncross/scripts/bot-owners.json`), the first on-chain transaction of each new wallet, and each auction's cross and settlement transactions.
-- The program's 25 unit tests, run with `cargo test`: all passed.
+- The refund-path fix: the upgrade's slot against the program's last-deployed slot, and every test transaction's result and error code.
+- The program's 25 unit tests, run with `cargo test` at `f7245ea` and again at `532dcb7` after the fix: all passed.
 
 ## How the site itself is checked
 

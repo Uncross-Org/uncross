@@ -33,7 +33,7 @@ The app gives every order one of seven statuses. They are the same words everywh
 
 **Cancelled.** The cancel transaction returned your full escrow immediately. The order is excluded from the clearing price.
 
-**Refunded.** The auction took the failure path, `cancel_and_refund`, which ignores computed fills and returns every order's full original escrow. It exists for when ordinary settlement cannot run, such as when the issuer has paused the token. It can also be triggered by any wallet that sends a refund batch before the first ordinary settlement ([Auction lifecycle](/mechanism/lifecycle/#6-the-refund-path)). Either way, nothing traded and nothing was lost.
+**Refunded.** The auction took the failure path, `cancel_and_refund`, which ignores computed fills and returns every order's full original escrow. The program allows it only when ordinary settlement cannot run: the issuer has paused the token, or an earlier batch already took this path ([Auction lifecycle](/mechanism/lifecycle/#6-the-refund-path)). Nothing traded and nothing was lost.
 
 ## Crossed but not yet settled
 

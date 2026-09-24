@@ -22,9 +22,9 @@ Neither event is evidence of organic market demand. Both were small, and both ra
 
 Pyth publishes no fresh price on devnet. The devnet accounts were last updated on 2 July 2026, so at every cross the gate fails, and the auction clears by the book alone. The path where a Pyth price passes the gate and breaks a tie is **covered only by unit tests**, built from the real mainnet account's and mint's bytes ([The on-chain gate](/pyth/gate/#tests)).
 
-## What whoever sends the transactions can influence
+## What whoever sends the cross can influence
 
-The instructions that finish an auction are permissionless: anyone can send them, and the program checks everything itself. Two choices are still left to the sender. Neither lets anyone take funds. Both are stated here because they bear on how far the result can be trusted.
+The instructions that finish an auction are permissionless: anyone can send them, and the program checks everything itself. One choice is still left to the sender of the cross. It does not let anyone take funds. It is stated here because it bears on how far the result can be trusted.
 
 ### Which Pyth account is passed at the cross
 
@@ -37,21 +37,26 @@ The sender of `compute_clearing` chooses which account to pass as the Pyth price
 
 **Possible fixes, not implemented:** bind the Pyth account address itself at creation, not just the feed ID. Or refuse the cross, rather than skip the oracle rule, when the account passed is not the bound feed's account. No fix is planned before judging.
 
-### Whether the auction settles or refunds
+## Found and fixed on 24 September: the refund path could void a cross
 
-`cancel_and_refund`, the failure path, has no caller restriction and does not check that the mint is paused. The first batch after the cross fixes the auction's settle path for good.
+`cancel_and_refund`, the failure path, returns every order's full escrow. It exists for when ordinary settlement cannot run, most importantly when the issuer has paused the mint. It had no caller restriction and did not check that the mint was paused, and the first batch after a cross fixes the auction's settle path for good. So any wallet could send a refund batch before the keeper's first ordinary settlement and undo every trade in that auction. Nothing could be stolen: every order would have got back exactly what it locked. In the community auction earlier that day, the keeper's first settlement landed 24 seconds after each cross. That was the window.
 
-- **They cannot** take funds, or cause anyone to receive less than their full escrow. The refund path returns every order's full original escrow.
-- **They can**, by sending a refund batch before the keeper's first ordinary settlement, lock the auction onto refunds. The trades computed at the cross then never happen, and every order shows **Refunded**.
+The docs pass found it, and it was fixed and deployed on devnet the same day. The refund path is now allowed **only when the ticker mint is paused, or once an earlier batch has already taken the refund path**. The second case is how a seller's shares come back after the issuer resumes, when the mint is no longer paused. There is no operator override. A refused attempt fails with the new error `RefundNotAllowed` (6024).
 
-**What this means for trust.** Any wallet can void any auction's trades, at the cost of a transaction fee. Funds are never at risk, but an auction's result is not guaranteed to execute. The keeper narrows the window without closing it: in the 24 September community auction, its first settlement batch landed 24 seconds after each cross. **The fix is identified and not yet shipped:** allow the refund path only when the ticker mint is paused, or when the auction's operator chooses it.
+Checked on chain before these docs were updated:
+
+- The program upgrade is [`3aE7J9JC…LC42YEKY`](https://explorer.solana.com/tx/3aE7J9JCgKadPp9Eqgo49oen7m9P6mgqhdvjHAZUATAKoeFcVNcu96kQUon9juRVufbbXa9pxdodHsVMLC42YEKY?cluster=devnet). The program's last-deployed slot, 503490825, is that transaction's slot.
+- On a paused test mint, ordinary settlement fails, a stranger's refund of the buyer succeeds while paused, and the seller's refund succeeds after resume.
+- Four refusal attempts each landed as a failed transaction with `RefundNotAllowed`: mid-window, a stranger and a participant on a crossed unsettled auction, and after partial settlement.
+
+Every signature is in [Transaction index](/trust/transactions/#the-refund-path-fix-24-sept). The program's unit tests pass on the fixed code, 25 of 25.
 
 ## Stranded auction rent: found, and mostly recovered
 
 `close_auction` returns an auction's rent (0.0183 SOL, for the auction account and its two vaults) once it is fully settled. The keeper built its working set from a local cache, and each redeploy reset that cache. So auctions opened before a redeploy were never cleared, and their rent sat stranded.
 
 - **119 auctions were stranded** this way, found on 23 September.
-- **118 of them were recovered** between 20:13 and 20:27 UTC on 23 September. The recovery closed 120 auctions in all: the 118, plus two opened on dormant tickers during testing. Together they returned **2.1994 SOL** of rent, for 0.0012 SOL in fees. 67 closes were sent by the recovery run and 53 by the keeper on Railway, from the same wallet, with the rent going to the same place. Every close signature is in [`docs/rent-recovery-2026-09-23.tsv`](https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/docs/rent-recovery-2026-09-23.tsv). The first is [`5YdN7KdX…ChFUqsW3`](https://explorer.solana.com/tx/5YdN7KdXG3XEeWR38sV6VWvKWwG5tf6V5aHnsbGsncabU4FxdWTBafhcZA5ijXL8R2HfKRmjY3oCsspsChFUqsW3?cluster=devnet).
+- **118 of them were recovered** between 20:13 and 20:27 UTC on 23 September. The recovery closed 120 auctions in all: the 118, plus two opened on dormant tickers during testing. Together they returned **2.1994 SOL** of rent, for 0.0012 SOL in fees. 67 closes were sent by the recovery run and 53 by the keeper on Railway, from the same wallet, with the rent going to the same place. Every close signature is in [`docs/rent-recovery-2026-09-23.tsv`](https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/docs/rent-recovery-2026-09-23.tsv). The first is [`5YdN7KdX…ChFUqsW3`](https://explorer.solana.com/tx/5YdN7KdXG3XEeWR38sV6VWvKWwG5tf6V5aHnsbGsncabU4FxdWTBafhcZA5ijXL8R2HfKRmjY3oCsspsChFUqsW3?cluster=devnet).
 - **One is permanently locked, at 0.0153 SOL.** It predates the reclaim upgrade, was cleared with no orders, and has no recorded payer, so `close_auction` refuses it. Its address is not in a committed file.
 - **The cause is fixed.** At 21:08 UTC on 23 September the keeper was replaced with one that finds its working set by scanning the program's accounts instead of a cache, so a redeploy can no longer strand anything.
 
@@ -85,7 +90,7 @@ The AAPL feed was measured publishing straight through the close and overnight. 
 ## Smaller things
 
 - **Capacity.** An auction holds at most 63 orders. The largest book tested had 42. Settlement fits 7 orders per transaction with distinct owners. Address lookup tables would raise that, and are not used.
-- **Recorded gate verdicts can mislead.** Five tickers have no Pyth account on any network. Their auctions currently record "wrong owner", because the keeper passes a placeholder. A committed keeper change records "no feed configured" instead, and deploys after the 24 September community auction. A cross run from the app's own button passes a mainnet address that does not exist on devnet, so it also records "wrong owner" where the keeper would record "stale".
+- **Recorded gate verdicts can mislead.** Five tickers have no Pyth account on any network. Their auctions currently record "wrong owner", because the keeper passes a placeholder. A committed keeper change records "no feed configured" instead, and deploys after the 24 September community auction. A cross run from the app's own button passes a mainnet address that does not exist on devnet, so it also records "wrong owner" where the keeper would record "stale". The fix is in the app build committed on 24 Sept, which was not yet deployed when these docs were published.
 - **Timing is estimated.** Windows are fixed in slots. Minutes are derived from a measured slot rate that drifts, so the countdown is an estimate.
 - **The faucet can run dry.** A global cap bounds how many new wallets it can fund. On 24 September it covered about 40, with 31 left.
 
@@ -94,4 +99,4 @@ The AAPL feed was measured publishing straight through the close and overnight. 
 - **Not audited.** Nothing here has had a security audit.
 - **Not on mainnet.** The program has never run against a real xStocks mint.
 
-<p class="sources">Sources: <code>docs/submission-draft.md</code> (What we're not claiming, the MSTRx cross, rent recovery), <code>docs/rent-recovery-2026-09-23.tsv</code> (120 closes, 2.199437 SOL), <code>README.md</code> (What this doesn't solve; Not yet tested), <code>uncross/programs/uncross/src/lib.rs</code> (<code>compute_clearing</code>, <code>cancel_and_refund</code>, <code>settle_or_refund</code>), <code>oracle.rs</code>, <code>docs/pyth.md</code>, <code>docs/phase2.md</code>, commit <code>803c141</code>, <code>web/src/App.tsx</code> and <code>web/src/lib/tx.ts</code> (crank's Pyth account).</p>
+<p class="sources">Sources: <code>docs/submission-draft.md</code> (What we're not claiming, the MSTRx cross, rent recovery), <code>docs/rent-recovery-2026-09-23.tsv</code> (120 closes, 2.199437 SOL), <code>README.md</code> (What this doesn't solve; Not yet tested), <code>uncross/programs/uncross/src/lib.rs</code> (<code>compute_clearing</code>, <code>cancel_and_refund</code>, <code>settle_or_refund</code>), commit <code>532dcb7</code> and <code>docs/phase2.md</code> (the refund-path fix), <code>oracle.rs</code>, <code>docs/pyth.md</code>, <code>docs/phase2.md</code>, commit <code>803c141</code>, <code>web/src/App.tsx</code> and <code>web/src/lib/tx.ts</code> (crank's Pyth account).</p>

@@ -86,4 +86,4 @@ To find every order a wallet owns, ask for the program's accounts with `dataSize
 
 Each auction's two vaults are ordinary associated token accounts owned by the auction PDA: one for the ticker mint (Token-2022), one for the quote mint (legacy SPL Token).
 
-<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/uncross/programs/uncross/src/state.rs"><code>state.rs</code></a> (layouts, size tests), <code>lib.rs</code> (PDA seeds, flags), checked against live devnet accounts on 24 Sept 2026.</p>
+<p class="sources">Sources: <a href="https://github.com/Uncross-Org/uncross/blob/532dcb736e8aa2c811e8b4704a8f36ec0c0f0a73/uncross/programs/uncross/src/state.rs"><code>state.rs</code></a> (layouts, size tests), <code>lib.rs</code> (PDA seeds, flags), checked against live devnet accounts on 24 Sept 2026.</p>

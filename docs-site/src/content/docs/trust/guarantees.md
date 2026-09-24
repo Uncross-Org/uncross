@@ -29,6 +29,8 @@ These guarantees come from the program's own checks, not from the app, the keepe
 
 **No double payment.** An order already settled is skipped, so a repeated or overlapping batch pays nothing twice.
 
+**Refunds only when settlement cannot run.** `cancel_and_refund` is refused (`RefundNotAllowed`) unless the ticker mint is paused, or an earlier batch already took the refund path. Nobody can void a cross by choosing refunds. This check was added on 24 September ([Honest limitations](/trust/limitations/#found-and-fixed-on-24-september-the-refund-path-could-void-a-cross)).
+
 **One wind-down path per auction.** The first batch fixes ordinary settlement or refund, and the other is refused from then on (`SettlementPathLocked`). Mixing them could refund a seller shares a buyer had already received. A failed batch rolls back and does not lock the path.
 
 **The cross runs once.** A second `compute_clearing` is a no-op, including mid-settlement.
@@ -40,7 +42,7 @@ These guarantees come from the program's own checks, not from the app, the keepe
 ## What the program cannot protect against
 
 - **The issuer.** It can pause the token, freezing escrowed shares until it unpauses. It can move or burn tokens in any account, escrow included. It could switch on a transfer hook. See [xStocks and Token-2022](/tokens/xstocks-token-2022/).
-- **The sender's two choices.** The sender of the cross chooses which Pyth account to pass. The sender of the first batch after the cross can choose the refund path. Neither can take funds. See [Honest limitations](/trust/limitations/#what-whoever-sends-the-transactions-can-influence).
+- **The sender's choice of Pyth account.** The sender of the cross chooses which Pyth account to pass. It cannot take funds or move the price outside what the book supports. See [Honest limitations](/trust/limitations/#what-whoever-sends-the-cross-can-influence).
 - **Transfer fees.** A token with an active transfer fee would leave the vault short. Such tokens are not supported.
 - **Bugs not yet found.** The program is unaudited. Its unit tests (24, all passing) and the devnet tests are listed in [Transaction index](/trust/transactions/) and [The on-chain gate](/pyth/gate/#tests).
 

@@ -94,8 +94,10 @@ When every order is settled, the auction's status becomes **Settled**.
 
 An auction is wound down **one way only**. The first batch, whether `settle_batch` or `cancel_and_refund`, fixes the auction's settle path, and the other instruction is refused from then on with `SettlementPathLocked`. Mixing them would let a seller be refunded shares a buyer had already received. A failed settlement attempt, such as one rejected because the mint is paused, rolls back and does not lock the path.
 
-:::caution[Anyone can choose the refund path first]
-`cancel_and_refund` has no caller restriction and does not check whether the mint is paused. Whoever sends the **first** batch after the cross chooses the path. A wallet that sends a refund batch before the keeper's first settlement locks the auction onto refunds. Every order then gets its full escrow back, and the trades computed at the cross never happen. No funds are at risk. But any wallet can void any auction's trades this way. This is listed in [Honest limitations](/trust/limitations/).
+:::note[Who can choose the refund path]
+The refund path is allowed only when the ticker mint is paused, or once an earlier batch has already taken it. The second case lets sellers' shares come back after the issuer resumes, when the mint is no longer paused. Anyone may send it then; otherwise it fails with `RefundNotAllowed`.
+
+Before 24 September there was no such check, and whoever sent the first batch after a cross could choose refunds and void the auction's trades. That was found and fixed the same day ([Honest limitations](/trust/limitations/#found-and-fixed-on-24-september-the-refund-path-could-void-a-cross)).
 :::
 
 ## 7. Closing and rent reclaim
