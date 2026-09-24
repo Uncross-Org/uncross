@@ -1,0 +1,166 @@
+/* ------------------------------------------------------------ tokens
+   The app's palette (web/src/styles.css), mapped onto Starlight's scale.
+   Starlight inverts its grey scale in light mode: --sl-color-white is the
+   strongest text and --sl-color-black the page ground. One accent, violet,
+   for links and emphasis. Bid blue and ask orange mark buy and sell, as they
+   do in the app; green and red mean a price moved up or down, and nothing
+   else. */
+
+:root {
+	--sl-font: 'Geist Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--sl-font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+	--uc-display: 'Archivo', var(--sl-font);
+
+	/* dark */
+	--sl-color-accent-low: #211a4a;
+	--sl-color-accent: #8b74ff;
+	--sl-color-accent-high: #d6ccff;
+	--sl-color-white: #f4f5f8;
+	--sl-color-gray-1: #e9edf5;
+	--sl-color-gray-2: #b3bbcb;
+	--sl-color-gray-3: #8a93a6;
+	--sl-color-gray-4: #5d6474;
+	--sl-color-gray-5: #2e3547;
+	--sl-color-gray-6: #151b28;
+	--sl-color-black: #0a0d14;
+	--sl-color-bg-nav: #0a0d14;
+	--sl-color-bg-sidebar: #0c1018;
+	--sl-color-hairline-light: #1e2433;
+	--sl-color-hairline: #1e2433;
+	--sl-color-hairline-shade: #0a0d14;
+
+	--uc-surface: #10141e;
+	--uc-raise: #151b28;
+	--uc-buy: #3987e5;
+	--uc-sell: #d95926;
+	--uc-up: #22ab94;
+	--uc-down: #f7525f;
+	--uc-warn: #e0a126;
+	--uc-warn-soft: rgba(224, 161, 38, 0.13);
+	--uc-accent-soft: rgba(139, 116, 255, 0.14);
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #ebe7fe;
+	--sl-color-accent: #5b3df5;
+	--sl-color-accent-high: #3a22c4;
+	--sl-color-white: #0b0e14;
+	--sl-color-gray-1: #1a1f2b;
+	--sl-color-gray-2: #3a4150;
+	--sl-color-gray-3: #5d6474;
+	--sl-color-gray-4: #8a93a6;
+	--sl-color-gray-5: #c3c8d3;
+	--sl-color-gray-6: #f3f4f7;
+	--sl-color-gray-7: #f7f8fa;
+	--sl-color-black: #ffffff;
+	--sl-color-bg-nav: #ffffff;
+	--sl-color-bg-sidebar: #fafbfc;
+	--sl-color-hairline-light: #eceef3;
+	--sl-color-hairline: #e4e7ee;
+	--sl-color-hairline-shade: #c3c8d3;
+
+	--uc-surface: #ffffff;
+	--uc-raise: #f3f4f7;
+	--uc-buy: #1f6fcf;
+	--uc-sell: #c8501c;
+	--uc-up: #089981;
+	--uc-down: #d42a39;
+	--uc-warn: #8a5700;
+	--uc-warn-soft: rgba(168, 106, 0, 0.1);
+	--uc-accent-soft: rgba(91, 61, 245, 0.08);
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+}
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
+/* ------------------------------------------------------------ type */
+.site-title {
+	font-family: var(--uc-display);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--sl-color-white);
+}
+.site-title img {
+	height: 1.6rem;
+	width: auto;
+}
+h1#_top,
+.sl-markdown-content :is(h2, h3) {
+	font-family: var(--uc-display);
+	letter-spacing: -0.015em;
+}
+.sl-markdown-content {
+	line-height: 1.7;
+}
+.sl-markdown-content :is(td, th) {
+	font-variant-numeric: tabular-nums;
+}
+.sl-markdown-content code:not(pre code) {
+	overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------ market colour */
+.buy {
+	color: var(--uc-buy);
+	font-weight: 600;
+}
+.sell {
+	color: var(--uc-sell);
+	font-weight: 600;
+}
+.up {
+	color: var(--uc-up);
+	font-weight: 600;
+}
+.down {
+	color: var(--uc-down);
+	font-weight: 600;
+}
+.muted {
+	color: var(--sl-color-gray-3);
+}
+
+/* A row of the worked example that survives a step, and one that does not. */
+.sl-markdown-content tr.keep td {
+	background: var(--uc-accent-soft);
+}
+.sl-markdown-content tr.out td {
+	color: var(--sl-color-gray-3);
+}
+
+/* Long values (signatures, addresses) break rather than widen the page. */
+.sig {
+	font-family: var(--sl-font-mono);
+	font-size: 0.8em;
+	overflow-wrap: anywhere;
+	word-break: break-all;
+}
+
+/* The "where this comes from" line at the foot of a page. */
+.sources {
+	margin-top: 2.5rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--sl-color-hairline);
+	font-size: var(--sl-text-sm);
+	color: var(--sl-color-gray-3);
+}
+.sources a {
+	color: inherit;
+}
+
+/* Narrow screens: tables keep every column in view where they can. */
+@media (max-width: 50rem) {
+	.sl-markdown-content :is(th, td) {
+		padding-inline: 0.45rem;
+	}
+	.sl-markdown-content :is(th, td):first-child {
+		padding-inline-start: 0;
+	}
+	.sl-markdown-content table {
+		font-size: var(--sl-text-sm);
+	}
+}

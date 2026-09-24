@@ -1,0 +1,17 @@
+---
+// Replaces Starlight's provider, which follows the OS colour scheme. The app
+// (web/src/styles.css) is light on every first visit and dark only when the
+// visitor chooses it; the docs do the same.
+---
+
+{/* Inlined to avoid a flash of the wrong theme. */}
+<script is:inline>
+	window.StarlightThemeProvider = (() => {
+		let stored = null;
+		try {
+			stored = localStorage.getItem('starlight-theme');
+		} catch {}
+		document.documentElement.dataset.theme = stored === 'dark' ? 'dark' : 'light';
+		return { updatePickers() {} };
+	})();
+</script>

@@ -1,0 +1,136 @@
+---
+title: The clearing rule
+description: How the program picks the single price an auction clears at, who fills at it, and what each order pays or receives, with a real devnet auction worked through by hand.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+export const SRC = 'https://github.com/Uncross-Org/uncross/blob/f7245ea33e019bbcfacfd17ccc6677a1d3bb5f5c/uncross/programs/uncross/src';
+
+Every Uncross auction clears at **one price**. Every order that trades, trades at that price, whatever limit it was placed with. The price is not set by anyone. When the window closes, the program computes it from the orders in the book by the fixed rule on this page.
+
+The rule runs inside the on-chain program, in the `compute_clearing` instruction. Any wallet can send that instruction once the auction's window has closed. The result depends on the book and, in one narrow case, on a Pyth price. That price counts only if the account the sender passes in clears the program's checks.
+
+<Aside type="caution" title="The one input a sender controls">
+The sender of `compute_clearing` chooses which account to pass as the Pyth price. It cannot be another asset's price: the auction is bound to one feed, and any other feed is refused. But a sender *can* pass an account that fails the checks. The oracle rule is then skipped, and the midpoint rule decides instead. This matters only when a tie survives the imbalance rule (step 4 below). It never moves the price outside the tied set.
+</Aside>
+
+## The rule in four steps
+
+**1. List the candidate prices.** Candidates are the distinct limit prices of the live orders in the book. A cancelled order is not live, and its price is not a candidate.
+
+**2. Measure demand and supply at each candidate.** At a price *p*:
+
+- **demand** is the total quantity of buy orders whose limit is **at or above** *p*. Each of those buyers is willing to pay *p*.
+- **supply** is the total quantity of sell orders whose limit is **at or below** *p*. Each of those sellers is willing to accept *p*.
+- **executable volume** is the smaller of the two. That is how many shares could actually change hands at *p*.
+
+**3. Take the price with the most executable volume.** If exactly one candidate has the highest volume, that is the clearing price.
+
+**4. Break any tie**, in this order, and stop at the first rule that leaves a single price:
+
+1. **Smallest imbalance.** Among the tied prices, keep those where demand and supply are closest, i.e. with the smallest |demand − supply|.
+2. **Nearest the oracle price.** This applies only if a Pyth price passed the program's [on-chain gate](/pyth/gate/) at the cross. Among the prices still tied, take the one nearest it. If two are equally near, the lower one wins, because the tied prices are held in ascending order and the first nearest is kept.
+3. **Midpoint.** Otherwise, take the midpoint of the lowest and highest prices still tied. The program's integer arithmetic rounds it down to its price unit, one millionth of a dollar per token.
+
+Executable volume is then measured again at the final price. The midpoint can fall between two limit prices, where no order sits.
+
+<Aside title="If the book does not cross">
+If no candidate has any executable volume, for example because every buy is priced below every sell, nothing trades. Every order is then settled with its full escrow returned. The program still records a price in this case (the lowest candidate), but with zero volume, so nothing executes at it.
+</Aside>
+
+## A real auction, worked by hand
+
+This book ran on devnet on the upgraded program, as the regression test recorded in `docs/phase2.md`. Its auction account still exists, so you can read these numbers from chain: [`Dw4UdSGL…nt8U`](https://explorer.solana.com/address/Dw4UdSGL6fvCPu6QuC8s7RkLv6gLETHzbaaLttm8nt8U?cluster=devnet). The ticker is the devnet AAPLx fixture. Its multiplier was 1 at the time, so one token is one share. Prices are dollars per share.
+
+| # | Side | Limit | Shares | At the cross |
+|---|---|---|---|---|
+| 0 | <span class="sell">Sell</span> | $240.00 | 10 | live |
+| 1 | <span class="buy">Buy</span> | $250.00 | 10 | live |
+| 2 | <span class="sell">Sell</span> | $245.00 | 5 | live |
+| 3 | <span class="buy">Buy</span> | $243.00 | 8 | live |
+| 4 | <span class="sell">Sell</span> | $300.00 | 1 | cancelled |
+| 5 | <span class="sell">Sell</span> | $310.00 | 1 | live |
+
+Order 4 was cancelled before the freeze, so it is not in the book at the cross. A cancel of order 5 was sent inside the freeze and the program refused it (`PastFreezeWindow`), so it stayed live.
+
+**Step 1.** The live limit prices are $240, $243, $245, $250 and $310. Order 4 is cancelled, so $300 is not a candidate.
+
+**Step 2.** Buys are 10 at $250 and 8 at $243. Sells are 10 at $240, 5 at $245 and 1 at $310.
+
+<table>
+<thead><tr><th>Price</th><th>Demand</th><th>Supply</th><th>Volume</th><th>|D − S|</th></tr></thead>
+<tbody>
+<tr class="out"><td>$240.00</td><td>18</td><td>10</td><td>10</td><td>8</td></tr>
+<tr class="out"><td>$243.00</td><td>18</td><td>10</td><td>10</td><td>8</td></tr>
+<tr class="keep"><td>$245.00</td><td>10</td><td>15</td><td>10</td><td>5</td></tr>
+<tr class="keep"><td>$250.00</td><td>10</td><td>15</td><td>10</td><td>5</td></tr>
+<tr class="out"><td>$310.00</td><td>0</td><td>16</td><td>0</td><td>16</td></tr>
+</tbody>
+</table>
+
+**Step 3.** The highest volume is 10 shares, and four candidates reach it: $240, $243, $245 and $250. There is a tie.
+
+**Step 4.**
+
+1. *Imbalance.* |D − S| is 8 at $240 and $243 but 5 at $245 and $250 (the highlighted rows). $245 and $250 remain.
+2. *Oracle.* No Pyth price passed the gate for this auction (`reference_price_set` is 0). The rule is skipped.
+3. *Midpoint.* ($245.00 + $250.00) ÷ 2 = **$247.50**.
+
+At $247.50, demand is 10 (only the $250 buy is willing) and supply is 15 (the $240 and $245 sells), so executable volume is **10 shares**. The account reads `clearing_price` 247500000 and `executable_volume` 1000000000. Those are the same figures in raw units, explained under [Units and decimals](/reference/units/).
+
+### Who filled, and what the money did
+
+| # | Order | Result at $247.50 |
+|---|---|---|
+| 0 | <span class="sell">Sell</span> 10 @ $240 | Sold all 10. Received **$2,475.00**, <span class="up">$7.50 a share more</span> than it asked |
+| 1 | <span class="buy">Buy</span> 10 @ $250 | Bought all 10. Had escrowed $2,500.00, paid **$2,475.00**, and got **$25.00** back |
+| 2 | <span class="sell">Sell</span> 5 @ $245 | Filled 0. Its 5 shares came back |
+| 3 | <span class="buy">Buy</span> 8 @ $243 | Filled 0. Its limit is below the clearing price. Its $1,944.00 escrow came back |
+| 4 | <span class="sell">Sell</span> 1 @ $300 | Cancelled before the cross. Its share came back at cancellation |
+| 5 | <span class="sell">Sell</span> 1 @ $310 | Filled 0. Its share came back at settlement |
+
+Order 2 was willing to sell at $247.50 and still filled nothing. The next section explains why.
+
+## Who fills at the clearing price
+
+Only orders on the right side of the price can trade: buys with a limit at or above it, and sells with a limit at or below it. There may be more of them than the executable volume. The program then fills each side separately by **price priority**:
+
+- Buys fill from the highest limit down; sells from the lowest limit up.
+- Orders at the same limit form a **tier**. Whole tiers fill in full until the volume runs out.
+- The one tier where the volume runs out is shared **pro rata**, in proportion to each order's quantity.
+- Pro-rating rounds down, which can leave a few raw units unassigned. They are handed out one unit per order, lowest order index first, so each side fills to exactly the executable volume.
+
+In the example, supply at $247.50 is 15 shares for 10 of volume. The $240 tier (10 shares) is best-priced, so it fills in full and uses up all 10. The $245 tier gets nothing. That is why order 2 filled zero.
+
+The largest test of the pro-rata rule was a 42-order book on devnet (`docs/phase2.md`). 22 buys of 10 shares at the same limit shared 200 shares of volume. Each buy was entitled to 9.0909… shares. The two leftover raw units went to orders 0 and 2, lowest index first. Buy fills totalled exactly 20,000,000,000 raw units, the same as the sell fills.
+
+## What each order pays or receives
+
+The program fixes every order's money leg at the cross, in `compute_clearing`, and stores it per order. Settlement later only moves those stored numbers. So the vaults end at exactly zero whatever order the settlement batches land in.
+
+- **A buy escrows** its quantity × its limit when placed, rounded **up** to the micro-dollar, so the escrow always covers what it could owe.
+- **A seller receives** its filled quantity × the clearing price, rounded down to the micro-dollar.
+- **Buyers are charged** exactly the sellers' total between them, split in proportion to their fills and capped at each buyer's escrow. The few micro-dollars left over by rounding are assigned one at a time.
+- **A buyer gets back** its escrow minus its charge: the unfilled part, plus the difference between its limit and the clearing price on the part that filled.
+- **A seller gets back** its unfilled shares.
+
+<Aside type="note" title="&quot;One price for everyone&quot;, to the last unit">
+Every fill in an auction is at the same clearing price. Money moves in whole micro-dollars (the test dollar has 6 decimals), so a buyer's charge can differ from its exact pro-rata share of the sellers' total by one micro-dollar. In the 42-order test, the buyers' charges were 912,454,547, 912,454,546 and 912,454,545 micro-dollars. Total charged equalled total paid out, to the unit.
+</Aside>
+
+## What this rule guarantees
+
+- **No buyer pays more than its limit.** A buy fills only if its limit is at or above the clearing price, and its charge never exceeds its escrow.
+- **No seller receives less than its limit per share**, apart from rounding down to the micro-dollar. A sell fills only if its limit is at or below the clearing price.
+- **Nobody in an auction gets a worse price than anyone else in it.** There is one price, subject only to the micro-dollar rounding above.
+- **The oracle cannot set the price.** Pyth only chooses among prices that are already tied on volume and on imbalance. It cannot move the price outside that set, or add or remove volume.
+- **Unfilled escrow always comes back**, at settlement or on cancellation. The one exception is outside the program's control: an issuer can pause the token, and while it is paused, escrowed shares cannot move. See [xStocks and Token-2022](/tokens/xstocks-token-2022/).
+
+## "Would clear at" before the cross
+
+The program runs the same rule, with no oracle price, every time an order is placed or cancelled. It writes the result to the auction as `indicative_price` and `indicative_volume`. The app shows these as **Would clear at** and the shares that would trade. At the cross the rule runs once more, with a Pyth price if one passed the gate. So the final price can differ from the last indicative price only if a tie survives the imbalance rule *and* the gate passes. On devnet the gate usually fails as stale ([What Pyth is used for](/pyth/role/)), so in practice the two agree.
+
+<p class="sources">
+Sources: <a href={`${SRC}/clearing.rs#L26-L91`}>find_clearing_price</a>, <a href={`${SRC}/clearing.rs#L93-L170`}>assign_fills</a>, <a href={`${SRC}/clearing.rs#L172-L237`}>escrow and quote amounts</a>, <a href={`${SRC}/lib.rs#L216-L262`}>compute_clearing</a>. Worked example: <code>docs/phase2.md</code> (regression on the upgraded program) and <code>docs/phase1.md</code> (the same book, first run), checked against the live auction account on 24 Sept 2026. Pro-rata figures: <code>docs/phase2.md</code>, stress run.
+</p>
