@@ -7,11 +7,12 @@
 // because its auction has been closed, is marked.
 
 import { useMemo, useState } from "react";
-import { explorerAddr, explorerTx, type ClusterConfig } from "../config";
+import { explorerTx, type ClusterConfig } from "../config";
 import { auctionPhase } from "../lib/auction";
 import { fmtDuration, fmtLocal, fmtShares, shortAddr } from "../lib/format";
 import { orderStatus, receiptOf, STATUS_HELP, type MyOrder, type OrderStatus } from "../lib/settlement";
 import { programToPerShare, quoteToUsd, rawToShares } from "../lib/units";
+import { CopyLink } from "./CopyLink";
 
 const usd = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 
@@ -40,9 +41,12 @@ interface Props {
   multipliers: Map<string, number>;
   symbolOf: (mint: string | null) => string;
   onOpenTicker: (symbol: string) => void;
+  onOpenAuction: (address: string) => void;
+  owner: string | null;
+  readOnly: boolean;
 }
 
-export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs, multipliers, symbolOf, onOpenTicker }: Props) {
+export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs, multipliers, symbolOf, onOpenTicker, onOpenAuction, owner, readOnly }: Props) {
   const [tab, setTab] = useState<Tab>("all");
   const [asset, setAsset] = useState("all");
   const [side, setSide] = useState<"all" | "buy" | "sell">("all");
@@ -73,7 +77,10 @@ export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs
   return (
     <section className="page" aria-label="Your orders">
       <div className="page-head">
-        <h2 className="display">Your orders</h2>
+        <div className="page-title-row">
+          <h2 className="display">{readOnly ? "Orders" : "Your orders"}</h2>
+          {owner && <CopyLink wallet={owner} />}
+        </div>
         <p className="page-sub">
           Every order this wallet has placed, on any ticker, read from its order accounts on chain. Each auction fills
           everyone at one clearing price, so a fill's price is that auction's price, not your limit.
@@ -175,9 +182,9 @@ export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs
                     </td>
                     <td data-label="Settled">{s?.time ? fmtLocal(s.time * 1000) : r ? "settling" : "—"}</td>
                     <td data-label="Links" className="links">
-                      <a href={explorerAddr(cluster, o.auctionAddress)} target="_blank" rel="noreferrer" title="The auction">
+                      <button className="link-btn" onClick={() => onOpenAuction(o.auctionAddress)} title="Every order in that auction and how its price was set">
                         auction
-                      </a>
+                      </button>
                       {o.placed && (
                         <a href={explorerTx(cluster, o.placed.sig)} target="_blank" rel="noreferrer" title="The transaction that placed it">
                           placed

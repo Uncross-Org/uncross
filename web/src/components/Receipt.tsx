@@ -10,6 +10,7 @@ import { explorerAddr, explorerTx, type ClusterConfig, type TickerConfig } from 
 import { fmtLocal, fmtShares, shortAddr } from "../lib/format";
 import { receiptOf, STATUS_HELP, type MyOrder, type Receipt as R } from "../lib/settlement";
 import { programToPerShare, quoteToUsd, rawToShares } from "../lib/units";
+import { CopyLink } from "./CopyLink";
 
 const shareText = (n: number) => `${fmtShares(n)} ${n === 1 ? "share" : "shares"}`;
 /** Dollars to the cent where that is exact, otherwise to the micro-dollar the program settles in. */
@@ -20,9 +21,12 @@ interface Props {
   m: number;
   cluster: ClusterConfig;
   items: MyOrder[];
+  /** The wallet these orders belong to, for a shareable link. */
+  wallet?: string | null;
+  onOpenAuction?: (address: string) => void;
 }
 
-export function Receipt({ tk, m, cluster, items }: Props) {
+export function Receipt({ tk, m, cluster, items, wallet, onOpenAuction }: Props) {
   const rows = items.map((it) => ({ it, r: receiptOf(it) })).filter((x): x is { it: MyOrder; r: R } => x.r !== null);
   if (!rows.length) return null;
   const a = items[0].auction;
@@ -38,9 +42,15 @@ export function Receipt({ tk, m, cluster, items }: Props) {
         <div>
           <div className="receipt-eyebrow">
             Your result · {tk.symbol} auction{" "}
-            <a href={explorerAddr(cluster, items[0].auctionAddress)} target="_blank" rel="noreferrer" className="num">
-              {shortAddr(items[0].auctionAddress)}
-            </a>
+            {onOpenAuction ? (
+              <button className="link-btn num" onClick={() => onOpenAuction(items[0].auctionAddress)} title="Every order and how the price was set">
+                {shortAddr(items[0].auctionAddress)}
+              </button>
+            ) : (
+              <a href={explorerAddr(cluster, items[0].auctionAddress)} target="_blank" rel="noreferrer" className="num">
+                {shortAddr(items[0].auctionAddress)}
+              </a>
+            )}
           </div>
           <div className="receipt-title num">
             {price != null ? (
@@ -57,6 +67,7 @@ export function Receipt({ tk, m, cluster, items }: Props) {
         <div className="receipt-meta">
           <span className={`tag ${settling ? "tag-ext" : "tag-live"}`}>{settling ? "Settling" : "Settled"}</span>
           {settledAt != null && <span className="muted small num">{fmtLocal(settledAt * 1000)}</span>}
+          {wallet && <CopyLink wallet={wallet} />}
         </div>
       </div>
       {rebuilt && (

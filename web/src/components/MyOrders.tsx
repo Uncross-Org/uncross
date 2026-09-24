@@ -25,9 +25,14 @@ interface Props {
   notify: (kind: "ok" | "err", text: string, sig?: string) => void;
   onChange: () => void;
   onOpenOrders: () => void;
+  onOpenAuction: (address: string) => void;
+  /** Whose orders these are: the connected wallet, or one named in the link. */
+  viewer: string | null;
+  /** Someone else's wallet, from a link: shown, never acted on. */
+  readOnly: boolean;
 }
 
-export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notify, onChange, onOpenOrders }: Props) {
+export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notify, onChange, onOpenOrders, onOpenAuction, viewer, readOnly }: Props) {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [busy, setBusy] = useState<number | null>(null);
@@ -37,7 +42,7 @@ export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notif
   // on screen by then.
   const seen = useRef<Map<string, boolean>>(new Map());
   useEffect(() => {
-    if (!myOrders) return;
+    if (!myOrders || readOnly) return;
     for (const o of myOrders) {
       const k = o.order.address.toBase58();
       const crossed = o.auction ? o.auction.status !== "open" : !!o.settled;
@@ -50,9 +55,9 @@ export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notif
       const price = r.clearingPrice != null ? ` at ${fmtPrice(programToPerShare(r.clearingPrice, m))}` : "";
       notify("ok", `${sym} crossed${price}. Your ${r.side}: ${r.status.toLowerCase()}. The result is under Your orders.`);
     }
-  }, [myOrders, tk, m, notify]);
+  }, [myOrders, tk, m, notify, readOnly]);
 
-  if (!wallet.publicKey) {
+  if (!viewer) {
     return (
       <section className="card mine">
         <div className="card-head">
@@ -85,14 +90,14 @@ export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notif
   return (
     <section className="card mine" aria-label="Your orders">
       <div className="card-head">
-        <h2>Your orders</h2>
+        <h2>{readOnly ? "Orders" : "Your orders"}</h2>
         {running.length > 0 && <span className="muted small">{running.length} in the running auction</span>}
         <button className="link-btn" onClick={onOpenOrders}>
           All your orders →
         </button>
       </div>
 
-      {group.length > 0 && <Receipt tk={tk} m={m} cluster={cluster} items={group} />}
+      {group.length > 0 && <Receipt tk={tk} m={m} cluster={cluster} items={group} wallet={viewer} onOpenAuction={onOpenAuction} />}
 
       {running.length === 0 ? (
         !group.length && (
@@ -133,7 +138,7 @@ export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notif
                         {status}
                       </td>
                       <td className="act">
-                        {!o.cancelled && (
+                        {!o.cancelled && !readOnly && (
                           <button
                             className="btn btn-ghost sm"
                             disabled={!canCancel || busy !== null}

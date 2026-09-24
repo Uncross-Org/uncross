@@ -2270,3 +2270,115 @@ input {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------- read-only
+   links, venue status, auction detail */
+.banner.viewing,
+.banner.warn-banner {
+  margin: 12px 24px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 14px;
+}
+.banner.viewing {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.banner.warn-banner {
+  background: var(--warn-soft);
+  color: var(--warn);
+  flex-direction: column;
+  align-items: flex-start;
+}
+@media (max-width: 640px) {
+  .banner.viewing,
+  .banner.warn-banner {
+    margin: 12px 16px 0;
+  }
+}
+.venue-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.page-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.page-title-row h2 {
+  margin: 0;
+}
+.title-link {
+  font: inherit;
+  padding: 0;
+}
+.copy-link {
+  white-space: nowrap;
+}
+.auction-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "result chart"
+    "result pyth";
+  gap: 14px;
+}
+.auction-grid > :nth-child(1) {
+  grid-area: result;
+}
+.auction-grid > :nth-child(2) {
+  grid-area: chart;
+  min-height: 320px;
+}
+.auction-grid > :nth-child(3) {
+  grid-area: pyth;
+}
+@media (max-width: 980px) {
+  .auction-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "result" "chart" "pyth";
+  }
+}
+.auction-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.auction-result .stat-s {
+  white-space: normal;
+}
+.port-big.accent {
+  color: var(--accent);
+}
+.auction-h {
+  margin: 10px 0 6px;
+  font-size: 15px;
+  color: var(--text);
+}
+.card > .auction-h:first-child {
+  margin-top: 0;
+}
+.auction-why {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--text-2);
+  max-width: 64ch;
+}
+.cand-tbl tr.cand-tied td {
+  background: var(--accent-soft);
+}
+.err-text {
+  color: var(--err);
+}
+.tx-tbl td {
+  white-space: nowrap;
+}

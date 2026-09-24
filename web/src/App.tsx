@@ -26,6 +26,8 @@ import { useMultipliers, usePythPrices, useWalletTokens } from "./lib/holdings";
 import { AuctionStats } from "./components/AuctionStats";
 import { OrdersPage } from "./components/OrdersPage";
 import { PortfolioPage } from "./components/PortfolioPage";
+import { AuctionPage } from "./components/AuctionPage";
+import { useVenueStatus, VenueBanner, VenueStatusLine } from "./components/VenueStatus";
 import { toConfig, useUniverse } from "./lib/universe";
 import { programToPerShare, rawToShares } from "./lib/units";
 
@@ -42,15 +44,25 @@ interface Toast {
   sig?: string;
 }
 
-type View = "trade" | "orders" | "portfolio";
+type View = "trade" | "orders" | "portfolio" | "auction";
 const VIEWS: { id: View; label: string }[] = [
   { id: "trade", label: "Trade" },
   { id: "orders", label: "Your orders" },
   { id: "portfolio", label: "Portfolio" },
 ];
+/** A wallet named in the link (?wallet=…), shown read-only: a receipt, orders or portfolio anyone can open. */
+const walletFromUrl = (): string | null => {
+  const w = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("wallet");
+  if (!w) return null;
+  try {
+    return new PublicKey(w).toBase58();
+  } catch {
+    return null;
+  }
+};
 const viewFromUrl = (): View => {
   const v = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("view");
-  return v === "orders" || v === "portfolio" ? v : "trade";
+  return v === "orders" || v === "portfolio" || v === "auction" ? v : "trade";
 };
 
 const PHASE_SHORT: Record<string, string> = {
@@ -68,6 +80,20 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const { theme, toggle } = useTheme();
   const [ticker, setTickerState] = useState<TickerSymbol>(tickerFromUrl);
   const [view, setView] = useState<View>(viewFromUrl);
+  const [linkedWallet, setLinkedWallet] = useState<string | null>(walletFromUrl);
+  const [auctionAddr, setAuctionAddr] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("auction"),
+  );
+  const openAuction = useCallback((address: string) => {
+    setAuctionAddr(address);
+    setView("auction");
+    window.scrollTo(0, 0);
+  }, []);
+  const openWallet = useCallback((address: string) => {
+    setLinkedWallet(address);
+    setView("orders");
+    window.scrollTo(0, 0);
+  }, []);
   // Choosing a ticker always means trading it.
   const setTicker = useCallback((t: TickerSymbol) => {
     setTickerState(t);
@@ -98,8 +124,17 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
     u.searchParams.set("ticker", ticker);
     if (view === "trade") u.searchParams.delete("view");
     else u.searchParams.set("view", view);
+    if (linkedWallet) u.searchParams.set("wallet", linkedWallet);
+    else u.searchParams.delete("wallet");
+    if (view === "auction" && auctionAddr) u.searchParams.set("auction", auctionAddr);
+    else u.searchParams.delete("auction");
     window.history.replaceState(null, "", u);
-  }, [ticker, view]);
+  }, [ticker, view, linkedWallet, auctionAddr]);
+
+  // Whose orders and holdings the page shows: a wallet named in the link, else
+  // the connected one. Someone else's is read-only; nothing can be cancelled.
+  const viewAs = useMemo(() => (linkedWallet ? new PublicKey(linkedWallet) : wallet.publicKey), [linkedWallet, wallet.publicKey]);
+  const readOnly = !!linkedWallet && linkedWallet !== wallet.publicKey?.toBase58();
 
   const now = useNow(1000);
   const { slot, slotMs } = useSlotClock(connection, now);
@@ -107,6 +142,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const venue = useVenue(connection, mint);
   const all = useVenueAll();
   const pyth = usePyth(tk);
+  const venueStatus = useVenueStatus(all.auctions, slot, slotMs);
   const ref = referenceState(pyth, now);
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => {
@@ -118,11 +154,11 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const current = venue.current;
   const phase = current && slot != null ? auctionPhase(current, slot) : null;
   const orders = useOrders(connection, current, refreshKey);
-  const mine = wallet.publicKey ? orders.filter((o) => o.owner.equals(wallet.publicKey!)) : [];
+  const mine = viewAs ? orders.filter((o) => o.owner.equals(viewAs)) : [];
   const balances = useBalances(connection, wallet.publicKey, mint, quoteMint, refreshKey);
   // Every order this wallet has placed, keyed to the order rather than to the
   // ticker's newest auction, so a result outlives the next auction opening.
-  const myOrders = useMyOrders(wallet.publicKey?.toBase58() ?? null, refreshKey);
+  const myOrders = useMyOrders(viewAs?.toBase58() ?? null, refreshKey);
   // For the Orders and Portfolio pages: every ticker, what the wallet holds,
   // and each ticker's multiplier and reference price.
   const allTickers = useMemo(() => Object.values(cluster.tickers), [cluster]);
@@ -134,7 +170,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
     ...allTickers.map((t) => t.mint).filter((x): x is string => !!x),
     ...(myOrders.orders ?? []).map((o) => o.tickerMint).filter((x): x is string => !!x),
   ]);
-  const walletTokens = useWalletTokens(connection, view === "portfolio" ? wallet.publicKey : null, refreshKey);
+  const walletTokens = useWalletTokens(connection, view === "portfolio" ? viewAs : null, refreshKey);
   const prices = usePythPrices(view === "portfolio" ? allTickers : []);
   const book = useMemo(() => (current && m ? bookOrders(current, m) : []), [current, m]);
 
@@ -213,7 +249,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             )}
             </>
             ) : (
-              <h1 className="display">{VIEWS.find((v) => v.id === view)!.label}</h1>
+              <h1 className="display">{view === "auction" ? "Auction" : VIEWS.find((v) => v.id === view)!.label}</h1>
             )}
           </div>
           <nav className="top-nav" aria-label="Pages">
@@ -233,6 +269,19 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
         </header>
 
         <EventBar ticker={ticker} onGo={setTicker} />
+        <VenueBanner {...venueStatus} />
+
+        {linkedWallet && (
+          <div className="banner viewing" role="status">
+            <span>
+              {readOnly ? "Viewing" : "This link shows"} <b className="num">{shortAddr(linkedWallet)}</b>
+              {readOnly ? ", read-only: its receipts, orders and holdings, as anyone with the link sees them." : ", your own wallet."}
+            </span>
+            <button className="link-btn" onClick={() => setLinkedWallet(null)}>
+              {wallet.publicKey ? "Show my own" : "Close"}
+            </button>
+          </div>
+        )}
 
         {/* A dormant ticker: listed, nothing running. The way to start a book is
             the first thing on the page, not a disabled button further down. */}
@@ -265,12 +314,28 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             cluster={cluster}
             orders={myOrders.orders}
             truncated={myOrders.truncated}
-            connected={!!wallet.publicKey}
+            connected={!!viewAs}
             slot={slot}
             slotMs={slotMs}
             multipliers={multipliers}
             symbolOf={symbolOf}
             onOpenTicker={setTicker}
+            onOpenAuction={openAuction}
+            owner={viewAs?.toBase58() ?? null}
+            readOnly={readOnly}
+          />
+        )}
+        {view === "auction" && auctionAddr && (
+          <AuctionPage
+            cluster={cluster}
+            address={auctionAddr}
+            slot={slot}
+            slotMs={slotMs}
+            now={now}
+            multipliers={multipliers}
+            symbolOf={symbolOf}
+            onOpenTicker={setTicker}
+            onOpenWallet={openWallet}
           />
         )}
         {view === "portfolio" && (
@@ -281,8 +346,8 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             quoteSymbol={cluster.quoteSymbol}
             wallet={walletTokens}
             orders={myOrders.orders}
-            connected={!!wallet.publicKey}
-            owner={wallet.publicKey?.toBase58() ?? null}
+            connected={!!viewAs}
+            owner={viewAs?.toBase58() ?? null}
             slot={slot}
             slotMs={slotMs}
             multipliers={multipliers}
@@ -375,22 +440,26 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
                 m={m}
                 mine={mine}
                 myOrders={myOrders.orders}
+                viewer={viewAs?.toBase58() ?? null}
+                readOnly={readOnly}
                 notify={notify}
                 onChange={refresh}
                 onOpenOrders={() => setView("orders")}
+                onOpenAuction={openAuction}
               />
             </div>
           )}
 
           {venue.auctions && m != null && (
             <div className="panel-past">
-              <PastAuctions auctions={venue.auctions} m={m} slot={slot} slotMs={slotMs} now={now} cluster={cluster} />
+              <PastAuctions auctions={venue.auctions} m={m} slot={slot} slotMs={slotMs} now={now} cluster={cluster} onOpenAuction={openAuction} />
             </div>
           )}
         </main>
         )}
 
         <footer className="footer">
+          <VenueStatusLine {...venueStatus} />
           <span>
             Program{" "}
             <a href={explorerAddr(cluster, PROGRAM_ID)} target="_blank" rel="noreferrer">
@@ -398,7 +467,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             </a>{" "}
             on {cluster.label}
           </span>
-          {current && (
+          {view === "trade" && current && (
             <span>
               Auction{" "}
               <a href={explorerAddr(cluster, current.address.toBase58())} target="_blank" rel="noreferrer">

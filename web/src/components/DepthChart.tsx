@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { demandAt, levels, niceCeil, niceTicks, supplyAt, type BookOrder } from "../lib/book";
-import { fmtPrice, fmtShares } from "../lib/format";
+import { fmtPrice, fmtShares, fmtExactPrice } from "../lib/format";
 
 interface Props {
   orders: BookOrder[];
@@ -13,7 +13,7 @@ const M = { l: 52, r: 16, t: 26, b: 34 };
 
 /** Approximate rendered width of the cross label (12px semibold ≈ 7px/char). */
 const crossLabelW = (ind: { price: number; volume: number }, crossed: boolean) =>
-  `${crossed ? "Cleared at" : "Would clear at"} ${fmtPrice(ind.price)} · ${fmtShares(ind.volume)} shares`.length * 7;
+  `${crossed ? "Cleared at" : "Would clear at"} ${fmtExactPrice(ind.price)} · ${fmtShares(ind.volume)} ${ind.volume === 1 ? "share" : "shares"}`.length * 7;
 
 export function DepthChart({ orders, indicative, reference, crossed }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -224,7 +224,7 @@ export function DepthChart({ orders, indicative, reference, crossed }: Props) {
                     y={Math.max(M.t + 12, geo.sy(indicative.volume) - 12)}
                     textAnchor="start"
                   >
-                    {crossed ? "Cleared at" : "Would clear at"} {fmtPrice(indicative.price)} · {fmtShares(indicative.volume)} shares
+                    {crossed ? "Cleared at" : "Would clear at"} {fmtExactPrice(indicative.price)} · {fmtShares(indicative.volume)} {indicative.volume === 1 ? "share" : "shares"}
                   </text>
                 </g>
               )}

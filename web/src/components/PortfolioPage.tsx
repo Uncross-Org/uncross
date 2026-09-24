@@ -14,6 +14,7 @@ import type { WalletTokens } from "../lib/holdings";
 import type { PythPrice } from "../lib/pyth";
 import { orderStatus, type MyOrder } from "../lib/settlement";
 import { quoteToUsd, rawToShares } from "../lib/units";
+import { CopyLink } from "./CopyLink";
 import { ORACLE_MAX_AGE_SECS } from "../config";
 
 const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -88,7 +89,10 @@ export function PortfolioPage({ cluster, tickers, quoteMint, quoteSymbol, wallet
   return (
     <section className="page" aria-label="Portfolio">
       <div className="page-head">
-        <h2 className="display">Portfolio</h2>
+        <div className="page-title-row">
+          <h2 className="display">Portfolio</h2>
+          {owner && <CopyLink wallet={owner} />}
+        </div>
         <p className="page-sub">
           What this wallet holds on devnet. <b>In wallet</b> is yours to use now. <b>Locked</b> is held by the auction
           program behind an order until that auction crosses; then it comes back or is exchanged at the clearing price.

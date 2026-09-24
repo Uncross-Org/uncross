@@ -11,9 +11,10 @@ interface Props {
   slotMs: number;
   now: number;
   cluster: ClusterConfig;
+  onOpenAuction: (address: string) => void;
 }
 
-export function PastAuctions({ auctions, m, slot, slotMs, now, cluster }: Props) {
+export function PastAuctions({ auctions, m, slot, slotMs, now, cluster, onOpenAuction }: Props) {
   const [n, setN] = useState(8);
   const past = auctions.filter((a) => a.status !== "open");
   // The last price this ticker actually traded at: history, so it lives here
@@ -58,8 +59,11 @@ export function PastAuctions({ auctions, m, slot, slotMs, now, cluster }: Props)
                   return (
                     <tr key={a.address.toBase58()}>
                       <td>
-                        <a href={explorerAddr(cluster, a.address.toBase58())} target="_blank" rel="noreferrer" title={`Slot ${fmtInt(a.closeSlot)}`}>
+                        <button className="link-btn" onClick={() => onOpenAuction(a.address.toBase58())} title={`Every order and how the price was set · slot ${fmtInt(a.closeSlot)}`}>
                           {closedMs ? `≈ ${fmtLocal(closedMs)}` : `slot ${fmtInt(a.closeSlot)}`}
+                        </button>{" "}
+                        <a href={explorerAddr(cluster, a.address.toBase58())} target="_blank" rel="noreferrer" title="On the explorer" className="muted">
+                          ↗
                         </a>
                       </td>
                       <td>{traded ? fmtExactPrice(price) : <span className="muted">no trade</span>}</td>

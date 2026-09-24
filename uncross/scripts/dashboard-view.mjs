@@ -25,6 +25,8 @@ const WIDTH = Number(arg("width", 1440));
 const THEME = arg("theme", "light");
 const OUT = arg("out", null);
 const JS = arg("js", "on") !== "off";
+// Extra URL parameters, e.g. "wallet=<address>" for a read-only link or "auction=<address>".
+const QUERY = arg("query", "");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cache = path.join(os.homedir(), "Library/Caches/ms-playwright");
@@ -82,7 +84,7 @@ const ev = async (x) => (await send("Runtime.evaluate", { expression: x, returnB
 const clickText = (t) =>
   ev(`(() => { const el=[...document.querySelectorAll("button")].find(e=>(e.innerText||"").trim().toLowerCase().includes(${JSON.stringify(t)})); if(!el) return false; el.click(); return true; })()`);
 
-const url = `${BASE}${VIEW === "landing" ? "/" : `/app?ticker=${TICKER}&theme=${THEME}${VIEW === "trade" ? "" : `&view=${VIEW}`}`}`;
+const url = `${BASE}${VIEW === "landing" ? "/" : `/app?ticker=${TICKER}&theme=${THEME}${VIEW === "trade" ? "" : `&view=${VIEW}`}${QUERY ? `&${QUERY}` : ""}`}`;
 await send("Page.navigate", { url }, s);
 await sleep(JS ? 7000 : 3000);
 
@@ -102,7 +104,13 @@ if (ADDRESS && JS) {
   }
 }
 
-const ready = { orders: ".orders-tbl, .page .card.empty", portfolio: ".port-cards, .page .card.empty", trade: ADDRESS ? ".receipt, .mine .empty" : ".stat-groups", landing: "main, body" }[VIEW];
+const ready = {
+  orders: ".orders-tbl, .page .card.empty, .page-empty",
+  portfolio: ".port-cards, .page .card.empty, .page-empty",
+  auction: ".tx-tbl, .page .card.empty",
+  trade: ADDRESS || QUERY.includes("wallet=") ? ".receipt, .mine .empty" : ".stat-groups",
+  landing: "main, body",
+}[VIEW];
 let found = false;
 for (let i = 0; i < 30 && !found && JS; i++) {
   await sleep(1500);
@@ -116,7 +124,7 @@ const text =
     ? await ev(`[${part(".stat-groups")}, ${part(".mine")}, ${part(".past-last")}, ${part(".chips")}].join("\\n=====\\n")`)
     : VIEW === "landing"
       ? await ev(`document.body.innerText.slice(0, 1500)`)
-      : await ev(part(".page"));
+      : await ev(`[${part(".banner.viewing")}, ${part(".page")}, ${part(".venue-status")}].join("\\n=====\\n")`);
 const layout = JSON.parse(
   await ev(`JSON.stringify({ overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, height: document.documentElement.scrollHeight,
     sidebar: [...document.querySelectorAll(".side-item")].slice(0, 4).map((e) => e.innerText.replace(/\\n/g, " · ")) })`),
