@@ -401,3 +401,24 @@ keeper and the UI both kept treating it as unfinished. Caught by the UI showing
 | A batch submitted twice doesn't double-pay | Duplicate lands as a no-op; vaults unchanged |
 | Both vaults end at exactly zero | Yes — and every owner's delta matches to the unit |
 | Pro-rata at p\* correct across a batch boundary | Yes — all 22 pro-rated buys, spread across all batches |
+
+### Re-verified 24 Sept 2026: PreStocks and Tessera, both still out
+
+Read live off mainnet (epoch 1041) with `uncross/scripts/read-mints.mjs`.
+
+- **PreStocks, all 8 mints** (from `prestocks.com/api/prestocks`): the transfer
+  fee is now **100 bps**, raised from 50 bps at epoch 1039, uncapped, and being
+  withheld. Everything else would work: 9 decimals, Token-2022 with ten
+  extensions, the transfer hook disabled (`programId: null`), new accounts start
+  `initialized`, not paused, and a PDA-owned token account simulates fine.
+- **Tessera, the three verified mints** tOpenAI `oPAiAikWTaFj9RYoRFD35ccfwhnMcB3ThgBZRHSkjTZ`,
+  tKalshi `TKLSidmLVt3cqGaaodG8tyRzoANfQwoh67AccjmubeZ` and tSpaceX
+  `TSPXcLV76s6V2zDiZQ18kBfcbnjaE2ZzNT3ga2Pd99v` (Jupiter's `tessera` tag, issuer
+  tessera.pe): Token-2022 with only a transfer fee and metadata. The fee is
+  **20 bps**, active since epochs 918–987, uncapped. 9 decimals, and a PDA-owned
+  token account simulates fine.
+
+Both fail on the transfer fee alone. A fee makes the vault receive less than
+the program records, so settlement cannot balance. The program is not extended
+for it. Both also use 9 decimals, where the dashboard's unit conversion assumes
+xStocks' 8, which would be a second change.
