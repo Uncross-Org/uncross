@@ -270,6 +270,27 @@ input {
   border: 1px solid var(--border);
   color: var(--text-2);
 }
+.docs-link {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.docs-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+/* Below 860px the top bar has no room for it (it squeezes the auction's phase
+   pill); the footer's Docs link is on every page instead. */
+@media (max-width: 860px) {
+  .topbar .docs-link {
+    display: none;
+  }
+}
 .cluster {
   cursor: default;
   user-select: none;

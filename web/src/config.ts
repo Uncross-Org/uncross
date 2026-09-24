@@ -12,6 +12,9 @@ export type TickerSymbol = string;
 
 export const PROGRAM_ID = "Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP";
 
+/** The documentation site: how the auction clears, what it guarantees, how to check it. */
+export const DOCS_URL = "https://docs.uncross.0xo.in";
+
 /** Pyth Solana Receiver program: owner of every PriceUpdateV2 account. */
 export const PYTH_RECEIVER = "rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ";
 export const HERMES = "https://hermes.pyth.network";

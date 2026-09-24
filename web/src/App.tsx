@@ -15,7 +15,7 @@ import { OrderForm } from "./components/OrderForm";
 import { PastAuctions } from "./components/PastAuctions";
 import { Sidebar } from "./components/Sidebar";
 import { CountdownSkeleton } from "./components/Skeletons";
-import { explorerAddr, explorerTx, PROGRAM_ID, tickerFromUrl, type ClusterConfig, type TickerSymbol } from "./config";
+import { DOCS_URL, explorerAddr, explorerTx, PROGRAM_ID, tickerFromUrl, type ClusterConfig, type TickerSymbol } from "./config";
 import { useBalances, useMultiplier, useNow, useOrders, usePyth, useSlotClock, useTheme, useVenue, useVenueAll } from "./hooks";
 import { auctionPhase } from "./lib/auction";
 import { bestBidAsk, bookOrders } from "./lib/book";
@@ -260,6 +260,9 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             ))}
           </nav>
           <div className="top-actions">
+            <a className="docs-link" href={DOCS_URL} target="_blank" rel="noreferrer">
+              Docs
+            </a>
             <span className="cluster">{cluster.label}</span>
             <button className="icon-btn" onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
               {theme === "dark" ? "☀" : "☾"}
@@ -477,6 +480,9 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
           )}
           <span>Auctions settle on Solana devnet · reference prices are read from Pyth on Solana mainnet</span>
           <a href="/#how">How it works ↗</a>
+          <a href={DOCS_URL} target="_blank" rel="noreferrer">
+            Docs ↗
+          </a>
         </footer>
       </div>
 
