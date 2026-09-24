@@ -242,6 +242,14 @@ degrades to a stale file rather than a page telling visitors about an auction
 that already happened — but the bot exclusion has no such fallback, and a
 venue whose two headline books never trade again is the worse failure.
 
+## What actually ran on 24 September
+
+Read this before quoting the 24 September result as bot-free.
+
+**The event sequence above was not run.** Neither `SKIP_TICKERS` nor `SKIP_AUCTIONS` was set on `uncross-activity` for this event, and `event-auction.mjs` did not open dedicated books. Participants traded on the regular keeper books for AAPLx and IBMx, which crossed at 13:02 and 12:58 UTC. The activity bot seeded both as usual. It had three wallets in each book, and they account for 4.7% of AAPLx's filled shares and 9.1% of IBMx's. The result was 11 wallets besides the bot, with the bot in both books; the submission text says so in the same paragraph. Checked afterwards, both variables read empty, and both books were seeding again.
+
+This is the third time the sequence has not been run. If there is a next event, the 14:00 step, setting `SKIP_TICKERS` and confirming the log line, is the one that decides whether the books are the participants' alone.
+
 ## If it has to be postponed
 
 Cheap and quick, in this order:
