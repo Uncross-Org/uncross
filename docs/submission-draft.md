@@ -60,6 +60,11 @@ Nobody trades at a worse price than they asked for, and nobody in an auction get
 
 ## What's built
 
+- **A cross with other people in it.** On 23 September a MSTRx auction cleared with three orders from three wallets. Two of them were placed by people other than the builder, from a group chat where the venue had been shared.
+  - **Who they were.** The three wallets have transacted with one another before, so these were people who know each other, not strangers. This was on devnet and was not an open public event. None of the three is one of the test bot's wallets.
+  - **The fills.** The buyer's limit was $164.24 and the seller's $158.01. The auction cleared both at $161.125, each $3.115 better than their own limit. The third order, a buy at $151.09, was below the clearing price and got its escrow back in full.
+  - **How the price was set.** The program's on-chain Pyth check failed as stale, so no oracle set that price. $158.01 and $164.24 tied on both volume and balance, and the midpoint rule set it.
+  - **Transactions.** Cross: `2SKcwefYsGdpquxrgJP2yRdnn2VpyBEL7oV2GdmjBsTFGqqHvP6L58wxMcAsuU7DYnyvhmeJBMRrhMpFK75FpLAU`. Settlement: `4ws2ByFqvSJzCVG73iW1D7CRSP8eYNqKBoq2CybQk2a6mdkHK1byo8KpmEnRFBEVWfHtzpYZiJK3RFQahNGBKY8A`.
 - **Anchor program:** open, orders, cancel until a freeze window, clearing, batched settlement (tested across 42 distinct owners, both vaults ending at exactly zero), refunds, and `close_auction` rent reclaim, which cuts the net cost of an auction from 0.018 to about 0.00002 SOL when an auction runs through to close.
 - **Live venue on devnet:** ten tickers crossing about every 19 minutes, run by a keeper, an activity bot and a faucet hosted on Railway.
 - **Dashboard:** one candle per auction, a depth ladder, order entry, and every auction linked to its transactions. The top of each ticker separates what the book computes (the price it would clear at, the shares that would trade, best bid and ask, time to the cross) from the one external number, Pyth, with its age and what the program's own check made of it.
@@ -84,7 +89,7 @@ We read the real AAPLx mint off mainnet and built a devnet fixture matching all 
 
 ## What we're not claiming
 
-- **No public auction with outside participants has happened yet.** Every order on the venue so far is ours.
+- **No open public auction has run yet.** The only auction with anyone but us in it is the 23 September MSTRx cross above: three wallets from one group chat, on devnet.
 - Most devnet orders are placed by a test bot priced around Pyth, or around Jupiter where no feed exists. A clearing price near the reference shows the bot followed instructions, not independent discovery.
 - On devnet the Pyth gate usually fails, because the devnet AAPL account is stale, so the oracle tie-break path is unit-tested only.
 - Candle high and low show the range of limit prices placed, not trades. One price trades per auction.
@@ -99,6 +104,8 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 ---
 
 ## Review notes
+
+▲ **Corrected: outside participation.** The earlier text said every order so far was ours. That was false. Two of the three orders in the 23 Sept MSTRx auction were placed by people from the builder's group chat. It is now the first item in "What's built", with what it is and is not. Checked on chain: none of the three wallets is a bot owner, deploy or wallet2. The three have transacted with one another before (a shared multisig in November 2025, and one funded another in May 2026), and the text says so rather than leave a judge to find it.
 
 ▲ **24 Sept, final pass.** The keeper paragraph said the scan-based keeper was "not yet deployed"; it has been live since 21:08 UTC on 23 Sept, and the paragraph now says so. "What's built" adds the settlement receipt, the Orders and Portfolio pages, and the split between book figures and the Pyth reference. The browser-wallet bullet now cites today's live run, which also shows cancel accepted while open and refused once frozen. The faucet figures are from its live health endpoint and its grant log on 24 Sept; an earlier version of this pass said 0.016 SOL per grant, which was wrong. The README's "not yet tested: a real browser wallet signing" line is deleted.
 
@@ -131,7 +138,7 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 ▲ **Added: Railway and Pyth's receiver** to "Built with".
 
 **Things you should check before pasting:**
-- **"No public auction with outside participants has happened yet. Every order on the venue so far is ours."** This is only true if the three wallets in the 23 Sept MSTRx auction (G4o8…xWPc, 218b…Z7US, Cwcg…p9Gu) are yours. If anyone else placed one of those orders, this line is wrong and should say so instead.
+- **Which MSTRx wallet was yours** (G4o8…xWPc the buyer, 218b…Z7US the seller, or Cwcg…p9Gu the unfilled buyer). The text does not name it and does not need to, but confirm it before pasting. If yours was one of the two that filled, the cross was between you and one other person; if yours was the unfilled one, it was between two other people. Either way the wording holds.
 - **The 1,026 is xStocks' own API, verified on chain.** It is far larger than the ~60 names at launch; the universe has grown. If a judge remembers "60 xStocks", the method line is what answers them.
 - **The site and this text now agree.** The landing page headline was corrected and deployed at 17:39 UTC on 23 Sept. It shows the same two dated IBMx readings and the same 17:32 figures as the table above.
 - **The IBMx figures are a moving target.** If you paste this days from now, they will be days old; the table's column header dates them, so they stay true as a record. If you want them current on the day you paste, ask and I will re-read and update both this text and the site together.
