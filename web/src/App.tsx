@@ -407,7 +407,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             </span>
           )}
           <span>Auctions settle on Solana devnet · reference prices are read from Pyth on Solana mainnet</span>
-          <a href="/">How it works ↗</a>
+          <a href="/#how">How it works ↗</a>
         </footer>
       </div>
 
