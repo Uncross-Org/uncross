@@ -1,0 +1,174 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,700;112,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=block" rel="stylesheet">
+<style>
+  /* Same tokens and type as the invite clip (brand/invite/invite.html). */
+  :root { --bg:#fbfbfd; --text:#0b0e14; --text2:#3a4150; --muted:#5d6474; --line:#e4e7ee;
+          --accent:#5b3df5; --up:#089981; --down:#f23645; }
+  html,body { margin:0; width:1080px; height:1080px; background:var(--bg); overflow:hidden;
+    font-family:'Geist',ui-sans-serif,system-ui,sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; }
+  .scene { position:absolute; inset:0; opacity:0; }
+  .eyebrow { font-family:'Geist Mono',monospace; font-weight:600; font-size:21px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .display { font-family:'Archivo',sans-serif; font-stretch:112%; font-weight:800; letter-spacing:-.02em; }
+  .num { font-variant-numeric:tabular-nums; }
+  .fade { opacity:0; }
+</style></head>
+<body>
+
+<!-- 1. Who came. -->
+<div class="scene" id="s1">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding-left:92px;gap:18px">
+    <div class="eyebrow">Community auction · 24 Sept · devnet</div>
+    <div class="display num" style="font-size:210px;line-height:.9"><span id="wallets">0</span></div>
+    <div class="display" style="font-size:64px;line-height:1.05">wallets besides<br>our test bot</div>
+    <div id="s1sub" class="fade num" style="font-size:34px;font-weight:600;color:var(--text2);margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- 2. The AAPLx book: orders arrive, the curves meet, one price. -->
+<div class="scene" id="s2">
+  <div style="position:absolute;left:92px;top:84px" class="eyebrow" id="s2eyebrow"></div>
+  <svg id="chart" width="1080" height="1080" style="position:absolute;inset:0"></svg>
+  <div id="s2a" class="fade display num" style="position:absolute;left:92px;top:792px;font-size:50px;line-height:1.05"></div>
+  <div id="s2b" class="fade num" style="position:absolute;left:92px;right:80px;top:858px;font-size:31px;font-weight:600;line-height:1.3;color:var(--text2)"></div>
+  <div id="s2c" class="fade num" style="position:absolute;left:92px;right:80px;top:1024px;font-size:21px;color:var(--muted)"></div>
+</div>
+
+<!-- 3. The second book. -->
+<div class="scene" id="s3">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding-left:92px;gap:22px">
+    <div class="eyebrow" id="s3eyebrow"></div>
+    <div class="display num" style="font-size:78px;line-height:1.02" id="s3a"></div>
+    <div class="num" style="font-size:36px;font-weight:600;color:var(--text2)" id="s3b"></div>
+    <div style="font-size:30px;color:var(--muted);margin-top:8px">IBM has no Pyth price on Solana.<br>The book was the only price.</div>
+  </div>
+</div>
+
+<!-- 4. Logo end card. -->
+<div class="scene" id="s4">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+    <div id="lockup" style="width:330px;height:400px"></div>
+  </div>
+</div>
+
+<script>
+const BOOK = __BOOK__;
+const LOCKUP = __LOCKUP__;
+const cents = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const shares = (n) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+const AAPL = BOOK.books.find((b) => b.ticker === "AAPLx"), IBM = BOOK.books.find((b) => b.ticker === "IBMx");
+const P = AAPL.clearingPrice, V = AAPL.volumeShares;
+
+// ---- scene 1
+document.getElementById("s1sub").textContent = `${BOOK.ordersTotal} orders in two books, AAPLx and IBMx`;
+
+// ---- scene 2: the AAPLx book
+const botWallets = new Set(AAPL.orders.filter((o) => o.bot).map((o) => o.wallet)).size;
+document.getElementById("s2eyebrow").textContent = `AAPLx · ${AAPL.orders.length} orders · ${AAPL.wallets} wallets, ${botWallets} of them the bot's`;
+document.getElementById("s2a").innerHTML = `${shares(V)} shares, all at <span style="color:var(--accent)">${cents(P)}</span>`;
+// What each order got against its limit, from the fills themselves.
+const fills = AAPL.orders.filter((o) => o.filled > 0);
+const worse = fills.filter((o) => (o.side === "buy" ? o.limit < P : o.limit > P)).length;
+if (worse) throw new Error("a fill worse than its limit: the line below would be false");
+const people = fills.filter((o) => !o.bot);
+const bestBuy = Math.max(...people.filter((o) => o.side === "buy").map((o) => o.limit - P));
+const bestSell = Math.max(...people.filter((o) => o.side === "sell").map((o) => P - o.limit));
+document.getElementById("s2b").innerHTML =
+  `No buy paid above its limit, no sell got below it.<br>Best for the ${AAPL.walletsNotBot} non-bot wallets: <span style="color:var(--up)">${cents(bestBuy)}</span> a share under a buy limit, <span style="color:var(--up)">${cents(bestSell)}</span> over a sell.`;
+
+const X0 = 332.5, X1 = 341, YMAX = 80;
+const inRange = AAPL.orders.filter((o) => o.limit >= X0 && o.limit <= X1);
+const off = AAPL.orders.filter((o) => !(o.limit >= X0 && o.limit <= X1));
+document.getElementById("s2c").textContent = off.length
+  ? `Not on this scale: ${off.length} buy${off.length > 1 ? "s" : ""} at ${off.map((o) => cents(o.limit)).join(" and ")}, unfilled.` : "";
+const box = { l: 150, r: 990, t: 200, b: 690 };
+const sx = (x) => box.l + ((x - X0) / (X1 - X0)) * (box.r - box.l);
+const sy = (y) => box.b - (y / YMAX) * (box.b - box.t);
+const buys = AAPL.orders.filter((o) => o.side === "buy"), sells = AAPL.orders.filter((o) => o.side === "sell");
+const demandAt = (p) => buys.filter((o) => o.limit >= p).reduce((a, o) => a + o.qty, 0);
+const supplyAt = (p) => sells.filter((o) => o.limit <= p).reduce((a, o) => a + o.qty, 0);
+const steps = (orders, at, before) => {
+  const xs = [...new Set([X0, ...orders.filter((o) => o.limit >= X0 && o.limit <= X1).map((o) => o.limit), X1])].sort((a, b) => a - b);
+  const pts = [];
+  for (const x of xs) { const lo = before(x), hi = at(x); pts.push([x, lo]); if (Math.abs(hi - lo) > 1e-9) pts.push([x, hi]); }
+  return pts;
+};
+// Demand steps down after each buy limit; supply steps up at each sell limit.
+const dPts = steps(buys, (x) => demandAt(x + 1e-9), (x) => demandAt(x));
+const sPts = steps(sells, (x) => supplyAt(x), (x) => supplyAt(x - 1e-9));
+const path = (pts, o) => pts.map(([x, y], i) => `${i ? "L" : "M"}${sx(x).toFixed(2)},${(sy(y) + o).toFixed(2)}`).join("");
+
+// Each order as a bar at its limit, height = its shares, stacked per price and side.
+const stack = new Map();
+const bars = inRange.map((o, i) => {
+  const k = o.side + Math.round(o.limit * 100); const base = stack.get(k) ?? 0; stack.set(k, base + o.qty);
+  const x = sx(o.limit) + (o.side === "buy" ? -13 : 1), w = 12;
+  return `<rect id="b${i}" x="${x.toFixed(2)}" width="${w}" y="${sy(base + o.qty).toFixed(2)}" height="${(sy(base) - sy(base + o.qty)).toFixed(2)}" rx="2" fill="${o.side === "buy" ? "#089981" : "#f23645"}" opacity="0"/>`;
+});
+const ticks = [333, 335, 337, 339, 341];
+const svg = document.getElementById("chart");
+svg.innerHTML = `
+  <g id="axes" opacity="0">
+    ${[0, 20, 40, 60, 80].map((y) => `<line x1="${box.l}" x2="${box.r}" y1="${sy(y)}" y2="${sy(y)}" stroke="#eceef3" stroke-width="2"/>
+       <text x="${box.l - 18}" y="${sy(y) + 8}" text-anchor="end" font-family="Geist Mono" font-size="20" fill="#5d6474">${y}</text>`).join("")}
+    ${ticks.map((x) => `<text x="${sx(x)}" y="${box.b + 44}" text-anchor="middle" font-family="Geist Mono" font-size="21" fill="#5d6474">$${x}</text>`).join("")}
+    <text x="${box.l - 18}" y="${box.t - 26}" text-anchor="end" font-family="Geist Mono" font-size="17" fill="#5d6474" letter-spacing="2">SHARES</text>
+    <g font-family="Geist" font-size="24" font-weight="600">
+      <circle cx="${box.r - 250}" cy="${box.t - 34}" r="8" fill="#089981"/><text x="${box.r - 234}" y="${box.t - 26}" fill="#0b0e14">Buyers</text>
+      <circle cx="${box.r - 110}" cy="${box.t - 34}" r="8" fill="#f23645"/><text x="${box.r - 94}" y="${box.t - 26}" fill="#0b0e14">Sellers</text>
+    </g>
+  </g>
+  <g id="bars">${bars.join("")}</g>
+  <path id="d" d="${path(dPts, -3)}" fill="none" stroke="#089981" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <path id="s" d="${path(sPts, 3)}" fill="none" stroke="#f23645" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <g id="cross" opacity="0">
+    <line x1="${sx(P)}" x2="${sx(P)}" y1="${sy(V)}" y2="${box.b}" stroke="#5b3df5" stroke-width="3" stroke-dasharray="3 9" stroke-linecap="round"/>
+    <circle cx="${sx(P)}" cy="${sy(V)}" r="17" fill="#5b3df5" opacity=".18"/>
+    <circle cx="${sx(P)}" cy="${sy(V)}" r="10" fill="#5b3df5" stroke="#fff" stroke-width="4"/>
+    <g transform="translate(${sx(P) - 26 - 290},${sy(62)})">
+      <rect x="0" y="0" width="290" height="124" rx="16" fill="#5b3df5"/>
+      <text x="24" y="40" font-family="Geist Mono" font-weight="600" font-size="17" letter-spacing="2" fill="#dcd6ff">CLEARS AT</text>
+      <text x="22" y="100" font-family="Archivo" font-stretch="112%" font-weight="800" font-size="56" fill="#fff" class="num">${cents(P)}</text>
+    </g>
+  </g>`;
+for (const id of ["d", "s"]) { const el = document.getElementById(id), L = el.getTotalLength(); el.dataset.len = L; el.style.strokeDasharray = `${L} ${L}`; el.style.strokeDashoffset = L; }
+
+// ---- scene 3: IBMx
+document.getElementById("s3eyebrow").textContent = `IBMx · ${IBM.orders.length} orders · ${IBM.wallets} wallets, ${new Set(IBM.orders.filter((o) => o.bot).map((o) => o.wallet)).size} of them the bot's`;
+document.getElementById("s3a").innerHTML = `Cleared at <span style="color:var(--accent)">${cents(IBM.clearingPrice)}</span>`;
+document.getElementById("s3b").textContent = `${shares(IBM.volumeShares)} shares, every one at that price`;
+document.getElementById("lockup").innerHTML = LOCKUP;
+
+// ---- timeline (seconds)
+// s1 1.4s: 11 from the first frame, the orders line joining at 0.25s.
+// s2 3.4s: bars 0.05-0.7, curves 0.6-1.3, the price at 1.3, both lines read for 1.6s.
+// s3 1.15s, the logo the last 1.05s, fading back into s1 so the clip loops.
+const T = { s1: [0.0, 1.4], s2: [1.4, 4.8], s3: [4.8, 5.95], s4: [5.95, 7.0] }, FADE = 0.2, END = 7.0;
+const clamp = (v) => Math.max(0, Math.min(1, v));
+const ease = (v) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
+const win = (t, a, b) => clamp((t - a) / (b - a));
+const vis = (t, [a, b], first, last) => Math.min(first ? 1 : clamp((t - a) / FADE), last ? 1 : clamp((b - t) / FADE));
+const set = (id, o) => { document.getElementById(id).style.opacity = o; };
+
+window.render = (t) => {
+  const loop = clamp((t - (END - 0.25)) / 0.25);
+  const inLoop = loop > 0;
+  set("s1", Math.max(vis(t, T.s1, true, false), loop));
+  set("s2", vis(t, T.s2)); set("s3", vis(t, T.s3)); set("s4", vis(t, T.s4, false, true) * (1 - loop));
+  // The count is shown at its real value from the first frame: no counting up,
+  // so the loop's last frame and its first are the same image.
+  document.getElementById("wallets").textContent = BOOK.walletsNotBot;
+  set("s1sub", inLoop ? 0 : ease(win(t, 0.25, 0.5)));
+  const t2 = t - T.s2[0];
+  document.getElementById("axes").setAttribute("opacity", ease(win(t2, 0.0, 0.2)));
+  const draw = ease(win(t2, 0.6, 1.3));
+  inRange.forEach((_, i) => document.getElementById("b" + i).setAttribute("opacity", (0.85 - 0.5 * draw) * ease(win(t2, 0.05 + i * 0.024, 0.17 + i * 0.024))));
+  for (const id of ["d", "s"]) { const el = document.getElementById(id); el.style.strokeDashoffset = el.dataset.len * (1 - draw); }
+  document.getElementById("cross").setAttribute("opacity", ease(win(t2, 1.25, 1.45)));
+  set("s2a", ease(win(t2, 1.35, 1.55)));
+  set("s2b", ease(win(t2, 1.5, 1.7)));
+  set("s2c", ease(win(t2, 1.5, 1.7)));
+};
+window.render(0);
+</script></body></html>

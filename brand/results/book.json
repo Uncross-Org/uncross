@@ -1,0 +1,437 @@
+{
+  "event": "Community auction, 24 Sept 2026, Solana devnet",
+  "units": "dollars per share and shares (raw amounts converted with each mint's multiplier)",
+  "books": [
+    {
+      "ticker": "AAPLx",
+      "auction": "7uc3uXqHFRx5eqAbuDV5BUdoimCVYLARQYDCYYMivcVn",
+      "cross": "439jNtYvUnqosHwJpcgXarVmxSMixB11X43omAsq22pEtGJ8T971Jz6hHjKksnpSvcR7AwBYxwase2J8wqCHk2wC",
+      "crossTime": 1790254926,
+      "multiplier": 1,
+      "clearingPrice": 336.97,
+      "volumeShares": 53.16,
+      "wallets": 13,
+      "walletsNotBot": 10,
+      "orders": [
+        {
+          "index": 0,
+          "wallet": "BF8NNTu8rgSCHuczfJtMfJcotrUHQ3zdLyJ6CnFdRFXE",
+          "side": "buy",
+          "limit": 339.308685,
+          "qty": 1.22,
+          "filled": 1.22,
+          "bot": true
+        },
+        {
+          "index": 1,
+          "wallet": "Bejqnij8yBQftgpLgRAdwhQ9gDvDn7HMzWerFm2WBk5p",
+          "side": "sell",
+          "limit": 333.874844,
+          "qty": 1.16,
+          "filled": 1.16,
+          "bot": true
+        },
+        {
+          "index": 2,
+          "wallet": "5JGDZCFj13UsqPih6B43Y3WHyx6k335Kr9EU1rpXaTLT",
+          "side": "buy",
+          "limit": 339.603186,
+          "qty": 2.58,
+          "filled": 2.58,
+          "bot": true
+        },
+        {
+          "index": 3,
+          "wallet": "CwcgGcwkuq6agvD3QnhtNuDD7GvfGNXaUA7CXReMp9Gu",
+          "side": "buy",
+          "limit": 337.11,
+          "qty": 2,
+          "filled": 2,
+          "bot": false
+        },
+        {
+          "index": 4,
+          "wallet": "5EYU1N5k5D2SUgV43r9DYpMpuWTEQJrhtAPM5YTsxmT8",
+          "side": "buy",
+          "limit": 336.97,
+          "qty": 4,
+          "filled": 2.10285715,
+          "bot": false
+        },
+        {
+          "index": 5,
+          "wallet": "5EYU1N5k5D2SUgV43r9DYpMpuWTEQJrhtAPM5YTsxmT8",
+          "side": "buy",
+          "limit": 336.97,
+          "qty": 2,
+          "filled": 1.05142857,
+          "bot": false
+        },
+        {
+          "index": 6,
+          "wallet": "5ww6Vz5N1Z3XEWKXFJRfzNtBm8PLy6uNHS1u5GCRicbp",
+          "side": "sell",
+          "limit": 336.97,
+          "qty": 6,
+          "filled": 6,
+          "bot": false
+        },
+        {
+          "index": 7,
+          "wallet": "HL7JUecsE4gLppCazeoQwLh8Btt3bZiw7DvAWm1BXKhr",
+          "side": "buy",
+          "limit": 336.97,
+          "qty": 8,
+          "filled": 4.20571428,
+          "bot": false
+        },
+        {
+          "index": 8,
+          "wallet": "HL7JUecsE4gLppCazeoQwLh8Btt3bZiw7DvAWm1BXKhr",
+          "side": "sell",
+          "limit": 336.93,
+          "qty": 2,
+          "filled": 2,
+          "bot": false
+        },
+        {
+          "index": 9,
+          "wallet": "A6ayRtU3ukfS3AXggVD5HV3qZxXywmaKMxX9iA12r9hn",
+          "side": "buy",
+          "limit": 207.27,
+          "qty": 3,
+          "filled": 0,
+          "bot": false
+        },
+        {
+          "index": 10,
+          "wallet": "A6ayRtU3ukfS3AXggVD5HV3qZxXywmaKMxX9iA12r9hn",
+          "side": "sell",
+          "limit": 333.87,
+          "qty": 4,
+          "filled": 4,
+          "bot": false
+        },
+        {
+          "index": 11,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "buy",
+          "limit": 339.6,
+          "qty": 5,
+          "filled": 5,
+          "bot": false
+        },
+        {
+          "index": 12,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "sell",
+          "limit": 333.87,
+          "qty": 4,
+          "filled": 4,
+          "bot": false
+        },
+        {
+          "index": 13,
+          "wallet": "DuLA7ZS5ZCt5ph7UyUhxFoKVnadSzmT1uWbXvkKSP9vT",
+          "side": "buy",
+          "limit": 339.6,
+          "qty": 4,
+          "filled": 4,
+          "bot": false
+        },
+        {
+          "index": 14,
+          "wallet": "DuLA7ZS5ZCt5ph7UyUhxFoKVnadSzmT1uWbXvkKSP9vT",
+          "side": "sell",
+          "limit": 339.6,
+          "qty": 12,
+          "filled": 0,
+          "bot": false
+        },
+        {
+          "index": 15,
+          "wallet": "7LUK5cWYdrwTDhJTSnuSE4C3DvYFZHWSMqeoxAQhbNk8",
+          "side": "buy",
+          "limit": 336.77,
+          "qty": 4,
+          "filled": 0,
+          "bot": false
+        },
+        {
+          "index": 16,
+          "wallet": "7LUK5cWYdrwTDhJTSnuSE4C3DvYFZHWSMqeoxAQhbNk8",
+          "side": "sell",
+          "limit": 336.77,
+          "qty": 12,
+          "filled": 12,
+          "bot": false
+        },
+        {
+          "index": 17,
+          "wallet": "6PCChVaccRAG4qbSD51Ng3BH5W5HpeMXU1kHH64W3wSd",
+          "side": "buy",
+          "limit": 339.6,
+          "qty": 12,
+          "filled": 12,
+          "bot": false
+        },
+        {
+          "index": 18,
+          "wallet": "6PCChVaccRAG4qbSD51Ng3BH5W5HpeMXU1kHH64W3wSd",
+          "side": "sell",
+          "limit": 333.87,
+          "qty": 12,
+          "filled": 12,
+          "bot": false
+        },
+        {
+          "index": 19,
+          "wallet": "DNstvrVbpErivL6NSfh7VsDBGLMmcsgwSaLsGQMRKa6k",
+          "side": "buy",
+          "limit": 339.6,
+          "qty": 7,
+          "filled": 7,
+          "bot": false
+        },
+        {
+          "index": 20,
+          "wallet": "DNstvrVbpErivL6NSfh7VsDBGLMmcsgwSaLsGQMRKa6k",
+          "side": "sell",
+          "limit": 336.97,
+          "qty": 12,
+          "filled": 12,
+          "bot": false
+        },
+        {
+          "index": 21,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "sell",
+          "limit": 339.6,
+          "qty": 8,
+          "filled": 0,
+          "bot": false
+        },
+        {
+          "index": 22,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "buy",
+          "limit": 339.6,
+          "qty": 12,
+          "filled": 12,
+          "bot": false
+        },
+        {
+          "index": 23,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "buy",
+          "limit": 1,
+          "qty": 123,
+          "filled": 0,
+          "bot": false
+        }
+      ]
+    },
+    {
+      "ticker": "IBMx",
+      "auction": "JgkL8nLKuFA2rGRCjmFy2EC75mxpZXsXYumWBe6WnwD",
+      "cross": "2MvdyHfbfVtnJ578cTWs1ZW9VXYUEHMxKNL7VLmzqc3Fd17kKiYqE1fNmfcDSQGrRgHNKXRDcg3LXkNxymrSCk1K",
+      "crossTime": 1790254713,
+      "multiplier": 1.015340763856885,
+      "clearingPrice": 207.2699998772663,
+      "volumeShares": 28.97000001690734,
+      "wallets": 12,
+      "walletsNotBot": 9,
+      "orders": [
+        {
+          "index": 0,
+          "wallet": "FJtTKxYVgushpuvFktScFGq8hEqfaYty3jQMvGeVzqa9",
+          "side": "buy",
+          "limit": 211.22627263119483,
+          "qty": 0.9600000013523557,
+          "filled": 0.9600000013523557,
+          "bot": true
+        },
+        {
+          "index": 1,
+          "wallet": "GrnYKrJ5of9mar4HGeUbRyY4bb7d45oEun3C6MmDoR6G",
+          "side": "sell",
+          "limit": 207.26996245140754,
+          "qty": 1.9700000017175001,
+          "filled": 1.9700000017175001,
+          "bot": true
+        },
+        {
+          "index": 2,
+          "wallet": "3XzeXQe8SD5gsoip81gXgULUpHWqMsw4CbZZb8LkgR7o",
+          "side": "buy",
+          "limit": 210.28133864040785,
+          "qty": 2.320000004960428,
+          "filled": 2.320000004960428,
+          "bot": true
+        },
+        {
+          "index": 3,
+          "wallet": "HL7JUecsE4gLppCazeoQwLh8Btt3bZiw7DvAWm1BXKhr",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 4.000000002250347,
+          "filled": 2.892000001789455,
+          "bot": false
+        },
+        {
+          "index": 4,
+          "wallet": "HL7JUecsE4gLppCazeoQwLh8Btt3bZiw7DvAWm1BXKhr",
+          "side": "sell",
+          "limit": 211.23000044370343,
+          "qty": 2.0000000011251733,
+          "filled": 0,
+          "bot": false
+        },
+        {
+          "index": 5,
+          "wallet": "5ww6Vz5N1Z3XEWKXFJRfzNtBm8PLy6uNHS1u5GCRicbp",
+          "side": "sell",
+          "limit": 211.23000044370343,
+          "qty": 3.00000000168776,
+          "filled": 0,
+          "bot": false
+        },
+        {
+          "index": 6,
+          "wallet": "5ww6Vz5N1Z3XEWKXFJRfzNtBm8PLy6uNHS1u5GCRicbp",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 1.0000000005625866,
+          "filled": 1.0000000005625866,
+          "bot": false
+        },
+        {
+          "index": 7,
+          "wallet": "5EYU1N5k5D2SUgV43r9DYpMpuWTEQJrhtAPM5YTsxmT8",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 6.00000000337552,
+          "filled": 6.00000000337552,
+          "bot": false
+        },
+        {
+          "index": 8,
+          "wallet": "5EYU1N5k5D2SUgV43r9DYpMpuWTEQJrhtAPM5YTsxmT8",
+          "side": "buy",
+          "limit": 211.23000044370343,
+          "qty": 4.000000002250347,
+          "filled": 4.000000002250347,
+          "bot": false
+        },
+        {
+          "index": 9,
+          "wallet": "218bKchSGV8124oLmc6MeNDPLvhJCXLcHfWvwm1xZ7US",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 5.000000002812933,
+          "filled": 3.6150000047751707,
+          "bot": false
+        },
+        {
+          "index": 10,
+          "wallet": "A6ayRtU3ukfS3AXggVD5HV3qZxXywmaKMxX9iA12r9hn",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 5.000000002812933,
+          "filled": 5.000000002812933,
+          "bot": false
+        },
+        {
+          "index": 11,
+          "wallet": "A6ayRtU3ukfS3AXggVD5HV3qZxXywmaKMxX9iA12r9hn",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 4.000000002250347,
+          "filled": 2.892000001789455,
+          "bot": false
+        },
+        {
+          "index": 12,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 4.000000002250347,
+          "filled": 4.000000002250347,
+          "bot": false
+        },
+        {
+          "index": 13,
+          "wallet": "C31nczGWktDu2jQMEXSmAzGxcyf5XixhXBFyJxWz7kRJ",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 6.00000000337552,
+          "filled": 4.338000007760886,
+          "bot": false
+        },
+        {
+          "index": 14,
+          "wallet": "DNstvrVbpErivL6NSfh7VsDBGLMmcsgwSaLsGQMRKa6k",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 5.000000002812933,
+          "filled": 3.6150000047751707,
+          "bot": false
+        },
+        {
+          "index": 15,
+          "wallet": "DNstvrVbpErivL6NSfh7VsDBGLMmcsgwSaLsGQMRKa6k",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 5.000000002812933,
+          "filled": 5.000000002812933,
+          "bot": false
+        },
+        {
+          "index": 16,
+          "wallet": "6PCChVaccRAG4qbSD51Ng3BH5W5HpeMXU1kHH64W3wSd",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 3.00000000168776,
+          "filled": 3.00000000168776,
+          "bot": false
+        },
+        {
+          "index": 17,
+          "wallet": "6PCChVaccRAG4qbSD51Ng3BH5W5HpeMXU1kHH64W3wSd",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 2.0000000011251733,
+          "filled": 1.4459999958180236,
+          "bot": false
+        },
+        {
+          "index": 18,
+          "wallet": "DuLA7ZS5ZCt5ph7UyUhxFoKVnadSzmT1uWbXvkKSP9vT",
+          "side": "buy",
+          "limit": 207.2699998772663,
+          "qty": 4.000000002250347,
+          "filled": 2.8919999916360473,
+          "bot": false
+        },
+        {
+          "index": 19,
+          "wallet": "DuLA7ZS5ZCt5ph7UyUhxFoKVnadSzmT1uWbXvkKSP9vT",
+          "side": "sell",
+          "limit": 207.2699998772663,
+          "qty": 3.00000000168776,
+          "filled": 3.00000000168776,
+          "bot": false
+        }
+      ]
+    }
+  ],
+  "walletsNotBot": 11,
+  "ordersTotal": 44,
+  "pythAAPL": {
+    "source": "mainnet Pyth Equity.US.AAPL/USD, last update at or before the AAPLx cross",
+    "tx": "4P6t8ZBmgRZsy2pbNPRYy2GoySbzsiF4NQHJNovpbPquKQHXheGvHk8YfNtiYYFmhHSnubbwV3yAMTevX7K29Wkg",
+    "price": 336.85534,
+    "conf": 0.045340000000000005,
+    "publishTime": 1790254923
+  }
+}

@@ -12,6 +12,8 @@ brand/clip/frames/
 brand/clip/.clip.rendered.html
 brand/invite/frames/
 brand/invite/.invite.rendered.html
+brand/results/frames/
+brand/results/.results.rendered.html
 # Entry-path harness evidence: screenshots and the last fresh wallet, per run.
 uncross/scripts/entry-*.png
 uncross/scripts/entry-wallet.txt
