@@ -70,7 +70,7 @@ Nobody trades at a worse price than they asked for, and nobody in an auction get
   - Once the auction froze, the page disabled Cancel. A cancel sent straight to the program was refused on chain with `PastFreezeWindow`: `wzwxgAAigSUqiMhgrABrjSiUuS8CT3phv7YpLbANdsoA46b1FwQhxwCAxxUWDjHP1kJU74d5cCqfKnTGyaZ3ikF`.
   - At the cross, the page announced the result and showed the second order's receipt with its settlement: `sf9HDGvT1VPE8PksBqjY4o89PATQkh8q2ZJarPSuqestVwKD1M54LgvqJmLB67DJ7eYmTBWZ92GQVLb6uQt4Lbf`.
   The script that drives it is `uncross/scripts/order-path-browser.mjs`.
-- **Anyone can join:** "Get test tokens" funds a fresh wallet with SOL and test tokens in one step. It is rate-limited: one grant per wallet every three hours, and a total cap of 0.8 SOL, about 50 grants at 0.016 SOL each, of which 40 were left on 24 Sept. A burst of visitors can exhaust it.
+- **Anyone can join:** "Get test tokens" funds a fresh wallet with SOL and test tokens in one step. It is rate-limited: one grant per wallet every three hours, and a total cap of 0.8 SOL. A new wallet gets 0.02 SOL, so the cap covers about 40 new wallets, and 31 were left on 24 Sept. A burst of visitors can exhaust it.
 
 ## Pyth
 
@@ -100,7 +100,7 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 
 ## Review notes
 
-▲ **24 Sept, final pass.** The keeper paragraph said the scan-based keeper was "not yet deployed"; it has been live since 21:08 UTC on 23 Sept, and the paragraph now says so. "What's built" adds the settlement receipt, the Orders and Portfolio pages, and the split between book figures and the Pyth reference. The browser-wallet bullet now cites today's live run, which also shows cancel accepted while open and refused once frozen. The faucet figures are from its live health endpoint on 24 Sept. The README's "not yet tested: a real browser wallet signing" line is deleted.
+▲ **24 Sept, final pass.** The keeper paragraph said the scan-based keeper was "not yet deployed"; it has been live since 21:08 UTC on 23 Sept, and the paragraph now says so. "What's built" adds the settlement receipt, the Orders and Portfolio pages, and the split between book figures and the Pyth reference. The browser-wallet bullet now cites today's live run, which also shows cancel accepted while open and refused once frozen. The faucet figures are from its live health endpoint and its grant log on 24 Sept; an earlier version of this pass said 0.016 SOL per grant, which was wrong. The README's "not yet tested: a real browser wallet signing" line is deleted.
 
 ▲ **Problem section now leads with the 95% finding** — 1,026 mints, 55 with any pool (two of them empty), 971 with none — with the method, the date, and the seven halted tickers. The short description leads with it too.
 
