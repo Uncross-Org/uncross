@@ -1,7 +1,7 @@
 use crate::ORACLE_MAX_AGE_SECS;
 use anchor_lang::prelude::*;
 use anchor_spl::token_2022::spl_token_2022::{
-    extension::{scaled_ui_amount::ScaledUiAmountConfig, BaseStateWithExtensions, StateWithExtensions},
+    extension::{pausable::PausableConfig, scaled_ui_amount::ScaledUiAmountConfig, BaseStateWithExtensions, StateWithExtensions},
     state::Mint,
 };
 
@@ -140,6 +140,18 @@ pub fn effective_multiplier(mint: &AccountInfo, now: i64) -> Option<f64> {
         f64::from(cfg.multiplier)
     };
     (m.is_finite() && m > 0.0).then_some(m)
+}
+
+/// Whether a Token-2022 mint's pausable extension has it paused. A mint without
+/// the extension, or one that cannot be read, is not paused.
+pub fn mint_paused(mint: &AccountInfo) -> bool {
+    let Ok(data) = mint.try_borrow_data() else {
+        return false;
+    };
+    let Ok(state) = StateWithExtensions::<Mint>::unpack(&data[..]) else {
+        return false;
+    };
+    state.get_extension::<PausableConfig>().map(|c| bool::from(c.paused)).unwrap_or(false)
 }
 
 /// Converts a per-share price (1e6-scaled) to a per-raw-token price.

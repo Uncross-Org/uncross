@@ -422,3 +422,54 @@ Both fail on the transfer fee alone. A fee makes the vault receive less than
 the program records, so settlement cannot balance. The program is not extended
 for it. Both also use 9 decimals, where the dashboard's unit conversion assumes
 xStocks' 8, which would be a second change.
+
+### 24 Sept 2026: the refund path could be used to void a cross. Fixed.
+
+`cancel_and_refund` returns every order's full escrow, for when normal
+settlement cannot run. It had no caller check and did not require the mint to be
+paused. Whoever sent the first settlement batch after a cross fixed the path, so
+anyone could choose refund and void every trade in that auction. Nothing could be
+taken: every order got back exactly what it locked. The documentation pass
+found it.
+
+The fix is one guard. The refund path is allowed only when the ticker mint is
+paused, or when an earlier batch has already taken it. The second case matters:
+during a pause, buyers' quote escrow is refunded while the mint is paused, but
+sellers' shares only after the issuer resumes. By then the mint is no longer
+paused, and a guard on the pause alone would strand those shares. The guard
+adds no operator override. The new error, `RefundNotAllowed`, is appended last,
+so existing error codes are unchanged.
+
+Upgraded on devnet in `3aE7J9JCgKadPp9Eqgo49oen7m9P6mgqhdvjHAZUATAKoeFcVNcu96kQUon9juRVufbbXa9pxdodHsVMLC42YEKY`.
+The previous build is saved outside the repo for rollback. Tested with
+`uncross/scripts/refund-guard-test.mjs` on the dormant CRCLx fixture, whose mint
+we can pause without touching a live book.
+
+**The case the path exists for, run first: 8 of 8 pass.** Auction
+`ChSD9Wr6Y3znirE6dBVBS6jvnmL4deoC6MGsZHK7ZftG`.
+
+| Step | Signature |
+|---|---|
+| Mint paused and auction crossed, one transaction (4 shares at 205) | `EvBMugfEncBcSwcgKowDN84AF4HUqQF6T2cry4w6AAer1PbZ7FJcgbHEvwCxy7cxqwMZzqWXFc4tkTonkSscS9w` |
+| settle_batch while paused: fails, "Transferring, minting, and burning is paused on this mint" | `4AzbxeEA2yEW3c4494HQTn7Cddw9ojQXZaETnmP6tTiXa3Pw2Tt8egga7gR3za3vKaBwPYnqexcoRaG7RSdSwjwX` |
+| cancel_and_refund for the buy, sent by a stranger while paused: succeeds | `RKDH7XZMBZ3cRUnkNCskhoJR44aGRiuHgaZRVVokkW9NMMg1rA75oLT5a8USP9pFdKoL6jsPYhkqTFinmMNoxu9` |
+| Mint resumed | `594sz2k5mQJwMvrHc5aPWv8jWukJKCKFEy8V2Gh1JQc4yvXAjL1fZsTNRhB1m9wc9M8PaJM8mXhQiuCizbHR1q4X` |
+| cancel_and_refund for the sell after resume, with the path already chosen: succeeds | `jRM3XCiYEfAevvd1eUCtktGjs7LxSynvDepKnNnqX3gwtUvFLzUvbaFCLpM1Xyg36xhq8thaQ4gZb3kzejUx2Gw` |
+
+Every balance ended exactly where it started, both vaults ended at zero, and
+the auction settled on the refund path.
+
+**Refusals: 6 of 6 pass.** Each attempt was sent with preflight skipped, so it
+landed as a failed transaction.
+
+| Case | Error | Signature |
+|---|---|---|
+| Mid-window (auction `3EhBRJBucq267vu9MPDx3U3ENpZe4w89Sz2Yst74mqix`) | `RefundNotAllowed` | `3B4HuV4KYJRo2XbF9DAtUHsSHZQgC8EXE3mritTDBFetKk7xtcD5zGMPMvU3tYFSRZuVgHZzg36qBwvAKioU2vtf` |
+| Crossed and unsettled, sent by a stranger | `RefundNotAllowed` | `5t5XBj7cCjnemuAzGVPcnw2LrCaJuyem8iSWUYwNnyV9oK2jpNsaoC7F92SNwnpSsW7TgDeNxHdty5n1sfwFMq9z` |
+| Crossed and unsettled, sent by a participant | `RefundNotAllowed` | `5n2tcn6CxSmsyGyetTmXAbKnwpgtCo4eHE5YxUjxBxuCH6nyfa7m9KoKTknwYi6LFoiXkF4tQtV3HVbcaCJxUomA` |
+| Partly settled: one order clear-settled in the same transaction (auction `GyjX3r7rDt1Kfd2RDL5DucysMNoxEtAqeAKry4JqQENG`) | `RefundNotAllowed` | `5vfnRZ2HJrciqCNno6QptBmBAsYKZdFqnMdmtFFcxniBTcTyU9J4LuVJMizPGKAVssF9pHiZNyjWxqBBspQt9vv6` |
+
+Both test auctions then settled on the clear path, so their trades stand.
+Mid-window and partly-settled refunds were refused before too, with
+`NotYetCleared` and `SettlementPathLocked`. The guard now runs first, so the
+error names changed.
