@@ -113,8 +113,21 @@ const server = createServer((req, res) => {
 	res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' });
 	res.end(readFileSync(file));
 });
-await new Promise((r) => server.listen(0, r));
-const ORIGIN = `http://localhost:${server.address().port}`;
+// --origin https://… checks a deployed copy instead of dist/ served locally.
+// Links and signatures are still read from dist/, which is the same build.
+const REMOTE = opt('--origin', null);
+if (!REMOTE) await new Promise((r) => server.listen(0, r));
+const ORIGIN = REMOTE ? REMOTE.replace(/\/$/, '') : `http://localhost:${server.address().port}`;
+if (REMOTE) {
+	const bad = [];
+	for (const r of [...idsOf.keys(), '/verify-auction.mjs', '/favicon.svg', '/pagefind/pagefind.js']) {
+		const res = await fetch(ORIGIN + r, { redirect: 'manual' });
+		if (res.status !== 200) bad.push(`${r} → ${res.status}`);
+	}
+	console.log(`live: ${idsOf.size + 3} URLs fetched from ${ORIGIN}, ${bad.length} not 200`);
+	for (const b of bad) console.log('  ' + b);
+	broken.push(...bad);
+}
 
 const browser = await chromium.launch({ executablePath: shell });
 const pageAt = async (width, theme) => {
@@ -200,7 +213,7 @@ if (SHOTS) {
 }
 
 await browser.close();
-server.close();
+if (!REMOTE) server.close();
 const failed = broken.length + overflow.length + (searchOk ? 0 : 1) + (labelsOk ? 0 : 1) + missing.length;
 console.log(failed ? `FAILED: ${failed} problem(s)` : 'ALL CHECKS PASSED');
 process.exit(failed ? 1 : 0);
