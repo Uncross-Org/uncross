@@ -2382,3 +2382,11 @@ input {
 .tx-tbl td {
   white-space: nowrap;
 }
+@media (max-width: 640px) {
+  .cand-tbl th,
+  .cand-tbl td {
+    padding: 6px 6px;
+    white-space: normal;
+    font-size: 12.5px;
+  }
+}

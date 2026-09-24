@@ -81,10 +81,21 @@ export function AuctionPage({ cluster, address, slot, slotMs, now, multipliers, 
         // Matched by signature, not position: a batched reply need not keep order.
         const bySig = new Map<string, (typeof got)[number]>();
         for (const t of got) if (t) bySig.set(t.transaction.signatures[0], t);
+        // Anything the batch did not return is read on its own, a few times:
+        // the public endpoint drops batched reads under load.
+        for (const s of chunk) {
+          for (let attempt = 0; attempt < 3 && !bySig.has(s.signature); attempt++) {
+            const one = await connection.getTransaction(s.signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }).catch(() => null);
+            if (one) bySig.set(s.signature, one);
+            else await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+          }
+        }
         chunk.forEach((s) => {
-          const logs = bySig.get(s.signature)?.meta?.logMessages ?? [];
+          const tx = bySig.get(s.signature);
+          const logs = tx?.meta?.logMessages ?? [];
           const ix = logs.map((l) => l.match(/^Program log: Instruction: (\w+)$/)?.[1]).find((x) => x && KINDS[x]);
-          out.push({ sig: s.signature, time: s.blockTime ?? null, kind: ix ? KINDS[ix] : "Other", failed: !!s.err });
+          // Unread is "…", never a guess.
+          out.push({ sig: s.signature, time: s.blockTime ?? null, kind: ix ? KINDS[ix] : tx ? "Other" : "…", failed: !!s.err });
         });
       }
       if (!dead) setTxs(out.sort((x, y) => (x.time ?? 0) - (y.time ?? 0)));
