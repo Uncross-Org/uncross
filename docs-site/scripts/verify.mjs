@@ -5,7 +5,9 @@
 // 1. Every internal link and #anchor in dist/ resolves to a built page and id.
 // 2. No page scrolls sideways at 1440 or 390 px, in either theme.
 // 3. Search returns the expected page for a real query.
-// 4. Screenshots of one page at 1440 and 390, light and dark, plus the mobile
+// 4. Every Explorer link's label matches its URL, and every cited transaction
+//    signature exists on devnet.
+// 5. Screenshots of one page at 1440 and 390, light and dark, plus the mobile
 //    menu and the search results, into --shots.
 //
 // Uses Playwright's chrome-headless-shell: plain headless Chrome ignores
@@ -70,6 +72,33 @@ for (const f of htmlFiles) {
 }
 console.log(`links: ${linkCount} internal links across ${htmlFiles.length} pages, ${broken.length} broken`);
 for (const b of broken) console.log('  BROKEN ' + b);
+
+// ---------------------------------------------------------------- 4. signatures
+import { execFileSync } from 'node:child_process';
+let labelsOk = true;
+try {
+	execFileSync('node', [new URL('./sig-labels.mjs', import.meta.url).pathname, '--check'], { stdio: 'pipe' });
+	console.log('explorer labels: all match their URLs');
+} catch (e) {
+	labelsOk = false;
+	console.log('explorer labels: MISMATCH\n' + e.stdout);
+}
+const sigs = [...new Set(htmlFiles.flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/explorer\.solana\.com\/tx\/([1-9A-HJ-NP-Za-km-z]{64,90})/g)].map((m) => m[1])))];
+const missing = [];
+const failedOnChain = [];
+const RPC = opt('--rpc', 'https://api.devnet.solana.com');
+for (let i = 0; i < sigs.length; i += 200) {
+	const chunk = sigs.slice(i, i + 200);
+	const r = await fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getSignatureStatuses', params: [chunk, { searchTransactionHistory: true }] }) });
+	const statuses = (await r.json()).result.value;
+	statuses.forEach((s, j) => {
+		if (!s) missing.push(chunk[j]);
+		else if (s.err) failedOnChain.push(`${chunk[j].slice(0, 8)}… ${JSON.stringify(s.err)}`);
+	});
+}
+console.log(`signatures: ${sigs.length} cited, ${sigs.length - missing.length} found on devnet, ${missing.length} missing`);
+for (const m of missing) console.log('  MISSING ' + m);
+for (const f of failedOnChain) console.log('  landed with an error (expected only for refusals): ' + f);
 
 // ---------------------------------------------------------------- server
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.woff2': 'font/woff2', '.woff': 'font/woff', '.wasm': 'application/wasm', '.xml': 'application/xml' };
@@ -172,6 +201,6 @@ if (SHOTS) {
 
 await browser.close();
 server.close();
-const failed = broken.length + overflow.length + (searchOk ? 0 : 1);
+const failed = broken.length + overflow.length + (searchOk ? 0 : 1) + (labelsOk ? 0 : 1) + missing.length;
 console.log(failed ? `FAILED: ${failed} problem(s)` : 'ALL CHECKS PASSED');
 process.exit(failed ? 1 : 0);

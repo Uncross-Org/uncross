@@ -164,3 +164,8 @@ h1#_top,
 		font-size: var(--sl-text-sm);
 	}
 }
+
+/* Addresses, signatures and feed IDs in tables wrap instead of widening them. */
+.sl-markdown-content td code {
+	word-break: break-all;
+}
