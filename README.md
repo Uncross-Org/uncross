@@ -161,10 +161,11 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
   regular-session one cannot be told apart on-chain. An earlier draft of this
   README said "no reference price" was true overnight; that is retracted — the
   measurement disproves it. Weekends were not measured.
-- **Tokens with transfer fees don't work.** PreStocks tokens charge 0.5% on
-  every transfer, which the escrow accounting does not handle, so they are not
-  supported. Their mints were verified live, and custody works, but the fee
-  would leave escrow short.
+- **Tokens with transfer fees don't work.** PreStocks tokens charge 1% on
+  every transfer (100 bps, raised from 50 at mainnet epoch 1039, read on
+  24 Sept 2026), and Tessera's 20 bps. The escrow accounting does not handle a
+  fee, so neither is supported. Their mints were verified live, and custody
+  works, but the fee would leave escrow short.
 - **Order accounts are never closed, by design.** Each order creates an account
   whose rent, 0.00121412 SOL, is paid by the trader and not returned. It is the
   durable settlement record: it keeps the owner, limit, quantity, escrow and

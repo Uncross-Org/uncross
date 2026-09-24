@@ -427,7 +427,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             ) : (
               <div className="card empty">{onCadence ? `Opening the next ${tk.symbol} auction…` : `No auction running for ${tk.symbol} — open one above.`}</div>
             )}
-            {venue.auctions && <CrankPanel auctions={venue.auctions} slot={slot} pythFeed={tk.pythAccount} notify={notify} onDone={refresh} />}
+            {venue.auctions && <CrankPanel auctions={venue.auctions} slot={slot} notify={notify} onDone={refresh} />}
           </section>
 
           {m != null && (

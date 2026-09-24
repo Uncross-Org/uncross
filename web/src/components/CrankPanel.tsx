@@ -6,18 +6,18 @@ import { PROGRAM } from "../hooks";
 import type { Auction } from "../lib/auction";
 import { fmtInt } from "../lib/format";
 import { fetchOrders } from "../lib/order";
+import { clusterPythAccount } from "../lib/pyth";
 import { computeClearingIx, errorMessage, getProgram, sendIxs, sendMany, settleIx } from "../lib/tx";
 
 interface Props {
   auctions: Auction[];
   slot: number | null;
-  pythFeed: string | null;
   notify: (kind: "ok" | "err", text: string, sig?: string) => void;
   onDone: () => void;
 }
 
 /** Permissionless crank: anyone can run the cross and settle once a window closes. */
-export function CrankPanel({ auctions, slot, pythFeed, notify, onDone }: Props) {
+export function CrankPanel({ auctions, slot, notify, onDone }: Props) {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { setVisible } = useWalletModal();
@@ -34,7 +34,10 @@ export function CrankPanel({ auctions, slot, pythFeed, notify, onDone }: Props) 
   async function cross(a: Auction) {
     setBusy(a.address.toBase58());
     try {
-      const ix = await computeClearingIx(getProgram(connection), a, wallet.publicKey!, pythFeed);
+      // The Pyth account for this auction's own feed on this cluster, not the
+      // ticker's mainnet address, so the program records a true verdict.
+      const feed = await clusterPythAccount(connection, a.pythFeedId);
+      const ix = await computeClearingIx(getProgram(connection), a, wallet.publicKey!, feed);
       const sig = await sendIxs(connection, wallet, [ix], 800_000);
       notify("ok", "Cross complete. Settle next to pay everyone out.", sig);
       onDone();
