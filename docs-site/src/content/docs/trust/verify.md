@@ -121,8 +121,6 @@ The app's receipts do exactly this for closed auctions, and label the result as 
 
 ## In the app
 
-:::note[In the next app release]
-A page for each auction, committed on 24 Sept and not yet deployed when these docs were published. It replays the clearing rule step by step from the auction account and says which rule set the price. For the MSTRx cross it reads: "$158.01 and $164.24 tie on volume and on balance. The program's Pyth check recorded 'stale', so no oracle broke the tie, and the midpoint of the tied range sets the price: $161.125". It then checks the replay against the recorded price.
-:::
+The app's [auction page](https://uncross.0xo.in/app?view=auction&auction=6RmfQTeTvshtDLQTJLpqRv8iZDTWzphXhp2fNpqxyhf7) does all of the above in the browser. It replays the clearing rule step by step from the auction account and says which rule set the price. For this auction it reads: "$158.01 and $164.24 tie on volume and on balance. The program's Pyth check recorded 'stale', so no oracle broke the tie, and the midpoint of the tied range sets the price: $161.125". It then checks the replay against the recorded price. It is still worth running the script: the page is part of the app, and the script depends only on the chain.
 
-<p class="sources">Sources: devnet reads of the auction account, the settlement transaction and the order accounts, made 24 Sept 2026; <code>uncross/programs/uncross/src/state.rs</code> (layout), <code>clearing.rs</code>; <code>docs/submission-draft.md</code> (the MSTRx cross and its participants); commit <code>071d00d</code> (auction page).</p>
+<p class="sources">Sources: devnet reads of the auction account, the settlement transaction and the order accounts, made 24 Sept 2026; <code>uncross/programs/uncross/src/state.rs</code> (layout), <code>clearing.rs</code>; <code>docs/submission-draft.md</code> (the MSTRx cross and its participants); <code>web/src/components/AuctionPage.tsx</code> and <code>web/src/lib/clearing.ts</code>.</p>

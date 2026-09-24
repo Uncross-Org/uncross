@@ -27,7 +27,7 @@ If an auction's window has closed and the cross or settlement has not run yet, t
 - the **cross** (`compute_clearing`), if the auction has not crossed;
 - otherwise **settlement**, in batches of 7 orders, the measured transaction-size limit with distinct owners.
 
-The app's cross button passes the ticker's **mainnet** Pyth account address. That address does not exist on devnet, so the gate records **wrong owner**. The keeper instead passes the freshest devnet Pyth account, and that one records **stale**. On devnet neither passes the gate, so the price is the same either way. Only the recorded verdict differs. The app build committed on 24 Sept fixes this: the button passes the auction's own feed account on devnet, found the way the keeper finds it. That build was not yet deployed when these docs were published.
+The app's cross button passes the Pyth account for the auction's own feed on devnet, found the way the keeper finds it, or none when the feed has no account there. So a cross run from the app records the same Pyth verdict the keeper's would. Until 25 Sept the button passed the ticker's mainnet address, which does not exist on devnet, so a cross run from the app recorded "wrong owner" where the keeper's recorded "stale". The price was the same either way.
 
 Apart from that, the result is the same whoever sends these. The clearing price and every order's fill and money leg are computed by the program from the book. Settlement only moves numbers fixed at the cross. The one exception is that the sender of the cross chooses which Pyth account to pass. That cannot move the price outside what the book supports, and it lets nobody take funds ([Honest limitations](/trust/limitations/#what-whoever-sends-the-cross-can-influence)).
 

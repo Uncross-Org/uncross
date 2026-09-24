@@ -41,6 +41,10 @@ A rebuilt receipt is only possible because order accounts are never closed ([Cos
 
 The app reads your orders through the site's `/api/orders`, which finds every order account your wallet owns, with each order's auction and the transactions that placed and settled it. It refreshes every 10 seconds. A settled order's transactions are cached on the server, because they cannot change.
 
+## Sharing a receipt
+
+**Copy link** on a receipt makes a read-only link to that wallet's view. Anyone who opens it sees the wallet's receipts, orders and portfolio without connecting a wallet, under a banner that says whose they are. Nothing can be cancelled from someone else's view. The auction address on a receipt opens that auction's page ([Read a ticker page](/app/ticker-page/#the-auction-page)).
+
 ## Checking it yourself
 
 Everything on the receipt can be checked independently: the auction account for the fill and money legs, and the settlement transaction for the transfers. [Verify a clearing price](/trust/verify/) walks through it on a real auction.

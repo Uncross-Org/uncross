@@ -60,13 +60,20 @@ Tickers show different timing because there is no shared schedule. Each ticker's
 
 **Past crosses.** One row per auction: when its window closed, clearing price, volume, number of orders, **Pyth anchor**, and status (Settled, Settling or Refunded). "Pyth anchor: Yes" means a fresh Pyth price passed the gate and was recorded at that cross.
 
-:::note[In the next app release]
-Committed on 24 Sept and not yet deployed when these docs were published:
-- a page for each auction, linked from Past crosses, from every receipt and from the Orders page;
-- read-only links to any wallet's receipts, orders and portfolio;
-- a venue status line in the footer.
+## The auction page
 
-The auction page replays the clearing rule step by step and compares the result with the price the program recorded ([Verify a clearing price](/trust/verify/)).
-:::
+Every auction has its own page, opened from **Past crosses**, from a receipt or from the Orders page. For example, the [23 Sept MSTRx cross](https://uncross.0xo.in/app?view=auction&auction=6RmfQTeTvshtDLQTJLpqRv8iZDTWzphXhp2fNpqxyhf7). It shows:
 
-<p class="sources">Sources: <code>docs/numbers.md</code> (every figure, source and refresh interval), <code>web/src/components/PastAuctions.tsx</code>, <code>web/src/App.tsx</code>, commits <code>071d00d</code> and <code>b78df66</code> (next release).</p>
+- every order, with its wallet, limit, fill and what it paid or received;
+- the demand and supply curves at the cross;
+- the clearing rule replayed step by step from the auction account, with the candidate prices, which rule set the price, and a check that the replay matches the price the program recorded;
+- the Pyth check the program recorded;
+- every transaction, labelled by what it did.
+
+See [Verify a clearing price](/trust/verify/) for doing the same check yourself.
+
+## The footer
+
+Every page's footer shows how long ago the last auction opened and how many new wallets the faucet can still fund. A banner appears only when something is wrong: no auction has opened for 25 minutes, or the faucet has reached its cap.
+
+<p class="sources">Sources: <code>docs/numbers.md</code> (every figure, source and refresh interval), <code>web/src/components/PastAuctions.tsx</code>, <code>web/src/App.tsx</code>, <code>web/src/components/AuctionPage.tsx</code>, <code>web/src/components/VenueStatus.tsx</code>.</p>

@@ -32,6 +32,6 @@ The list is complete because it is read from your wallet's own order accounts, w
 | Settled | When settlement landed |
 | Links | The auction account and the transactions, on Explorer |
 
-The figures come from the same place as [your receipt](/app/receipt/). A row rebuilt from its settlement transaction, because its auction has since been closed, is marked.
+The figures come from the same place as [your receipt](/app/receipt/). **Copy link** makes a read-only link to this list that anyone can open without a wallet, and each auction links to its auction page. A row rebuilt from its settlement transaction, because its auction has since been closed, is marked.
 
 <p class="sources">Sources: <code>web/src/components/OrdersPage.tsx</code>, <code>web/src/lib/settlement.ts</code>, <code>docs/numbers.md</code>.</p>
