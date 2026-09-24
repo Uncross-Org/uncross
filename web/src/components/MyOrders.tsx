@@ -24,9 +24,10 @@ interface Props {
   myOrders: MyOrder[] | null;
   notify: (kind: "ok" | "err", text: string, sig?: string) => void;
   onChange: () => void;
+  onOpenOrders: () => void;
 }
 
-export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notify, onChange }: Props) {
+export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notify, onChange, onOpenOrders }: Props) {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [busy, setBusy] = useState<number | null>(null);
@@ -86,6 +87,9 @@ export function MyOrders({ tk, cluster, auction, phase, m, mine, myOrders, notif
       <div className="card-head">
         <h2>Your orders</h2>
         {running.length > 0 && <span className="muted small">{running.length} in the running auction</span>}
+        <button className="link-btn" onClick={onOpenOrders}>
+          All your orders →
+        </button>
       </div>
 
       {group.length > 0 && <Receipt tk={tk} m={m} cluster={cluster} items={group} />}

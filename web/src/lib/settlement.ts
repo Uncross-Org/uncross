@@ -50,18 +50,19 @@ export interface MyOrder {
 interface Wire {
   orders?: { address: string; data: string; auction: string; tickerMint: string | null; placed: TxRef | null; settled: (TxRef & { kind: Settlement["kind"]; quoteDelta: string; tickerDelta: string; ordersInTx: number }) | null }[];
   auctions?: Record<string, string | null>;
+  truncated?: boolean;
   error?: string;
 }
 
 const bytes = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
-export async function fetchMyOrders(owner: string): Promise<MyOrder[]> {
+export async function fetchMyOrders(owner: string): Promise<{ orders: MyOrder[]; truncated: boolean }> {
   const r = await fetch(`/api/orders?owner=${owner}`, { cache: "no-store" });
   const w = (await r.json()) as Wire;
   if (!r.ok || w.error) throw new Error(w.error ?? `orders ${r.status}`);
   const auctions = new Map<string, Auction | null>();
   for (const [k, v] of Object.entries(w.auctions ?? {})) auctions.set(k, v ? decodeAuction(new PublicKey(k), bytes(v)) : null);
-  return (w.orders ?? []).map((o) => ({
+  const orders = (w.orders ?? []).map((o) => ({
     order: decodeOrder(new PublicKey(o.address), bytes(o.data)),
     auction: auctions.get(o.auction) ?? null,
     auctionAddress: o.auction,
@@ -69,11 +70,13 @@ export async function fetchMyOrders(owner: string): Promise<MyOrder[]> {
     placed: o.placed,
     settled: o.settled ? { ...o.settled, quoteDelta: BigInt(o.settled.quoteDelta), tickerDelta: BigInt(o.settled.tickerDelta) } : null,
   }));
+  return { orders, truncated: !!w.truncated };
 }
 
 /** The connected wallet's orders, refreshed every 10s and whenever `refreshKey` changes. Null until the first read. */
-export function useMyOrders(owner: string | null, refreshKey: number): { orders: MyOrder[] | null; error: string | null } {
+export function useMyOrders(owner: string | null, refreshKey: number): { orders: MyOrder[] | null; truncated: boolean; error: string | null } {
   const [orders, setOrders] = useState<MyOrder[] | null>(null);
+  const [truncated, setTruncated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ownerRef = useRef(owner);
   ownerRef.current = owner;
@@ -81,14 +84,24 @@ export function useMyOrders(owner: string | null, refreshKey: number): { orders:
   useEffect(() => {
     if (!owner) return;
     let dead = false;
-    const load = () =>
-      fetchMyOrders(owner)
+    // One request at a time: a wallet with a long history can take several
+    // seconds to read the first time, longer than the refresh interval.
+    let busy = false;
+    const load = () => {
+      if (busy) return;
+      busy = true;
+      return fetchMyOrders(owner)
         .then((o) => {
           if (dead || ownerRef.current !== owner) return;
-          setOrders(o);
+          setOrders(o.orders);
+          setTruncated(o.truncated);
           setError(null);
         })
-        .catch((e) => !dead && setError(e instanceof Error ? e.message : String(e)));
+        .catch((e) => !dead && setError(e instanceof Error ? e.message : String(e)))
+        .finally(() => {
+          busy = false;
+        });
+    };
     void load();
     const id = setInterval(() => !document.hidden && void load(), 10_000);
     return () => {
@@ -96,7 +109,7 @@ export function useMyOrders(owner: string | null, refreshKey: number): { orders:
       clearInterval(id);
     };
   }, [owner, refreshKey]);
-  return { orders, error };
+  return { orders, truncated, error };
 }
 
 // ---------------------------------------------------------------- statuses

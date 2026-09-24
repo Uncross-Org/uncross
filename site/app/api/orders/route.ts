@@ -29,8 +29,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ORDER_SIZE = 111;
-/** Settlement lookups per request; a wallet past this is told so. */
-const MAX_LOOKUPS = 60;
+/** Orders looked up per request; the rest are read by the next poll. */
+const MAX_LOOKUPS = 24;
 
 interface TxRef {
   sig: string;
@@ -57,6 +57,19 @@ interface WireOrder {
 
 const done = new Map<string, { placed: TxRef | null; settled: Settlement }>();
 const mintOf = new Map<string, string>();
+const placedOf = new Map<string, TxRef>();
+
+/** Run tasks with at most `n` in flight. */
+async function pool(tasks: (() => Promise<void>)[], n: number) {
+  let next = 0;
+  const worker = async () => {
+    while (next < tasks.length) {
+      const t = tasks[next++];
+      await t().catch(() => {});
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(n, tasks.length) }, worker));
+}
 /** Confirmed transactions never change; kept so a poll does not refetch them. */
 const txCache = new Map<string, VersionedTransactionResponse>();
 async function getTx(conn: Connection, sig: string): Promise<VersionedTransactionResponse | null> {
@@ -156,25 +169,57 @@ export async function GET(req: Request): Promise<Response> {
 
     // Newest auctions first; closed ones (no slot left to sort by) after.
     orders.sort((a, b) => (openSlot[b.auction] ?? -1) - (openSlot[a.auction] ?? -1));
-    let lookups = 0;
-    const out: WireOrder[] = [];
+
+    // What each order still needs looked up. A settled order's transactions
+    // never change, so once read they are cached for good. An order in an
+    // auction still taking orders cannot have settled: only its placement is
+    // read, once. Everything else — crossed, settling, or closed — is read in
+    // full. Lookups run eight at a time and stop at MAX_LOOKUPS per request; a
+    // later poll carries on from where this one stopped.
+    const auctionOpen = (k: string) => auctions[k] != null && Buffer.from(auctions[k]!, "base64")[312] === 0;
+    const results = new Map<string, { placed: TxRef | null; settled: Settlement | null }>();
+    const todo: (() => Promise<void>)[] = [];
+    let pending = 0;
     for (const o of orders) {
       const cached = done.get(o.address);
-      let ev: { placed: TxRef | null; settled: Settlement | null } | null = cached ?? null;
-      const settledFlag = o.raw[108] !== 0;
-      let mint: string | null = tickerMint[o.auction] ?? mintOf.get(o.address) ?? null;
-      if (!ev && lookups < MAX_LOOKUPS) {
-        lookups++;
+      if (cached) {
+        results.set(o.address, cached);
+        continue;
+      }
+      const openOnly = auctionOpen(o.auction) && o.raw[107] === 0;
+      if (openOnly && placedOf.has(o.address)) {
+        results.set(o.address, { placed: placedOf.get(o.address)!, settled: null });
+        continue;
+      }
+      if (todo.length >= MAX_LOOKUPS) {
+        pending++;
+        continue;
+      }
+      todo.push(async () => {
+        let mint: string | null = tickerMint[o.auction] ?? mintOf.get(o.address) ?? null;
         if (mint === null) mint = (await mintFromHistory(conn, o.address)) || null;
         if (mint) mintOf.set(o.address, mint);
-        ev = await events(conn, owner.toBase58(), o.address, mint ?? "", siblingsOf.get(o.auction)!);
-        if (settledFlag && ev.settled) done.set(o.address, { placed: ev.placed, settled: ev.settled });
-      }
-      out.push({ address: o.address, data: b64(o.raw), auction: o.auction, tickerMint: mint, placed: ev?.placed ?? null, settled: ev?.settled ?? null });
+        const ev = await events(conn, owner.toBase58(), o.address, mint ?? "", siblingsOf.get(o.auction)!);
+        results.set(o.address, ev);
+        if (ev.placed) placedOf.set(o.address, ev.placed);
+        if (o.raw[108] !== 0 && ev.settled) done.set(o.address, { placed: ev.placed, settled: ev.settled });
+      });
     }
+    await pool(todo, 8);
+    const out: WireOrder[] = orders.map((o) => {
+      const ev = results.get(o.address);
+      return {
+        address: o.address,
+        data: b64(o.raw),
+        auction: o.auction,
+        tickerMint: tickerMint[o.auction] ?? mintOf.get(o.address) ?? null,
+        placed: ev?.placed ?? null,
+        settled: ev?.settled ?? null,
+      };
+    });
     const slot = await conn.getSlot("confirmed").catch(() => null);
     return Response.json(
-      { readAt: Date.now(), slot, owner: owner.toBase58(), orders: out, auctions, truncated: lookups >= MAX_LOOKUPS },
+      { readAt: Date.now(), slot, owner: owner.toBase58(), orders: out, auctions, truncated: pending > 0 },
       { headers: { "cache-control": "no-store" } },
     );
   } catch (e) {

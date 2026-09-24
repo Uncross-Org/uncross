@@ -4,6 +4,9 @@ const num = (max: number, min = 0) => new Intl.NumberFormat("en-US", { minimumFr
 export const fmtUsd = (n: number | null | undefined) => (n == null || !Number.isFinite(n) ? "—" : usd2.format(n));
 export const fmtPrice = (n: number | null | undefined) =>
   n == null || !Number.isFinite(n) ? "—" : "$" + num(n < 10 ? 4 : 2, 2).format(n);
+/** A clearing price as the program settled it: cents, or finer where the price has them. */
+export const fmtExactPrice = (n: number | null | undefined) =>
+  n == null || !Number.isFinite(n) ? "—" : "$" + num(6, 2).format(n);
 export const fmtShares = (n: number | null | undefined) => {
   if (n == null || !Number.isFinite(n)) return "—";
   const a = Math.abs(n);

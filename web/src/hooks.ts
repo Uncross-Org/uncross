@@ -96,7 +96,7 @@ export function useMultiplier(conn: Connection, mint: PublicKey | null) {
 // Pyth reads rotate through MAINNET_READ_RPCS, sticking with whichever last worked.
 const mainnetConns = MAINNET_READ_RPCS.map((u) => new Connection(u, { commitment: "confirmed", disableRetryOnRateLimit: true }));
 let mainnetIdx = 0;
-async function readPyth(account: string): Promise<PythPrice> {
+export async function readPyth(account: string): Promise<PythPrice> {
   let last: unknown = null;
   for (let k = 0; k < mainnetConns.length; k++) {
     const i = (mainnetIdx + k) % mainnetConns.length;

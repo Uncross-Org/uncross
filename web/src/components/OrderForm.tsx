@@ -119,9 +119,9 @@ export function OrderForm({ tk, auction, phase, m, balances, quoteSymbol, sugges
           {suggestions.map((s) => (
             <button
               key={s.label}
-              // The first chip is the best anchor this ticker has: Pyth where a
-              // feed exists, the last cross where none does. Mark it, so a
-              // newcomer knows which number to trust rather than guessing.
+              // The first chip is the best anchor this ticker has: the Pyth
+              // reference where a feed exists, otherwise what this book would
+              // clear at. Mark it, so a newcomer knows where to start.
               className={`chip num${s === suggestions[0] ? " chip-primary" : ""}`}
               onClick={() => setPriceStr(s.price.toFixed(2))}
             >
@@ -137,7 +137,7 @@ export function OrderForm({ tk, auction, phase, m, balances, quoteSymbol, sugges
         <p className="fine muted">
           No oracle publishes {/^[AEIOU]/i.test(tk.underlying) ? "an" : "a"} {tk.underlying} price on Solana, so there is
           no reference to copy — the only price for {tk.symbol} is the one this book makes.{" "}
-          {suggestions.length > 0 ? "The last cross is shown above." : "Name the price you would actually trade at."}
+          Its past clearing prices are under Past crosses. Name the price you would actually trade at.
         </p>
       )}
 

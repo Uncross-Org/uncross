@@ -13,7 +13,7 @@ const M = { l: 52, r: 16, t: 26, b: 34 };
 
 /** Approximate rendered width of the cross label (12px semibold ≈ 7px/char). */
 const crossLabelW = (ind: { price: number; volume: number }, crossed: boolean) =>
-  `${crossed ? "Cleared" : "Cross"} ${fmtPrice(ind.price)} · ${fmtShares(ind.volume)} sh`.length * 7;
+  `${crossed ? "Cleared at" : "Would clear at"} ${fmtPrice(ind.price)} · ${fmtShares(ind.volume)} shares`.length * 7;
 
 export function DepthChart({ orders, indicative, reference, crossed }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -224,7 +224,7 @@ export function DepthChart({ orders, indicative, reference, crossed }: Props) {
                     y={Math.max(M.t + 12, geo.sy(indicative.volume) - 12)}
                     textAnchor="start"
                   >
-                    {crossed ? "Cleared" : "Cross"} {fmtPrice(indicative.price)} · {fmtShares(indicative.volume)} sh
+                    {crossed ? "Cleared at" : "Would clear at"} {fmtPrice(indicative.price)} · {fmtShares(indicative.volume)} shares
                   </text>
                 </g>
               )}

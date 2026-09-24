@@ -40,9 +40,9 @@ export function Ladder({ book, indicative, crossed }: Props) {
           <div className={`ladder-mid num${indicative && indicative.volume > 0 ? "" : " ladder-mid-none"}`}>
             {indicative && indicative.volume > 0 ? (
               <>
-                <span>{crossed ? "crossed" : "would cross"}</span>
+                <span>{crossed ? "cleared at" : "would clear at"}</span>
                 <b>{fmtPrice(indicative.price)}</b>
-                <span>{fmtShares(indicative.volume)} sh</span>
+                <span>{fmtShares(indicative.volume)} shares {crossed ? "traded" : "would trade"}</span>
               </>
             ) : (
               <span>no cross yet — buyers and sellers do not overlap</span>

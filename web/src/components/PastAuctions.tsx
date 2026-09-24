@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { explorerAddr, type ClusterConfig } from "../config";
 import type { Auction } from "../lib/auction";
-import { fmtInt, fmtLocal, fmtPrice, fmtShares, fmtUsd } from "../lib/format";
+import { fmtExactPrice, fmtInt, fmtLocal, fmtPrice, fmtShares, fmtUsd } from "../lib/format";
 import { programToPerShare, rawToShares } from "../lib/units";
 
 interface Props {
@@ -16,12 +16,23 @@ interface Props {
 export function PastAuctions({ auctions, m, slot, slotMs, now, cluster }: Props) {
   const [n, setN] = useState(8);
   const past = auctions.filter((a) => a.status !== "open");
+  // The last price this ticker actually traded at: history, so it lives here
+  // rather than beside the order form.
+  const last = past.filter((a) => a.executableVolume > 0n).sort((x, y) => y.closeSlot - x.closeSlot)[0];
+  const lastMs = last && slot != null ? now - (slot - last.closeSlot) * slotMs : null;
   return (
     <section className="card past" aria-label="Past auctions">
       <div className="card-head">
         <h2>Past crosses</h2>
         <span className="muted small">{past.length ? `${past.length} total` : ""}</span>
       </div>
+      {last && (
+        <p className="past-last num">
+          Last cross <b>{fmtExactPrice(programToPerShare(last.clearingPrice, m))}</b> · {fmtShares(rawToShares(last.executableVolume, m))}{" "}
+          {rawToShares(last.executableVolume, m) === 1 ? "share" : "shares"}
+          {lastMs != null ? ` · window closed ≈ ${fmtLocal(lastMs)}` : ""}
+        </p>
+      )}
       {past.length === 0 ? (
         <div className="empty small">No completed auctions yet.</div>
       ) : (
@@ -51,7 +62,7 @@ export function PastAuctions({ auctions, m, slot, slotMs, now, cluster }: Props)
                           {closedMs ? `≈ ${fmtLocal(closedMs)}` : `slot ${fmtInt(a.closeSlot)}`}
                         </a>
                       </td>
-                      <td>{traded ? fmtPrice(price) : <span className="muted">no trade</span>}</td>
+                      <td>{traded ? fmtExactPrice(price) : <span className="muted">no trade</span>}</td>
                       <td>
                         {traded ? (
                           <>

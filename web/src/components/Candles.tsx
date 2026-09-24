@@ -199,7 +199,7 @@ export function Candles({ auctions, m, slot, slotMs, now, theme }: Props) {
                 C <b>${shown.close.toFixed(2)}</b>
               </span>
               <span>
-                vol <b>{shown.volume.toFixed(2)} sh</b>
+                traded <b>{shown.volume.toFixed(2)} shares</b>
               </span>
               <span className="muted">
                 {shown.orders} orders · slot {fmtInt(shown.slot)}

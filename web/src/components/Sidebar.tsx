@@ -20,6 +20,12 @@ const STALE_MS = 60 * 60 * 1000;
 /** Rendered at most, so a one-letter search over a thousand names stays quick. */
 const MAX_RESULTS = 40;
 
+/** Minutes, coarse enough to sit in a list without ticking every second. */
+function within(ms: number): string {
+  if (ms < 60_000) return "under a minute";
+  return `${Math.ceil(ms / 60_000)}m`;
+}
+
 function ago(ms: number): string {
   const s = Math.round(ms / 1000);
   if (s < 60) return "just now";
@@ -80,8 +86,11 @@ export function Sidebar({ cluster, universe, ticker, onSelect, all, loading, slo
       const crossed = mine.filter((a) => a.executableVolume > 0n).sort((a, b) => b.closeSlot - a.closeSlot)[0];
       const running = !!newest && newest.status === "open" && slot != null && slot < newest.closeSlot;
       const frozen = running && slot != null && slot >= newest.closeSlot - newest.freezeSlots;
+      // Time since the last auction that traded closed its window: when that
+      // price was set. Not the settlement time, which is seconds later.
       const ageMs = crossed && slot != null ? Math.max(0, (slot - crossed.closeSlot) * slotMs) : null;
-      return { running, frozen, crossed, ageMs, any: mine.length > 0 };
+      const msToCross = running && slot != null ? Math.max(0, (newest.closeSlot - slot) * slotMs) : null;
+      return { running, frozen, crossed, ageMs, msToCross, any: mine.length > 0 };
     };
   }, [all, slot, slotMs]);
 
@@ -153,22 +162,24 @@ export function Sidebar({ cluster, universe, ticker, onSelect, all, loading, slo
                   <span className={`dot ${s.frozen ? "dot-warn" : s.running ? "dot-live" : "dot-off"}`} aria-hidden />
                   {r.symbol}
                 </span>
-                <span className={`side-px num${last == null || stale ? " side-px-muted" : ""}`}>
+                <span
+                  className={`side-px num${last == null || stale ? " side-px-muted" : ""}`}
+                  title={last != null && s.ageMs != null ? `Last clearing price. That auction's window closed ${ago(s.ageMs)}.` : undefined}
+                >
                   {loading ? "…" : (last ?? (dormant ? "" : "No trades yet"))}
                 </span>
                 <span className="side-name">{r.name}</span>
-                <span className={`side-state num${dormant ? " side-listed" : ""}`} title={s.frozen ? "Closing — no more cancelling" : undefined}>
+                <span className={`side-state num${dormant ? " side-listed" : ""}`} title={s.frozen ? "Frozen: orders can no longer be cancelled" : undefined}>
+                  {/* What the book is doing now first; when it last crossed after. */}
                   {r.halted && dormant
                     ? "halted"
-                    : s.frozen
-                      ? "closing"
+                    : s.running
+                      ? `${s.frozen ? "frozen" : "open"} · crosses in ${within(s.msToCross ?? 0)}`
                       : dormant
                         ? "listed · open one"
                         : s.ageMs != null
-                          ? `traded ${ago(s.ageMs)}`
-                          : s.running
-                            ? "taking orders"
-                            : "between auctions"}
+                          ? `last cross ${ago(s.ageMs)}`
+                          : "between auctions"}
                 </span>
               </button>
             </li>
