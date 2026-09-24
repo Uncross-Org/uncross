@@ -274,10 +274,22 @@ pub mod uncross {
     /// Failure path: refunds each order's full original escrow, ignoring any
     /// computed fill -- e.g. when settle_batch cannot run because the mint is
     /// paused. Only available before any order has been clear-settled.
+    ///
+    /// Only when settlement cannot run: the ticker mint is paused, or an
+    /// earlier batch already took this path. The second case is the other half
+    /// of a pause: buyers' quote escrow can be refunded while the mint is
+    /// paused, but sellers' shares only after the issuer resumes it, by which
+    /// time the mint is no longer paused. Without this check, whoever sent the
+    /// first batch after a cross could pick this path and void every trade.
     pub fn cancel_and_refund<'info>(
         ctx: Context<'_, '_, 'info, 'info, SettleAccounts<'info>>,
         order_indices: Vec<u16>,
     ) -> Result<()> {
+        let refund_chosen = ctx.accounts.auction.load()?.settle_path == SETTLE_PATH_REFUND;
+        require!(
+            refund_chosen || oracle::mint_paused(&ctx.accounts.ticker_mint.to_account_info()),
+            UncrossError::RefundNotAllowed
+        );
         settle_or_refund(ctx, order_indices, SETTLE_PATH_REFUND)
     }
 

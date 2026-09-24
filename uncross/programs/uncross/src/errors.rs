@@ -50,4 +50,6 @@ pub enum UncrossError {
     WrongRentRecipient,
     #[msg("auction predates rent tracking and cannot be closed")]
     UnknownRentPayer,
+    #[msg("the refund path is only for when settlement cannot run: the mint must be paused")]
+    RefundNotAllowed,
 }

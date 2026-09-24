@@ -45,3 +45,28 @@ export async function fetchSchedule(query: string, feedId: string): Promise<stri
   const f = feeds.find((x) => x.id.replace(/^0x/, "") === feedId);
   return f?.attributes?.schedule ?? null;
 }
+
+const PYTH_PUSH_ORACLE = new PublicKey("pythWSnswVUd12oZpeFP8e9CVaEqJg25g1Vtc2biRsT");
+
+/**
+ * The Pyth price account for an auction's feed on the cluster the program runs
+ * on, which is what the cross must be given. It is derived from the feed id,
+ * the way the keeper finds it: the freshest of the push oracle's four shards.
+ * Null when the feed is empty or has no account on this cluster; the cross
+ * then records "no feed". (The ticker's pythAccount is a mainnet address,
+ * which does not exist on devnet: passing it made the program record "wrong
+ * owner".)
+ */
+export async function clusterPythAccount(conn: Connection, feedHex: string): Promise<string | null> {
+  if (!feedHex || /^0+$/.test(feedHex)) return null;
+  const id = Uint8Array.from(feedHex.match(/../g)!.map((h) => parseInt(h, 16)));
+  const pdas = [0, 1, 2, 3].map((shard) => PublicKey.findProgramAddressSync([Uint8Array.of(shard & 0xff, shard >> 8), id], PYTH_PUSH_ORACLE)[0]);
+  const infos = await conn.getMultipleAccountsInfo(pdas, "confirmed");
+  let best: { key: PublicKey; t: number } | null = null;
+  infos.forEach((info, i) => {
+    if (!info || info.data.length < 101) return;
+    const t = Number(new DataView(info.data.buffer, info.data.byteOffset, info.data.byteLength).getBigInt64(93, true));
+    if (!best || t > best.t) best = { key: pdas[i], t };
+  });
+  return (best as { key: PublicKey } | null)?.key.toBase58() ?? null;
+}

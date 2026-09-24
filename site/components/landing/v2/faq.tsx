@@ -30,7 +30,7 @@ const FAQ = [
   },
   {
     q: "Why aren't PreStocks supported?",
-    a: "Every PreStocks mint charges a 0.5% fee on every transfer, and it is active now. Escrow would receive less than was recorded, so settlement would come up short. Custody works; the fee is the problem.",
+    a: "Every PreStocks mint charges a fee on every transfer: 1% since late September 2026, up from 0.5%, read live off mainnet on 24 Sept. Escrow would receive less than was recorded, so settlement would come up short. Custody works; the fee is the problem.",
   },
   {
     q: "Does the Pyth feed stop after the 4pm close?",
