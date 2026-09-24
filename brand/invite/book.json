@@ -1,0 +1,15 @@
+{
+  "auction": "6RmfQTeTvshtDLQTJLpqRv8iZDTWzphXhp2fNpqxyhf7",
+  "ticker": "MSTRx",
+  "closedAt": "2026-09-23T20:37:04.000Z",
+  "cross": "2SKcwefYsGdpquxrgJP2yRdnn2VpyBEL7oV2GdmjBsTFGqqHvP6L58wxMcAsuU7DYnyvhmeJBMRrhMpFK75FpLAU",
+  "settlement": "4ws2ByFqvSJzCVG73iW1D7CRSP8eYNqKBoq2CybQk2a6mdkHK1byo8KpmEnRFBEVWfHtzpYZiJK3RFQahNGBKY8A",
+  "units": "dollars per share and shares; MSTRx's multiplier is 1, so a token is a share",
+  "clearingPrice": 161.125,
+  "volume": 1,
+  "orders": [
+    { "side": "buy", "limit": 164.24, "qty": 1 },
+    { "side": "sell", "limit": 158.01, "qty": 1 },
+    { "side": "buy", "limit": 151.09, "qty": 1 }
+  ]
+}
