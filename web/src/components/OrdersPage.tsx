@@ -9,12 +9,19 @@
 import { useMemo, useState } from "react";
 import { explorerTx, type ClusterConfig } from "../config";
 import { auctionPhase } from "../lib/auction";
-import { fmtDuration, fmtLocal, fmtShares, shortAddr } from "../lib/format";
+import { fmtDuration, fmtLocal, shortAddr } from "../lib/format";
 import { orderStatus, receiptOf, STATUS_HELP, type MyOrder, type OrderStatus } from "../lib/settlement";
 import { programToPerShare, quoteToUsd, rawToShares } from "../lib/units";
 import { CopyLink } from "./CopyLink";
 
 const usd = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+// The table prints dollars to the cent and shares to four places, so digits line
+// up down each column; the exact figure, as the program settled it, is in the
+// cell's tooltip.
+const usd2 = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const sh4 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+const Usd = ({ n }: { n: number }) => <span title={usd(n)}>{usd2(n)}</span>;
+const Sh = ({ n }: { n: number }) => <span title={n.toLocaleString("en-US", { maximumFractionDigits: 8 })}>{sh4(n)}</span>;
 
 type Tab = "open" | "history" | "fills" | "unfilled" | "all";
 const TABS: { id: Tab; label: string; help: string }[] = [
@@ -120,7 +127,17 @@ export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs
           </select>
         </label>
       </div>
-      <p className="fine muted">{TABS.find((t) => t.id === tab)!.help}</p>
+      <p className="fine muted orders-count">
+        {shown.length === rows.length
+          ? `${rows.length} ${rows.length === 1 ? "order" : "orders"} on ${assets.length} ${assets.length === 1 ? "ticker" : "tickers"}`
+          : `Showing ${shown.length} of ${rows.length} orders: ${[
+              tab !== "all" && TABS.find((t) => t.id === tab)!.label.toLowerCase(),
+              asset !== "all" && asset,
+              side !== "all" && `${side}s only`,
+            ]
+              .filter(Boolean)
+              .join(", ")}`}
+      </p>
 
       {shown.length === 0 ? (
         <div className="card empty">{rows.length ? "No orders match these filters." : "This wallet has not placed an order yet."}</div>
@@ -133,11 +150,11 @@ export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs
                 <th>Asset</th>
                 <th>Side</th>
                 <th>Status</th>
-                <th>Limit</th>
-                <th>Filled / asked</th>
-                <th>Clearing price</th>
-                <th>Paid / received</th>
-                <th>Returned</th>
+                <th className="num-r">Limit</th>
+                <th className="num-r">Filled / asked</th>
+                <th className="num-r">Clearing price</th>
+                <th className="num-r">Paid / received</th>
+                <th className="num-r">Returned</th>
                 <th>Settled</th>
                 <th>Links</th>
               </tr>
@@ -159,29 +176,54 @@ export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs
                       <span className={`order-side order-side-${o.order.side}`}>{buy ? "Buy" : "Sell"}</span>
                     </td>
                     <td data-label="Status" title={STATUS_HELP[status]}>
-                      <span className={`status-pill st-${status.replace(/ /g, "-").toLowerCase()}`}>{status}</span>
-                      {msToCross != null && !o.order.cancelled && <div className="muted small">crosses in {fmtDuration(msToCross)}</div>}
-                      {r?.source === "rebuilt" && <div className="muted small">rebuilt from settlement tx</div>}
+                      <span className="status-line">
+                        <span className={`status-pill st-${status.replace(/ /g, "-").toLowerCase()}`}>{status}</span>
+                        {msToCross != null && !o.order.cancelled && <span className="muted small">crosses in {fmtDuration(msToCross)}</span>}
+                        {r?.source === "rebuilt" && (
+                          <span className="muted small" title="Its auction has been closed; these figures are rebuilt from the settlement transaction">
+                            rebuilt
+                          </span>
+                        )}
+                      </span>
                     </td>
-                    <td data-label="Limit">{usd(programToPerShare(o.order.limitPrice, m))}</td>
-                    <td data-label="Filled / asked">
-                      {r ? fmtShares(rawToShares(filled, m)) : "—"} / {fmtShares(rawToShares(o.order.quantity, m))}
+                    <td data-label="Limit" className="num-r">
+                      <Usd n={programToPerShare(o.order.limitPrice, m)} />
                     </td>
-                    <td data-label="Clearing price">{r?.clearingPrice != null ? usd(programToPerShare(r.clearingPrice, m)) : "—"}</td>
-                    <td data-label="Paid / received">{r && r.filled > 0n && r.traded != null ? `${buy ? "paid" : "got"} ${usd(quoteToUsd(r.traded))}` : "—"}</td>
-                    <td data-label="Returned">
-                      {r?.returned != null
-                        ? buy
-                          ? usd(quoteToUsd(r.returned))
-                          : `${fmtShares(rawToShares(r.returned, m))} shares`
-                        : status === "Cancelled" && !s
-                          ? "all"
-                          : r?.shared
-                            ? "with your other orders"
-                            : "—"}
+                    <td data-label="Filled / asked" className="num-r">
+                      {r ? <Sh n={rawToShares(filled, m)} /> : "—"} / <Sh n={rawToShares(o.order.quantity, m)} />
+                    </td>
+                    <td data-label="Clearing price" className="num-r">
+                      {r?.clearingPrice != null ? <Usd n={programToPerShare(r.clearingPrice, m)} /> : "—"}
+                    </td>
+                    <td data-label="Paid / received" className="num-r">
+                      {r && r.filled > 0n && r.traded != null ? (
+                        <>
+                          <span className="muted">{buy ? "paid" : "got"}</span> <Usd n={quoteToUsd(r.traded)} />
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td data-label="Returned" className="num-r">
+                      {r?.returned != null ? (
+                        buy ? (
+                          <Usd n={quoteToUsd(r.returned)} />
+                        ) : (
+                          <>
+                            <Sh n={rawToShares(r.returned, m)} /> <span className="muted">shares</span>
+                          </>
+                        )
+                      ) : status === "Cancelled" && !s ? (
+                        "all"
+                      ) : r?.shared ? (
+                        "with your other orders"
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td data-label="Settled">{s?.time ? fmtLocal(s.time * 1000) : r ? "settling" : "—"}</td>
                     <td data-label="Links" className="links">
+                      <span className="links-row">
                       <button className="link-btn" onClick={() => onOpenAuction(o.auctionAddress)} title="Every order in that auction and how its price was set">
                         auction
                       </button>
@@ -192,9 +234,10 @@ export function OrdersPage({ cluster, orders, truncated, connected, slot, slotMs
                       )}
                       {s && (
                         <a href={explorerTx(cluster, s.sig)} target="_blank" rel="noreferrer" title={s.kind === "cancel" ? "The cancel transaction" : "The settlement transaction"}>
-                          {s.kind === "cancel" ? "cancel" : "settlement"} {shortAddr(s.sig)}
+                          <span className="sig">{shortAddr(s.sig)}</span> ↗
                         </a>
                       )}
+                      </span>
                     </td>
                   </tr>
                 );
