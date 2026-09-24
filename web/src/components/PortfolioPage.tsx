@@ -83,7 +83,7 @@ export function PortfolioPage({ cluster, tickers, quoteMint, quoteSymbol, wallet
   const holdingsValue = valued.reduce((s, r) => s + r.total * r.p!.price, 0);
   const unvalued = rows.filter((r) => !r.p);
   const lockText = (l: Lock, amount: string) =>
-    `${amount} in a ${l.symbol} ${l.side}${l.settling ? ", settling" : l.msToCross != null ? `, crosses in ${fmtDuration(l.msToCross)}` : ""}`;
+    `${amount} in your ${l.symbol} ${l.side}${l.settling ? ", settling" : l.msToCross != null ? `, crosses in ${fmtDuration(l.msToCross)}` : ""}`;
 
   return (
     <section className="page" aria-label="Portfolio">

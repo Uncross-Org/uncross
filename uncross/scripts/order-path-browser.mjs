@@ -7,9 +7,8 @@
 //   1. places a buy and cancels it while the auction is open — the cancel must
 //      land and return the escrow;
 //   2. places a second buy and waits for the freeze — the Cancel button must be
-//      disabled, the app's own cancel path must be refused, and a cancel sent
-//      straight to the program with preflight skipped must land as a failed
-//      transaction, leaving the order in place;
+//      disabled, and a cancel sent straight to the program with preflight
+//      skipped must land as a failed transaction, leaving the order in place;
 //   3. waits for the cross — the page must raise its "crossed" notice and show
 //      the order's receipt with its settlement.
 // Every assertion reads chain state, not page text, except the two that are
@@ -74,9 +73,11 @@ const SHIM = `(() => { const ADDRESS=${JSON.stringify(me)};
   const reg=()=>window.dispatchEvent(new CustomEvent("wallet-standard:register-wallet",{detail:(api)=>api.register(wallet)}));
   window.addEventListener("wallet-standard:app-ready",(e)=>{try{e.detail.register(wallet)}catch{}}); reg(); document.addEventListener("DOMContentLoaded",reg);
   // Every notice the page raises, kept, since each one disappears after a few seconds.
+  // Installed once the document exists; this script runs before it does.
   window.__notices=[];
-  new MutationObserver(()=>{for(const t of document.querySelectorAll(".toast span:first-child")){const x=t.innerText; if(x && window.__notices[window.__notices.length-1]!==x && !window.__notices.includes(x)) window.__notices.push(x);}})
-    .observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+  const watch=()=>new MutationObserver(()=>{for(const t of document.querySelectorAll(".toast span:first-child")){const x=t.innerText; if(x && !window.__notices.includes(x)) window.__notices.push(x);}})
+    .observe(document.body,{subtree:true,childList:true,characterData:true});
+  document.readyState==="loading" ? document.addEventListener("DOMContentLoaded",watch) : watch();
 })();`;
 
 const cache = path.join(os.homedir(), "Library/Caches/ms-playwright");
@@ -248,11 +249,9 @@ await step("auction reached its freeze", /closing/i.test(phase), phase);
 await sleep(4000);
 const btn = await ev(`(() => { const b=[...document.querySelectorAll(".mine .tbl button")].find(x=>/cancel/i.test(x.innerText)); return b ? { disabled: b.disabled, status: b.closest("tr")?.querySelector(".status")?.innerText } : null; })()`);
 await step("Cancel is disabled once frozen, and the row says Frozen", btn?.disabled && /frozen/i.test(btn.status ?? ""), JSON.stringify(btn));
-// The app's own cancel path, with the button's guard removed.
-const nBefore = (await notices()).length;
-await ev(`(() => { const b=[...document.querySelectorAll(".mine .tbl button")].find(x=>/cancel/i.test(x.innerText)); b.disabled=false; b.removeAttribute("disabled"); b.click(); return true; })()`);
-await sleep(6000);
-const appRefusal = (await notices()).slice(nBefore).join(" | ");
+// The app cannot be made to send this cancel: React ignores clicks on a
+// button it has disabled. So the refusal is tested where it matters, at the
+// program, with preflight skipped so the attempt lands on chain.
 // Straight to the program, preflight skipped, so the refusal lands on chain.
 const auctionKey = new PublicKey(pick.address);
 const ix = await program.methods
@@ -287,8 +286,7 @@ try {
   refusedErr = `send failed: ${e.message}`;
 }
 const bNow = (await myOrders()).find((o) => o.address === b.order.address);
-await step("the app's cancel was refused once frozen", /freeze|frozen|PastFreezeWindow/i.test(appRefusal), appRefusal || "no notice");
-await step("a cancel sent straight to the program failed on chain", !!refusedSig && !!refusedErr && refusedErr !== null, `tx ${refusedSig}: ${refusedErr}`);
+await step("a cancel sent straight to the program failed on chain", !!refusedSig && /PastFreezeWindow/.test(refusedErr ?? ""), `tx ${refusedSig}: ${refusedErr}`);
 await step("order B is still live on chain", bNow && !bNow.cancelled, JSON.stringify({ cancelled: bNow?.cancelled, settled: bNow?.settled }));
 await shot("2-refused-when-frozen");
 
