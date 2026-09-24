@@ -187,10 +187,22 @@ async function snapshot() {
 const SYMBOL = new Map(cfg.tickers.map((t) => [t.mint, t.symbol]));
 const describe = (mintKey) => ({ symbol: SYMBOL.get(mintKey) ?? `${mintKey.slice(0, 6)}…` });
 
+// A feed id with no Pyth account on this cluster is opened as "no feed". Five
+// tickers (HOODx, IBMx, XOMx, JPMx, ORCLx) have a Pyth feed id but no price
+// account on Solana at all. Opened with that id, the cross had nothing to pass
+// but a placeholder, and the program recorded "wrong owner" — true of the
+// placeholder, misleading about the ticker. "No feed configured" is the truth.
+const NO_FEED = "0".repeat(64);
+async function feedForCluster(feed) {
+  if (!feed || feed === NO_FEED) return NO_FEED;
+  return (await pythAccountFor(feed)).equals(SystemProgram.programId) ? NO_FEED : feed;
+}
+
 async function openAuction(t, mint, slot) {
   const auction = auctionPda(ID, mint, slot);
+  const feed = await feedForCluster(t.feed);
   const ix = await program.methods
-    .initializeAuction(new BN(slot), new BN(slot + CADENCE), new BN(FREEZE), new BN(CADENCE), Array.from(Buffer.from(t.feed, "hex")))
+    .initializeAuction(new BN(slot), new BN(slot + CADENCE), new BN(FREEZE), new BN(CADENCE), Array.from(Buffer.from(feed, "hex")))
     .accountsStrict({
       payer: payer.publicKey,
       auction,
@@ -204,11 +216,12 @@ async function openAuction(t, mint, slot) {
       systemProgram: SystemProgram.programId,
     })
     .instruction();
-  if (DRY) return log(`DRY would open ${t.symbol} ${auction.toBase58()} slots ${slot}..${slot + CADENCE}`);
+  const feedNote = feed === NO_FEED ? ", no feed" : "";
+  if (DRY) return log(`DRY would open ${t.symbol} ${auction.toBase58()} slots ${slot}..${slot + CADENCE}${feedNote}`);
   const r = await sendV0(connection, payer, [], [ix]);
   // Known first-hand, so it joins the working set before any scan sees it.
   remember(auction);
-  log(`${t.symbol} opened ${auction.toBase58()} slots ${slot}..${slot + CADENCE} (freeze ${FREEZE})`, r.sig);
+  log(`${t.symbol} opened ${auction.toBase58()} slots ${slot}..${slot + CADENCE} (freeze ${FREEZE}${feedNote})`, r.sig);
 }
 
 async function clear(t, mint, a) {
