@@ -184,8 +184,6 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
 **Not yet tested:**
 
 - The Pyth tie-break on-chain (unit tests only, for the reason above).
-- A real browser wallet signing. The app's transaction code was driven end to
-  end on devnet with local keys standing in for the wallet.
 - A full order book. Capacity is 63 orders (down from 64, to make room for the
   rent payer); the largest tested had 42.
 - Nothing here has been audited.

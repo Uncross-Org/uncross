@@ -1,11 +1,13 @@
 # Uncross — revised submission description
 
-**Draft for review. Nothing has been entered on the site.**
+**Final text, 24 Sept 2026.** Paste two sections: "Short description" into the
+short description field, and everything from "The problem" down to the end of
+"Built with" into the full description. Stop at the line above "Review notes";
+those are for us and are not part of the submission.
 
 The universe figures were read on 23 Sept 2026 at 06:57 UTC. The IBMx quotes
-were read at 17:32 UTC the same day, the same reading the landing page now
-shows. Any other date is stated beside its figure. Review notes at the end mark
-each change from the version live on the project page.
+were read at 17:32 UTC the same day, the same reading the landing page shows.
+Any other date is stated beside its figure.
 
 ---
 
@@ -60,10 +62,15 @@ Nobody trades at a worse price than they asked for, and nobody in an auction get
 
 - **Anchor program:** open, orders, cancel until a freeze window, clearing, batched settlement (tested across 42 distinct owners, both vaults ending at exactly zero), refunds, and `close_auction` rent reclaim, which cuts the net cost of an auction from 0.018 to about 0.00002 SOL when an auction runs through to close.
 - **Live venue on devnet:** ten tickers crossing about every 19 minutes, run by a keeper, an activity bot and a faucet hosted on Railway.
-- **Dashboard:** one candle per auction, a depth ladder, order entry, and every auction linked to its transactions.
+- **Dashboard:** one candle per auction, a depth ladder, order entry, and every auction linked to its transactions. The top of each ticker separates what the book computes (the price it would clear at, the shares that would trade, best bid and ask, time to the cross) from the one external number, Pyth, with its age and what the program's own check made of it.
+- **Every participant sees what their order came to.** After the cross, each order's receipt shows whether it filled, shares filled out of shares asked, the limit, the clearing price, what was paid or received, what came back, and the settlement transaction. It is read from on-chain settlement data, keyed to the order rather than to the ticker's newest auction, so it stays after the next auction opens. An Orders page lists every order a wallet has placed on any ticker, and a Portfolio page shows each asset in the wallet and locked in orders.
 - **Landing page:** the routing evidence above, how the auction works, the Pyth gate, and a live book read from devnet in the browser with no wallet required.
-- **Browser wallets work end to end.** A wallet that had never existed connected through Wallet Standard in a fresh browser, took a faucet grant, placed an order and had it land on chain — driven through the UI only, and checked on chain rather than in the page. Most recent run: 23 Sept, transaction `3eZSqDJJyhUsJSCbrAK1GgRC88dNsbMZ25vw2FFjAJRPUFeobqubTXCC8b3BquyBVS641UoWeYuXBrypE8dPHCpy`.
-- **Anyone can join:** "Get test tokens" funds a fresh wallet with SOL and test tokens in one step. It is rate-limited — one grant per wallet every three hours, and a total cap (currently 0.8 SOL, enough for roughly 40 new wallets) — so a burst of visitors can exhaust it.
+- **Browser wallets work end to end, checked on chain.** On 24 Sept, on the live site, a wallet that had never existed connected through Wallet Standard in a fresh browser, took a faucet grant and placed two orders through the page.
+  - It cancelled the first while the auction was open: `5xuRETXFQpt6DvstKBPnRZuh6NhyFk7TeoSsWXnwi49MgchrHs3sKmM9rDzhdcygT7L8NwFg4eTZk65kFJPT3eNg`.
+  - Once the auction froze, the page disabled Cancel. A cancel sent straight to the program was refused on chain with `PastFreezeWindow`: `wzwxgAAigSUqiMhgrABrjSiUuS8CT3phv7YpLbANdsoA46b1FwQhxwCAxxUWDjHP1kJU74d5cCqfKnTGyaZ3ikF`.
+  - At the cross, the page announced the result and showed the second order's receipt with its settlement: `sf9HDGvT1VPE8PksBqjY4o89PATQkh8q2ZJarPSuqestVwKD1M54LgvqJmLB67DJ7eYmTBWZ92GQVLb6uQt4Lbf`.
+  The script that drives it is `uncross/scripts/order-path-browser.mjs`.
+- **Anyone can join:** "Get test tokens" funds a fresh wallet with SOL and test tokens in one step. It is rate-limited: one grant per wallet every three hours, and a total cap of 0.8 SOL, about 50 grants at 0.016 SOL each, of which 40 were left on 24 Sept. A burst of visitors can exhaust it.
 
 ## Pyth
 
@@ -83,7 +90,7 @@ We read the real AAPLx mint off mainnet and built a devnet fixture matching all 
 - Candle high and low show the range of limit prices placed, not trades. One price trades per auction.
 - Issuers retain pause and seizure rights. A paused mint blocks refunds of that token.
 - **Order rent is not returned, by design.** Every order creates an account that is never closed. It keeps the owner, limit, quantity, escrow and filled quantity after the auction account is closed, and every settlement transaction touches it. So any participant can rebuild their own outcome from chain at any time: the fill from the account, and what they paid and got back from the settlement transfers in its history. The cost is the account's rent, 0.00121412 SOL per order, paid by the trader and kept. We had designed closing these accounts to return that rent, and cancelled it because it would erase the record.
-- **The deployed keeper can strand auctions, and did.** `close_auction` returns an auction's rent once it is fully settled: 0.0183 SOL, for the auction account and its two vaults. The keeper running now builds its working set from a local cache, and each redeploy reset that cache, so auctions opened before a redeploy were never cleared. On 23 Sept, 119 auctions were stranded this way. We then recovered 120 auctions between 20:13 and 20:27 UTC: 118 of the 119, plus two opened on dormant tickers during testing. They returned 2.1994 SOL of rent for 0.0012 SOL in fees, and every close signature is in `docs/rent-recovery-2026-09-23.tsv`. The 119th cannot be recovered. It predates the reclaim upgrade, was cleared with no orders, and has no recorded payer, so its 0.0153 SOL stays locked. A keeper that finds its working set with a program scan instead of a cache is written and committed, but not yet deployed. Until it is, a redeploy can strand auctions again. As of 20:31 UTC on 23 Sept, 245 auction accounts hold 3.74 SOL. 202 of them, holding 3.09 SOL, settled before the reclaim upgrade, have no recorded payer, and can never be closed. 32 are settled and closeable, 10 are live, and one is the stranded auction above.
+- **The keeper stranded auctions until 23 Sept.** `close_auction` returns an auction's rent once it is fully settled: 0.0183 SOL, for the auction account and its two vaults. The keeper built its working set from a local cache, and each redeploy reset that cache, so auctions opened before a redeploy were never cleared. On 23 Sept, 119 auctions were stranded this way. We then recovered 120 auctions between 20:13 and 20:27 UTC: 118 of the 119, plus two opened on dormant tickers during testing. They returned 2.1994 SOL of rent for 0.0012 SOL in fees, and every close signature is in `docs/rent-recovery-2026-09-23.tsv`. The 119th cannot be recovered. It predates the reclaim upgrade, was cleared with no orders, and has no recorded payer, so its 0.0153 SOL stays locked. At 21:08 UTC on 23 Sept we replaced the keeper with one that finds its working set with a program scan instead of a cache, so a redeploy can no longer strand anything. It also never closes an auction that has an order from anyone but our test bot, so a participant's auction keeps its full on-chain record. As of 20:31 UTC on 23 Sept, 245 auction accounts hold 3.74 SOL. 202 of them, holding 3.09 SOL, settled before the reclaim upgrade, have no recorded payer, and can never be closed. 32 are settled and closeable, 10 are live, and one is the stranded auction above.
 
 ## Built with
 
@@ -92,6 +99,8 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 ---
 
 ## Review notes
+
+▲ **24 Sept, final pass.** The keeper paragraph said the scan-based keeper was "not yet deployed"; it has been live since 21:08 UTC on 23 Sept, and the paragraph now says so. "What's built" adds the settlement receipt, the Orders and Portfolio pages, and the split between book figures and the Pyth reference. The browser-wallet bullet now cites today's live run, which also shows cancel accepted while open and refused once frozen. The faucet figures are from its live health endpoint on 24 Sept. The README's "not yet tested: a real browser wallet signing" line is deleted.
 
 ▲ **Problem section now leads with the 95% finding** — 1,026 mints, 55 with any pool (two of them empty), 971 with none — with the method, the date, and the seven halted tickers. The short description leads with it too.
 
@@ -122,6 +131,7 @@ Anchor, Next.js, TradingView lightweight-charts, shadcn/ui, Aceternity UI (licen
 ▲ **Added: Railway and Pyth's receiver** to "Built with".
 
 **Things you should check before pasting:**
+- **"No public auction with outside participants has happened yet. Every order on the venue so far is ours."** This is only true if the three wallets in the 23 Sept MSTRx auction (G4o8…xWPc, 218b…Z7US, Cwcg…p9Gu) are yours. If anyone else placed one of those orders, this line is wrong and should say so instead.
 - **The 1,026 is xStocks' own API, verified on chain.** It is far larger than the ~60 names at launch; the universe has grown. If a judge remembers "60 xStocks", the method line is what answers them.
 - **The site and this text now agree.** The landing page headline was corrected and deployed at 17:39 UTC on 23 Sept. It shows the same two dated IBMx readings and the same 17:32 figures as the table above.
 - **The IBMx figures are a moving target.** If you paste this days from now, they will be days old; the table's column header dates them, so they stay true as a record. If you want them current on the day you paste, ask and I will re-read and update both this text and the site together.
