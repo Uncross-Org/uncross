@@ -14,6 +14,32 @@ Three orders from three wallets, two placed by people other than the builder. Wa
 | Cross (`compute_clearing`) | [`2SKcwefY…K75FpLAU`](https://explorer.solana.com/tx/2SKcwefYsGdpquxrgJP2yRdnn2VpyBEL7oV2GdmjBsTFGqqHvP6L58wxMcAsuU7DYnyvhmeJBMRrhMpFK75FpLAU?cluster=devnet) |
 | Settlement | [`4ws2ByFq…hNGBKY8A`](https://explorer.solana.com/tx/4ws2ByFqvSJzCVG73iW1D7CRSP8eYNqKBoq2CybQk2a6mdkHK1byo8KpmEnRFBEVWfHtzpYZiJK3RFQahNGBKY8A?cluster=devnet) |
 
+## The community auction, 24 Sept
+
+Announced publicly ahead of time, run on devnet on the regular AAPLx and IBMx books. 11 wallets other than the test bot's placed orders across the two books, and every one got a fill. The bot's own orders were in both books ([Honest limitations](/trust/limitations/#what-the-devnet-results-do-and-do-not-show)). Both prices were set by volume alone, with no tie, so neither the oracle nor the midpoint rule played any part. `verify-auction.mjs` matches both.
+
+**AAPLx.** 24 orders from 13 wallets, 10 of them not the bot. Cleared 53.16 shares at $336.97. Auction [`7uc3uXqH…YYMivcVn`](https://explorer.solana.com/address/7uc3uXqHFRx5eqAbuDV5BUdoimCVYLARQYDCYYMivcVn?cluster=devnet).
+
+| Step | Signature |
+|---|---|
+| Opened, 12:42:42 UTC | [`5iDs9xEK…6NMMfAnW`](https://explorer.solana.com/tx/5iDs9xEKUt8DmSQ1gSerjfAk9zVasT9oLoRDNDD7NXqoeTWGZuCjc4L6s3YGQcS4k1LVmadHdV4nJz796NMMfAnW?cluster=devnet) |
+| Cross, 13:02:06 UTC | [`439jNtYv…wqCHk2wC`](https://explorer.solana.com/tx/439jNtYvUnqosHwJpcgXarVmxSMixB11X43omAsq22pEtGJ8T971Jz6hHjKksnpSvcR7AwBYxwase2J8wqCHk2wC?cluster=devnet) |
+| Settlement 1 of 4 | [`3GVouS2V…N9Bv9ckH`](https://explorer.solana.com/tx/3GVouS2VuyK4pYWRUGv6nX147uKjBcSEcy5os9AU9Ti2veBgadRSKcNob2JyqL5m4o9b9aQEw3GmwtQ4N9Bv9ckH?cluster=devnet) |
+| Settlement 2 of 4 | [`44yyhpbt…JwDgfXc8`](https://explorer.solana.com/tx/44yyhpbtEMVzZueTxhZe8teC5bkaQsEqabMtENxLSV1cue8ycA2NrhuZhaxVNVZwSgkgLR4Rc69i797HJwDgfXc8?cluster=devnet) |
+| Settlement 3 of 4 | [`3X5M32Ea…7irP2hJY`](https://explorer.solana.com/tx/3X5M32Ea33bM7cjUVsPWfdNERq8r7PMcJgxdUMK1PbCSPMTsrH3M34Duw1rEXjUCxj4uE5ejqpSQskUt7irP2hJY?cluster=devnet) |
+| Settlement 4 of 4 | [`BWTFG3M8…4tB7Go2P`](https://explorer.solana.com/tx/BWTFG3M8qdGgWcLr4xLm3YdDL9vjSp9FANaVDuR1R1sgBC6h7gWHN65P7VKMt1ZotkiowLj25asMeCc4tB7Go2P?cluster=devnet) |
+
+**IBMx.** 20 orders from 12 wallets, 9 of them not the bot. Cleared 28.97 shares at $207.27 a share. That is $210.44968 per token × 28.53 tokens on chain, at IBMx's multiplier of 1.0153. Auction [`JgkL8nLK…WBe6WnwD`](https://explorer.solana.com/address/JgkL8nLKuFA2rGRCjmFy2EC75mxpZXsXYumWBe6WnwD?cluster=devnet).
+
+| Step | Signature |
+|---|---|
+| Cross, 12:58:33 UTC | [`2MvdyHfb…ymrSCk1K`](https://explorer.solana.com/tx/2MvdyHfbfVtnJ578cTWs1ZW9VXYUEHMxKNL7VLmzqc3Fd17kKiYqE1fNmfcDSQGrRgHNKXRDcg3LXkNxymrSCk1K?cluster=devnet) |
+| Settlement 1 of 3 | [`5FffySLM…Fi6iuJew`](https://explorer.solana.com/tx/5FffySLMGViJLqi3yJw6MTyF86wmbpwb6zFv9rFNjDUoMpcuhCbqUF5tpm3g1fx5nT2KPnSELio4Y9XqFi6iuJew?cluster=devnet) |
+| Settlement 2 of 3 | [`62e7BqRi…S5mgHLeD`](https://explorer.solana.com/tx/62e7BqRi7LtCr1iTqTGpnuRWg43VYe5LGScybkYVK4PnPisNubqAgwCV1huKZk3kDvhWKZ4JiMXWEvuqS5mgHLeD?cluster=devnet) |
+| Settlement 3 of 3 | [`3xyXxwjR…gHQJxko4`](https://explorer.solana.com/tx/3xyXxwjRaayZULnJxoVdPMPBDG1MGEpKkMX3dEvTwRj7Majw9zpTAmkAcz7zdfr1kZ4a6DBooZgrhemHgHQJxko4?cluster=devnet) |
+
+The Pyth check recorded "stale" for AAPLx and "wrong owner" for IBMx, which has no Pyth account ([What Pyth is used for](/pyth/role/#what-actually-happens-on-devnet)).
+
 ## A real browser wallet on the live site, 24 Sept
 
 A wallet that had never existed, in a fresh browser, through Wallet Standard. It took a faucet grant and placed two orders through the page.
@@ -103,4 +129,4 @@ The functions the UI calls on click were driven end to end against devnet on the
 
 The docs site's build check extracts every Explorer transaction link on every page. It asks a devnet RPC for each signature's status, with transaction history search on, and fails if any is not found. The cancel refused with `PastFreezeWindow` above is a transaction that landed and failed, which is how a refusal is recorded on chain. It is expected to show an error.
 
-<p class="sources">Sources: <code>docs/phase1.md</code>, <code>docs/phase2.md</code>, <code>docs/submission-draft.md</code>, <code>README.md</code>, <code>docs/rent-recovery-2026-09-23.tsv</code>.</p>
+<p class="sources">Sources: <code>docs/submission-draft.md</code> (community auction, commit <code>70ca5d4</code>), checked against the auction accounts, their order accounts and transactions on devnet; <code>docs/phase1.md</code>, <code>docs/phase2.md</code>, <code>docs/submission-draft.md</code>, <code>README.md</code>, <code>docs/rent-recovery-2026-09-23.tsv</code>.</p>

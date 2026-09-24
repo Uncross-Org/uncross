@@ -9,7 +9,12 @@ Read this page before relying on any claim elsewhere in these docs.
 
 **Most devnet orders come from a test bot.** An activity bot places orders on some tickers. They are priced around Pyth, or around Jupiter where no Pyth feed exists. So when a clearing price lands near the Pyth price, that shows **the bot followed its instructions**. It is not independent price discovery. What the crosses do demonstrate is the mechanism: one price, every order filled at it, escrow conserved to the unit.
 
-**Only one auction has had anyone but us in it.** On 23 September a MSTRx auction cleared with three orders from three wallets. Two were placed by people other than the builder, from a group chat where the venue had been shared ([Verify a clearing price](/trust/verify/)). The three wallets have transacted with one another before, so these were people who know each other, not strangers. As of 24 September, **no open public auction has run**. Two community auctions were scheduled and neither ran.
+**Participation is small, and it is not bot-free.** Two events have had people besides us in them.
+
+- **23 September, MSTRx.** Three orders from three wallets. Two were placed by people other than the builder, from a group chat where the venue had been shared ([Verify a clearing price](/trust/verify/)). The three wallets have transacted with one another before, so these were people who know each other, not strangers.
+- **24 September, the community auction.** It was announced publicly ahead of time and run on devnet, on the regular AAPLx and IBMx books, which crossed at 13:02 and 12:58 UTC. **11 wallets other than the test bot's placed orders, and every one got a fill.** Nine were new wallets that first appeared on chain in the 15 minutes before the AAPLx cross. The other two had taken part in the 23 September cross. We do not know who controls the nine. The bot was not held out of these books. Three of its wallets placed orders in each, and they account for about 5% of AAPLx's filled shares and 9% of IBMx's. Figures and signatures: [Transaction index](/trust/transactions/#the-community-auction-24-sept).
+
+Neither event is evidence of organic market demand. Both were small, and both ran on devnet with test tokens.
 
 **Candle high and low are limit prices placed, not trades.** Only one price trades per auction.
 
@@ -39,7 +44,7 @@ The sender of `compute_clearing` chooses which account to pass as the Pyth price
 - **They cannot** take funds, or cause anyone to receive less than their full escrow. The refund path returns every order's full original escrow.
 - **They can**, by sending a refund batch before the keeper's first ordinary settlement, lock the auction onto refunds. The trades computed at the cross then never happen, and every order shows **Refunded**.
 
-**What this means for trust.** Any wallet can void any auction's trades, at the cost of a transaction fee. Funds are never at risk, but an auction's result is not guaranteed to execute. **Possible fixes, not implemented:** allow the refund path only while the ticker mint is paused, or only after ordinary settlement has been impossible for some time.
+**What this means for trust.** Any wallet can void any auction's trades, at the cost of a transaction fee. Funds are never at risk, but an auction's result is not guaranteed to execute. The keeper narrows the window without closing it: in the 24 September community auction, its first settlement batch landed 24 seconds after each cross. **The fix is identified and not yet shipped:** allow the refund path only when the ticker mint is paused, or when the auction's operator chooses it.
 
 ## Stranded auction rent: found, and mostly recovered
 

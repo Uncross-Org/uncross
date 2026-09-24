@@ -45,6 +45,7 @@ Source links point to commit [`f7245ea`](https://github.com/Uncross-Org/uncross/
 - The 247.50 auction account ([The clearing rule](/mechanism/clearing-rule/)).
 - The clearing rule replayed over 40 other auctions: all 39 that had crossed matched.
 - The MSTRx fixture mint's extensions and multiplier.
+- The 24 Sept community auction: both auction accounts replayed, every order account's owner checked against the bot's 42 test wallets (`uncross/scripts/bot-owners.json`), the first on-chain transaction of each new wallet, and each auction's cross and settlement transactions.
 - The program's 25 unit tests, run with `cargo test`: all passed.
 
 ## How the site itself is checked

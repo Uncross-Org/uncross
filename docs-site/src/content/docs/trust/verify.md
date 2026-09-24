@@ -3,7 +3,7 @@ title: Verify a clearing price
 description: Check any Uncross cross yourself, from chain, without trusting the app, worked through on the 23 Sept MSTRx auction.
 ---
 
-Every clearing price can be checked from public chain data. You need nothing from Uncross except the program's published rule. This page walks through it on a real auction: the **23 September MSTRx cross**, the one auction so far with orders from people other than the builder.
+Every clearing price can be checked from public chain data. You need nothing from Uncross except the program's published rule. This page walks through it on a real auction: the **23 September MSTRx cross**, the first auction with orders from people other than the builder. The same steps apply to the [24 September community auction](/trust/transactions/#the-community-auction-24-sept), whose two books the script also matches.
 
 ## The fast way: a script
 
