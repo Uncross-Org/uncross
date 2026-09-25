@@ -90,7 +90,7 @@ The AAPL feed was measured publishing straight through the close and overnight. 
 ## Smaller things
 
 - **Capacity.** An auction holds at most 63 orders. The largest book tested had 42. Settlement fits 7 orders per transaction with distinct owners. Address lookup tables would raise that, and are not used.
-- **Recorded gate verdicts can mislead.** Five tickers have no Pyth account on any network. Their auctions currently record "wrong owner", because the keeper passes a placeholder. A committed keeper change records "no feed configured" instead, and deploys after the 24 September community auction.
+- **Older gate verdicts can mislead.** Five tickers have no Pyth account on any network. Until 25 September their auctions recorded "wrong owner", because the keeper passed a placeholder, and those records stand. Since the keeper change deployed on 25 September they open with no feed and record "no feed configured".
 - **Timing is estimated.** Windows are fixed in slots. Minutes are derived from a measured slot rate that drifts, so the countdown is an estimate.
 - **The faucet can run dry.** A global cap bounds how many new wallets it can fund. On 24 September it covered about 40, with 31 left.
 
