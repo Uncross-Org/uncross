@@ -19,7 +19,7 @@ The top of a ticker's page keeps two sources apart:
 | **Cleared at**, **N shares traded** (after the cross) | The clearing price and volume the program wrote once, at the cross, with a Pyth price if one passed the gate | As above |
 | **Best bid** | The highest limit among live buy orders, worked out in your browser | As above |
 | **Best ask** | The lowest limit among live sell orders | As above |
-| **Crosses in** | (close slot − current slot) × the measured slot time. The slot is read every 12 s and counted forward between reads. The slot time comes from the network's recent performance samples every 2 minutes, about 0.166 s on devnet. | Every second, estimated |
+| **Crosses in** | (close slot − current slot) × the measured slot time. The slot is read every 12 s and counted forward between reads. The slot time comes from the network's recent performance samples every 2 minutes. It drifts: about 0.166 s on devnet in late September, about 0.235 s on 3 Oct 2026. | Every second, estimated |
 | **Orders can be cancelled for …** | (close slot − freeze slots − current slot) × slot time | Every second, estimated |
 
 **Would clear at vs cleared at.** Before the cross no oracle price is used, so the final price can differ from the last "would clear at" only if a tie survives the imbalance rule and a Pyth price passes the gate. On devnet the gate usually fails as stale, so in practice the two agree.

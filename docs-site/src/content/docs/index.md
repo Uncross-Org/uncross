@@ -3,7 +3,7 @@ title: What Uncross is
 description: A periodic call auction for tokenized stocks on Solana. Orders collect for a window, then everyone who trades fills at one price.
 ---
 
-Uncross is a **periodic call auction** for tokenized US stocks on Solana. Orders do not trade when they arrive. They collect during a window of about 19 minutes. Cancelling closes for the last 700 slots of it, about two minutes. Then everything in the book clears at a single price: the price at which the most shares change hands.
+Uncross is a **periodic call auction** for tokenized US stocks on Solana. Orders do not trade when they arrive. They collect during a window of 7,000 slots. Cancelling closes for the last 700 slots of it. A slot is Solana's clock tick, and its length varies with the network: at the slot time devnet showed on 3 Oct 2026 (4.26 slots a second), a window lasted about 27 minutes and the freeze about 164 seconds. See [Timing](/mechanism/lifecycle/#timing). Then everything in the book clears at a single price: the price at which the most shares change hands.
 
 - **Buyers** pay the clearing price, never their limit if the clearing price is lower. The difference comes back to them.
 - **Sellers** receive the clearing price, never less than they asked.

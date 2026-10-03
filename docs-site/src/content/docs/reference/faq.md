@@ -24,13 +24,13 @@ Price priority. When more shares are willing to trade than can be matched, bette
 Because nothing executes until the cross. Overlapping buyers and sellers are exactly what will trade. [Glossary](/start/glossary/)
 
 **When can I cancel?**
-Until the freeze, the last 700 slots of the window (about two minutes at the measured devnet slot rate). [Auction lifecycle](/mechanism/lifecycle/)
+Until the freeze, the last 700 slots of the window. That was about 164 seconds at the slot time devnet showed on 3 Oct 2026; it varies with the network. [Auction lifecycle](/mechanism/lifecycle/)
 
 **Can I place an order during the freeze?**
 Yes. Only cancelling stops. An order placed during the freeze cannot be cancelled. [Auction lifecycle](/mechanism/lifecycle/)
 
 **How long is an auction?**
-7,000 slots, about 19 minutes at the measured devnet rate. A new one opens for each scheduled ticker as soon as the last one ends. [Auction lifecycle](/mechanism/lifecycle/#timing)
+7,000 slots. In minutes it depends on devnet's slot time: about 27 minutes on 3 Oct 2026, about 19 minutes in late September. A new one opens for each scheduled ticker as soon as the last one ends. [Auction lifecycle](/mechanism/lifecycle/#timing)
 
 ## Money and safety
 

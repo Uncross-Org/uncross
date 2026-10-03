@@ -24,10 +24,14 @@ The freeze stops **cancellation** only. The program accepts `place_order` until 
 
 The keeper opens each auction with a window of **7,000 slots** and a freeze of **700 slots**. Those are the only fixed numbers. They are written into each auction account (`close_slot`, `freeze_slots`), and anyone can read them there.
 
-Converting slots to minutes needs the network's slot rate, which is measured, not specified, and it drifts. At the rate measured on devnet, **6.04 slots per second (about 0.166 s per slot)**:
+Converting slots to minutes needs the network's slot rate. That is measured, not specified, and it drifts:
 
-- 7,000 slots ≈ 19.3 minutes (derived);
-- 700 slots ≈ 116 seconds, about two minutes (derived).
+| Measured | Slot rate | 7,000-slot window | 700-slot freeze |
+|---|---|---|---|
+| 23 Sept 2026 | 6.04 slots/s (0.166 s per slot) | about 19 minutes | about 116 seconds |
+| 3 Oct 2026 | 4.26 slots/s (0.235 s per slot) | about 27 minutes | about 164 seconds |
+
+The minute figures are derived from those rates, not fixed by anything. Only the slot counts are written into the auction. The slot rate comes from devnet's recent performance samples (`getRecentPerformanceSamples`).
 
 The app counts down using the same measured rate. It reads the current slot every 12 seconds and the slot rate every two minutes, so its countdown is an estimate. See [Read a ticker page](/app/ticker-page/).
 
@@ -115,4 +119,4 @@ The keeper closes finished auctions, but never one that holds an order from anyo
 
 **Order accounts are never closed.** They are the permanent record of each order and its settlement. See [Costs and rent](/mechanism/costs/).
 
-<p class="sources">Sources: <code>uncross/programs/uncross/src/lib.rs</code> (every instruction and check), <code>state.rs</code>, <code>docs/railway.md</code> (keeper start command), <code>docs/numbers.md</code> (timing and slot rate), <code>docs/submission-draft.md</code> (6.04 slots/s, browser-wallet run, keeper close policy), <code>docs/phase2.md</code> (batch size, path lock), <code>README.md</code> (close_auction tests), <code>web/src/components/OrderForm.tsx</code>.</p>
+<p class="sources">Sources: <code>uncross/programs/uncross/src/lib.rs</code> (every instruction and check), <code>state.rs</code>, <code>docs/railway.md</code> (keeper start command), <code>docs/numbers.md</code> (timing and slot rate), devnet <code>getRecentPerformanceSamples</code> read on 3 Oct 2026, <code>docs/submission-draft.md</code> (6.04 slots/s, browser-wallet run, keeper close policy), <code>docs/phase2.md</code> (batch size, path lock), <code>README.md</code> (close_auction tests), <code>web/src/components/OrderForm.tsx</code>.</p>

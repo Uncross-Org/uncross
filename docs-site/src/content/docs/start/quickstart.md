@@ -41,7 +41,7 @@ More in [Place an order](/app/placing-an-order/).
 
 ## 5. Wait for the cross
 
-The countdown shows when the auction crosses. Until the **freeze** (the last 700 slots, about two minutes) you can cancel and get everything back. During the freeze you can still place orders, but no order can be cancelled.
+The countdown shows when the auction crosses. Until the **freeze** (the last 700 slots, about 164 seconds at the slot time devnet showed on 3 Oct 2026) you can cancel and get everything back. During the freeze you can still place orders, but no order can be cancelled.
 
 When the window closes, the program computes one clearing price. Everyone whose limit allows it fills at that price. [The clearing rule](/mechanism/clearing-rule/) explains how the price is chosen.
 

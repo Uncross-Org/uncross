@@ -55,7 +55,7 @@ You may see the **best bid above the best ask**. In a continuous market that wou
 
 Until the freeze, **Cancel** returns everything the order locked in the same transaction.
 
-Once the auction enters its freeze (the last 700 slots, about two minutes), Cancel is disabled, and the program refuses a cancel sent to it directly (`PastFreezeWindow`). You can **still place new orders** during the freeze. The form warns that they cannot be cancelled.
+Once the auction enters its freeze (the last 700 slots, about 164 seconds at the slot time devnet showed on 3 Oct 2026), Cancel is disabled, and the program refuses a cancel sent to it directly (`PastFreezeWindow`). You can **still place new orders** during the freeze. The form warns that they cannot be cancelled.
 
 ## At the cross
 

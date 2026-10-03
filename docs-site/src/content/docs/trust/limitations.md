@@ -87,6 +87,10 @@ See [xStocks and Token-2022](/tokens/xstocks-token-2022/).
 
 The AAPL feed was measured publishing straight through the close and overnight. The claim that it stops was retracted ([After the close](/pyth/after-hours/)). The on-chain account has no trading-status field, so a thin extended-hours print and a liquid regular-session one cannot be told apart on chain. The program will use either as a tie-break if it is fresh and tight. Weekends were not measured.
 
+## Pyth's mainnet accounts have stopped updating
+
+The five sponsored Pyth accounts the app reads on Solana mainnet (AAPL, NVDA, TSLA, GOOGL, MSTR) all stopped updating at 11:53 UTC on 28 Sept 2026. The app shows that reference as too old to use. The auctions are unaffected, because they clear on devnet by the book, but the external reference on each ticker page is stale until the accounts resume or the app moves to another source. See [What Pyth is used for](/pyth/role/#which-feed).
+
 ## Smaller things
 
 - **Capacity.** An auction holds at most 63 orders. The largest book tested had 42. Settlement fits 7 orders per transaction with distinct owners. Address lookup tables would raise that, and are not used.

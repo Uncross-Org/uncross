@@ -11,7 +11,7 @@ The keeper runs auctions on a fixed cadence for ten tickers: AAPLx, NVDAx, TSLAx
 
 Click **Open an auction for …**. The faucet service opens it for you:
 
-- It takes orders for the next 7,000 slots, about 19 minutes at the measured devnet slot rate, with the same 700-slot freeze as every other auction.
+- It takes orders for the next 7,000 slots, with the same 700-slot freeze as every other auction. How long that takes depends on devnet's slot time: about 27 minutes at the slot time devnet showed on 3 Oct 2026 ([Timing](/mechanism/lifecycle/#timing)).
 - **The venue pays the rent**, about 0.018 SOL, and gets it back when the auction closes. Your test tokens stay yours to trade with.
 - If an auction is already running for that ticker, you are shown that one instead.
 - The keeper runs the cross and settlement when the window closes, as for any other auction.

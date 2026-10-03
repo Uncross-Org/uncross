@@ -33,8 +33,8 @@ A ticker whose multiplier is not 1 says so on its page. For AAPLx and MSTRx on d
 
 ## Slots and time
 
-Auction windows are set in **slots**. A slot is a short period of the Solana clock, and its length is measured, not fixed. The keeper's auctions are 7,000 slots with a 700-slot freeze. At the measured devnet rate of about 6.04 slots per second (0.166 s per slot), that is about 19.3 minutes and 116 seconds. Those minute figures are derived, and they drift with the network ([Auction lifecycle](/mechanism/lifecycle/#timing)).
+Auction windows are set in **slots**. A slot is a short period of the Solana clock, and its length is measured, not fixed. The keeper's auctions are 7,000 slots with a 700-slot freeze. Minutes are derived from the slot rate at the time: 4.26 slots per second on 3 Oct 2026 gives about 27 minutes and 164 seconds, and 6.04 slots per second in late September gave about 19 minutes and 116 seconds ([Auction lifecycle](/mechanism/lifecycle/#timing)).
 
 Pyth publish times and the 90-second freshness check use Unix seconds from the on-chain clock.
 
-<p class="sources">Sources: <code>web/src/lib/units.ts</code>, <code>uncross/programs/uncross/src/clearing.rs</code> (<code>escrow_for_buy</code>, <code>assign_quote_amounts</code>), <code>docs/numbers.md</code> (Units; slot time), <code>docs/submission-draft.md</code> (6.04 slots/s).</p>
+<p class="sources">Sources: <code>web/src/lib/units.ts</code>, <code>uncross/programs/uncross/src/clearing.rs</code> (<code>escrow_for_buy</code>, <code>assign_quote_amounts</code>), <code>docs/numbers.md</code> (Units; slot time), <code>docs/submission-draft.md</code> (6.04 slots/s), devnet <code>getRecentPerformanceSamples</code> read on 3 Oct 2026 (4.26 slots/s).</p>

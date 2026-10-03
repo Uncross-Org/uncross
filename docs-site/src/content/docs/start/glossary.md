@@ -49,7 +49,7 @@ description: Every term these docs use, for readers who know markets but not Sol
 
 **Transaction and signature.** A transaction is a signed request to one or more programs. Its **signature** is its unique ID. Paste it into [Solana Explorer](https://explorer.solana.com/?cluster=devnet) (set to devnet) to see exactly what it did.
 
-**Slot.** Solana's clock tick. A slot is a short period in which one block can be produced. Uncross measures auction windows in slots, not minutes, because slots are what the program can read. Converting slots to minutes needs the network's measured slot rate, which drifts. On devnet it was measured at about 0.166 s per slot.
+**Slot.** Solana's clock tick. A slot is a short period in which one block can be produced. Uncross measures auction windows in slots, not minutes, because slots are what the program can read. Converting slots to minutes needs the network's measured slot rate, which drifts. On devnet it was about 0.166 s per slot in late September and about 0.235 s on 3 Oct 2026.
 
 **Program.** Code deployed on Solana. The Uncross program is `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP`.
 
