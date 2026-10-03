@@ -53,11 +53,7 @@ All 1,026 xStocks mints on Solana carry the identical eight-extension set under 
 
 - **Liquidity.** Devnet orders come mostly from a test bot. See [Honest limitations](/trust/limitations/).
 - **An adversarial issuer on mainnet.** The fixture proves the program handles the extension set as currently configured. It cannot prove anything about what Backed Finance might do next, such as setting a transfer-hook program or using the permanent delegate.
-- **The oracle's passing path.** Pyth publishes no fresh price on devnet ([What Pyth is used for](/pyth/role/#what-actually-happens-on-devnet)).
+- **A live Pyth price for the venue's tickers.** There is none on Solana today, so every cross clears on the book alone. The gate's passing path ran once, on a devnet test auction with SOL/USD ([What Pyth is used for](/pyth/role/#the-pull-model-proven-once-on-devnet)).
 - **Mainnet itself.** Nothing here has run against a real xStocks mint. The program is not deployed on mainnet.
-
-## The reference price comes from mainnet
-
-The Pyth price the app shows is read from Solana **mainnet**, read-only, and labelled as such. Auctions clear on devnet.
 
 <p class="sources">Sources: <code>README.md</code> (What it runs on), <code>docs/devnet-fixture.md</code>, <code>docs/phase0.md</code> Q1 and Q7, <code>docs/submission-draft.md</code> (Why devnet; identical extension set), <code>uncross/scripts/tickers.json</code>.</p>

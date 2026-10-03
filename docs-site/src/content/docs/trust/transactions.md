@@ -38,7 +38,7 @@ Announced publicly ahead of time, run on devnet on the regular AAPLx and IBMx bo
 | Settlement 2 of 3 | [`62e7BqRi…S5mgHLeD`](https://explorer.solana.com/tx/62e7BqRi7LtCr1iTqTGpnuRWg43VYe5LGScybkYVK4PnPisNubqAgwCV1huKZk3kDvhWKZ4JiMXWEvuqS5mgHLeD?cluster=devnet) |
 | Settlement 3 of 3 | [`3xyXxwjR…gHQJxko4`](https://explorer.solana.com/tx/3xyXxwjRaayZULnJxoVdPMPBDG1MGEpKkMX3dEvTwRj7Majw9zpTAmkAcz7zdfr1kZ4a6DBooZgrhemHgHQJxko4?cluster=devnet) |
 
-The Pyth check recorded "stale" for AAPLx and "wrong owner" for IBMx, which has no Pyth account ([What Pyth is used for](/pyth/role/#what-actually-happens-on-devnet)).
+The program recorded "stale" for AAPLx and "wrong owner" for IBMx, which has no Pyth account; neither had a live Pyth price, so both cleared on the book alone ([What Pyth is used for](/pyth/role/#today-no-live-pyth-price-for-the-venues-tickers)).
 
 ## The refund-path fix, 24 Sept
 

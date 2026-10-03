@@ -30,14 +30,12 @@ The top of a ticker's page keeps two sources apart:
 
 ## External reference
 
-| Shown as | What it is | Refresh |
-|---|---|---|
-| **Pyth · XXX/USD** | The ticker's Pyth price account on **Solana mainnet**, read through the site's `/api/rpc` proxy, with public endpoints as fallback. Price × 10^exponent. | Every 12 s |
-| **Published Ns ago** | Now − the price's publish time. Over 90 s is marked **stale**, the same limit the program uses. | Every second |
-| **Extended hours** | Pyth's own schedule for the feed says the market is closed, but the price is still fresh | Schedule read hourly |
-| **Last check: stale, not used** | What the program's eight-condition gate recorded at the latest cross of this ticker. The program checks the **devnet** Pyth account the keeper passes in, not the mainnet one shown above. | Every 30 s |
+| Shown as | What it is |
+|---|---|
+| **Pyth · XXX/USD** | When there is no fresh Pyth print for the ticker, which today is always, one line: "No live Pyth price for this ticker. The book alone sets the clearing price." No old price, age or warning is shown. |
+| A price, "Published Ns ago on Solana mainnet" | Shown only if a fresh print (under 90 seconds old, the program's own limit) exists on Solana mainnet. It is read through the site's `/api/rpc` proxy every 12 s, with "extended hours" added when Pyth's schedule says the market is closed. |
 
-The price shown is mainnet Pyth. The auction's own check reads devnet Pyth at the cross, and uses it only to break a tie, never to set the price. The devnet accounts were last published on 2 July 2026, so most auctions record "stale" ([What Pyth is used for](/pyth/role/)).
+None of the venue's tickers has a live Pyth price today ([What Pyth is used for](/pyth/role/#today-no-live-pyth-price-for-the-venues-tickers)). Whatever the panel shows, it never sets the devnet auction's price; a fresh Pyth price could only break a tie at the cross.
 
 ## Sidebar
 
@@ -47,6 +45,7 @@ The price shown is mainnet Pyth. The auction's own check reads devnet Pyth at th
 | **open · crosses in Nm** / **frozen · crosses in Nm** | Shown whenever the ticker's newest auction is taking orders, rounded up to the minute |
 | **last cross N ago** | Time since the window closed on the ticker's last auction that traded. Not the settlement time, which follows seconds later. |
 | **between auctions** | The few seconds between one auction's cross and the next one opening |
+| **Search tickers** | Searches all 120 listed xStocks. A ticker with nothing running opens to its "Open an auction" card ([Open an auction](/app/open-and-crank/)). |
 
 The sidebar reads the site's cached venue feed, refreshed every 15 s (the server refreshes its own read every 10 s). The ticker page reads the auction account directly. So the sidebar can lag the page by up to about 25 seconds.
 
@@ -58,7 +57,7 @@ Tickers show different timing because there is no shared schedule. Each ticker's
 
 **Depth.** Cumulative demand and supply curves for the current book. Where they cross is where the auction would clear.
 
-**Past crosses.** One row per auction: when its window closed, clearing price, volume, number of orders, **Pyth anchor**, and status (Settled, Settling or Refunded). "Pyth anchor: Yes" means a fresh Pyth price passed the gate and was recorded at that cross.
+**Past crosses.** One row per auction: when its window closed, clearing price, volume, number of orders, **Pyth anchor**, and status (Settled, Settling or Refunded). "Pyth anchor: Yes" would mean a fresh Pyth price passed the gate at that cross; on the venue's tickers every row reads No.
 
 ## The auction page
 
@@ -67,7 +66,7 @@ Every auction has its own page, opened from **Past crosses**, from a receipt or 
 - every order, with its wallet, limit, fill and what it paid or received;
 - the demand and supply curves at the cross;
 - the clearing rule replayed step by step from the auction account, with the candidate prices, which rule set the price, and a check that the replay matches the price the program recorded;
-- the Pyth check the program recorded;
+- whether a live Pyth price existed at the cross. For the venue's tickers it reads "No live Pyth price for this ticker at the cross. The book alone set the clearing price.", with the program's recorded reason in its tooltip;
 - every transaction, labelled by what it did.
 
 See [Verify a clearing price](/trust/verify/) for doing the same check yourself.

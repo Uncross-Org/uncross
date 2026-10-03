@@ -61,7 +61,7 @@ No. It can only break an exact tie between prices the book already supports, and
 Not in the window measured. The AAPL feed kept publishing at every one of 80 checks over 10h38m. An earlier claim that it stops was retracted. [After the close: a retraction](/pyth/after-hours/)
 
 **Has the Pyth tie-break ever run on chain?**
-No. Devnet has no fresh Pyth price, so it is covered by unit tests only. [The on-chain gate](/pyth/gate/#tests)
+Never on the venue's tickers: none has a live Pyth price, so every cross clears on the book alone. It ran once on a devnet test auction bound to SOL/USD and fed a pull update, where the gate passed. [What Pyth is used for](/pyth/role/)
 
 ## Devnet
 

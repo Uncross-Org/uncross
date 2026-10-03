@@ -7,7 +7,7 @@ Two actions that usually happen automatically can also be done by anyone. The pr
 
 ## Opening an auction on a quiet ticker
 
-The keeper runs auctions on a fixed cadence for ten tickers: AAPLx, NVDAx, TSLAx, GOOGLx, MSTRx, HOODx, IBMx, XOMx, JPMx and ORCLx. Other listed tickers have no auction running until someone opens one. The app shows these as **Listed**: "No auction is running for …".
+The app lists **120** xStocks; its ticker search covers all of them. The keeper runs auctions on a fixed cadence for ten: AAPLx, NVDAx, TSLAx, GOOGLx, MSTRx, HOODx, IBMx, XOMx, JPMx and ORCLx. The other 110 have no auction running until someone opens one. One of those is marked trading-halted by xStocks and cannot be opened. The app shows the rest as **Listed**: "No auction is running for …".
 
 Click **Open an auction for …**. The faucet service opens it for you:
 
@@ -15,6 +15,14 @@ Click **Open an auction for …**. The faucet service opens it for you:
 - **The venue pays the rent**, about 0.018 SOL, and gets it back when the auction closes. Your test tokens stay yours to trade with.
 - If an auction is already running for that ticker, you are shown that one instead.
 - The keeper runs the cross and settlement when the window closes, as for any other auction.
+
+### You'll probably be the only order
+
+A book opened on demand has no test bot in it. While it is taking orders, the trade page says so above the order form:
+
+> **You'll probably be the only order.** It isn't on the venue's schedule and no bot trades in books opened on demand, so unless someone else joins before the cross, nobody will be on the other side.
+
+It also gives how many live orders the book holds so far, and adds: "An order with nothing to match doesn't fill. At the cross its funds come back to you in full."
 
 Opening is refused for a ticker xStocks has marked trading-halted. It is also rate-limited: one open per wallet every 15 minutes, a per-IP hourly count, and a cap of 25 faucet-opened auctions live at once. The cap bounds how much rent is locked at any moment.
 
@@ -33,4 +41,4 @@ Apart from that, the result is the same whoever sends these. The clearing price 
 
 The refund path is not a choice the sender has. The program allows it only when the ticker mint is paused, or when the path has already been taken.
 
-<p class="sources">Sources: <code>web/src/components/OpenAuction.tsx</code>, <code>web/src/components/CrankPanel.tsx</code>, <code>uncross/scripts/faucet.mjs</code> (open limits), <code>uncross/scripts/keeper.mjs</code>, <code>docs/railway.md</code>, <code>uncross/programs/uncross/src/lib.rs</code>.</p>
+<p class="sources">Sources: <code>web/src/components/OpenAuction.tsx</code>, <code>web/src/App.tsx</code> (the on-demand notice, commit <code>d74455a</code>), the live site's <code>/app/universe.json</code> (120 listed, 10 on cadence, 1 halted, read 4 Oct 2026), <code>web/src/components/CrankPanel.tsx</code>, <code>uncross/scripts/faucet.mjs</code> (open limits), <code>uncross/scripts/keeper.mjs</code>, <code>docs/railway.md</code>, <code>uncross/programs/uncross/src/lib.rs</code>.</p>

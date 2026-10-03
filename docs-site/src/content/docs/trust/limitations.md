@@ -18,9 +18,11 @@ Neither event is evidence of organic market demand. Both were small, and both ra
 
 **Candle high and low are limit prices placed, not trades.** Only one price trades per auction.
 
-## The oracle tie-break has never run on chain
+## No live Pyth price for the venue's tickers
 
-Pyth publishes no fresh price on devnet. The devnet accounts were last updated on 2 July 2026, so at every cross the gate fails, and the auction clears by the book alone. The path where a Pyth price passes the gate and breaks a tie is **covered only by unit tests**, built from the real mainnet account's and mint's bytes ([The on-chain gate](/pyth/gate/#tests)).
+The program can use a Pyth price to break an exact tie, after eight on-chain checks. But **none of the venue's stock tickers has a live Pyth price on Solana**. The five sponsored mainnet accounts (AAPL, NVDA, TSLA, GOOGL, MSTR) stopped updating at 11:53 UTC on 28 Sept 2026, and the other five tickers never had one. So every cross on the venue has recorded "stale", "no feed configured" or "wrong owner", and cleared on the book alone. **No cross on the venue's tickers has ever passed the gate.**
+
+The passing path has run once: on a devnet test auction bound to `Crypto.SOL/USD`, fed a pull update, on 3 Oct 2026. The venue's tickers are not pulled, because the API key used is entitled to crypto feeds only. See [What Pyth is used for](/pyth/role/).
 
 ## What whoever sends the cross can influence
 
@@ -33,7 +35,7 @@ The sender of `compute_clearing` chooses which account to pass as the Pyth price
 - **They cannot** substitute another asset's price. The auction is bound at creation to one feed ID, and any other feed is refused. They cannot pass a fabricated price, because the account must be owned by Pyth's receiver program and fully verified. They cannot move the clearing price outside the set the book already supports, or change any volume, fill or payout rule.
 - **They can** pass an account that fails the gate on purpose: the System Program, a stale shard, anything that is not the live price. The oracle rule is then skipped, and the midpoint rule decides. That matters in exactly one case: when a tie survives the imbalance rule and a fresh Pyth price would have broken it. There, the sender can choose between "the tied price nearest Pyth" and "the midpoint of the tied prices".
 
-**What this means for trust.** The oracle tie-break is only as dependable as whoever sends the cross. Normally that is the keeper, which passes the right account. But anyone can send the cross first once the window closes. The price always stays within what the book supports equally well, on volume and on balance. On devnet the gate never passes anyway, so today this changes nothing in practice.
+**What this means for trust.** The oracle tie-break is only as dependable as whoever sends the cross. Normally that is the keeper, which passes the right account. But anyone can send the cross first once the window closes. The price always stays within what the book supports equally well, on volume and on balance. Today no live Pyth price exists for the venue's tickers, so the gate never passes and this changes nothing in practice.
 
 **Possible fixes, not implemented:** bind the Pyth account address itself at creation, not just the feed ID. Or refuse the cross, rather than skip the oracle rule, when the account passed is not the bound feed's account. No fix is planned before judging.
 
@@ -86,10 +88,6 @@ See [xStocks and Token-2022](/tokens/xstocks-token-2022/).
 ## Pyth's feed carries no session marker
 
 The AAPL feed was measured publishing straight through the close and overnight. The claim that it stops was retracted ([After the close](/pyth/after-hours/)). The on-chain account has no trading-status field, so a thin extended-hours print and a liquid regular-session one cannot be told apart on chain. The program will use either as a tie-break if it is fresh and tight. Weekends were not measured.
-
-## Pyth's mainnet accounts have stopped updating
-
-The five sponsored Pyth accounts the app reads on Solana mainnet (AAPL, NVDA, TSLA, GOOGL, MSTR) all stopped updating at 11:53 UTC on 28 Sept 2026. The app shows that reference as too old to use. The auctions are unaffected, because they clear on devnet by the book, but the external reference on each ticker page is stale until the accounts resume or the app moves to another source. See [What Pyth is used for](/pyth/role/#which-feed).
 
 ## Smaller things
 

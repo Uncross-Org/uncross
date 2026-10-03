@@ -68,7 +68,7 @@ Each of these would have been silent:
 
 ## Tests
 
-The passing path has not run on chain, because Pyth publishes no fresh price on devnet ([What Pyth is used for](/pyth/role/#what-actually-happens-on-devnet)). It is covered by unit tests built from the real mainnet AAPL account's bytes and the real AAPLx mint's bytes:
+On the venue's own tickers the passing path has never run, because none of them has a live Pyth price ([What Pyth is used for](/pyth/role/#today-no-live-pyth-price-for-the-venues-tickers)). It has run once on chain, on a devnet test auction bound to `Crypto.SOL/USD` and fed a pull update, where the gate recorded **passed** ([The pull model, proven once on devnet](/pyth/role/#the-pull-model-proven-once-on-devnet)). It is also covered by unit tests built from the real mainnet AAPL account's bytes and the real AAPLx mint's bytes:
 
 | Test | Checks |
 |---|---|

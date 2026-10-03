@@ -11,8 +11,10 @@ description: The order form, what gets locked, and what happens when you submit,
 
 Under the price field, the app suggests prices to tap:
 
-- **Pyth reference**, where the ticker has a live Pyth price and it is fresh (under 90 seconds old). The first chip is highlighted as a starting point.
+- **Pyth reference**, only when the ticker has a fresh Pyth price (under 90 seconds old). None of the venue's tickers has one today, so this chip does not appear.
 - **Would clear**, the price the book would clear at right now, if it would trade anything.
+
+The first chip is highlighted as a starting point.
 - **Best bid** and **Best ask** in the current book.
 
 For tickers with no Pyth price on Solana (HOODx, IBMx, XOMx, JPMx, ORCLx), the form says so. There the only price is the one the book makes, and past clearing prices are under **Past crosses**.

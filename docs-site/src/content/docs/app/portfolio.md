@@ -22,7 +22,7 @@ The headline is your total test-dollar balance: what is in your wallet plus what
 | In wallet | Shares in your wallet's token account for that ticker |
 | Locked in sell orders | Shares escrowed by your sell orders that have not settled |
 | Total shares | The two together |
-| Reference price | The ticker's Pyth price on mainnet, read every 30 s, marked stale when older than 90 s |
+| Reference price | The ticker's Pyth price on mainnet, read every 30 s, marked stale when older than 90 s. Every one is stale today: the accounts last updated on 28 Sept 2026. |
 | Value | Total shares × the reference price |
 
 **Not valued:** a ticker with no Pyth price on Solana is listed but not valued. That covers HOODx, IBMx, XOMx, JPMx and ORCLx. SOL is shown but not valued either. It pays transaction fees and each order's account rent.

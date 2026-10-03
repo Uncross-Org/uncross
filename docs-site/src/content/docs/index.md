@@ -34,9 +34,9 @@ A call auction needs no pool and no market maker. It needs only people who want 
 |---|---|
 | On-chain program | `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP` on devnet, written in Rust with Anchor. Holds escrow, computes the clearing price, settles. |
 | Ticker mints | Devnet fixtures built to match the real xStocks mints extension for extension. See [Why devnet](/devnet/why-devnet/). |
-| Keeper | A service on Railway that opens a new auction for each of ten tickers whenever one ends, and runs the cross and settlement. Anyone else may run them too. |
+| Keeper | A service on Railway that opens a new auction for each of ten scheduled tickers whenever one ends, and runs the cross and settlement. Anyone else may run them too. Of the 120 xStocks the app lists, any of the other 110 (bar one marked halted) can have an auction opened on demand ([Open an auction](/app/open-and-crank/)). |
 | Activity bot | A service that places test orders on some tickers, priced around Pyth. See [Honest limitations](/trust/limitations/). |
 | Faucet | Gives a new wallet devnet SOL, test shares and test dollars in one click. |
-| Pyth | A reference price from Solana **mainnet**, read-only. It breaks ties between prices the book already supports, and never sets the price. |
+| Pyth | An oracle. The program can use a Pyth price to break an exact tie between prices the book already supports, and never to set the price. Today none of the venue's tickers has a live Pyth price, so every cross clears on the book alone ([What Pyth is used for](/pyth/role/)). |
 
 <p class="sources">Sources: <code>README.md</code>, <code>docs/submission-draft.md</code>, <code>docs/railway.md</code>, <code>uncross/programs/uncross/src/lib.rs</code>.</p>
