@@ -17,6 +17,7 @@ import { Container } from "@/components/container";
 import { SectionHead } from "@/components/landing/sections";
 import { AnimatedBeamPathIllustration } from "@/components/ui/animated-path";
 import { Scales } from "@/components/ui/scales";
+import { fmtApproxDuration } from "@/lib/uncross/format";
 
 const STEPS = [
   { n: "stage 1", h: "Open", p: "A new auction opens for each ticker." },
@@ -57,7 +58,7 @@ function OrderRow({ o, dim, out }: { o: (typeof EXAMPLE)[number]; dim?: boolean;
 }
 
 /** The stage's picture: the same four orders, at that point in their life. */
-function Picture({ step, reduced }: { step: number; reduced: boolean }) {
+function Picture({ step, reduced, windowMs }: { step: number; reduced: boolean; windowMs: number | null }) {
   if (step === 0)
     return (
       <div className="flex h-full flex-col justify-center gap-4">
@@ -69,7 +70,9 @@ function Picture({ step, reduced }: { step: number; reduced: boolean }) {
         ) : (
           <AnimatedBeamPathIllustration />
         )}
-        <div className="num text-[12.5px] text-muted">IBMx · opens, takes orders for ~20 minutes, then crosses</div>
+        <div className="num text-[12.5px] text-muted">
+          IBMx · opens, takes orders for {windowMs ? fmtApproxDuration(windowMs) : "one window"}, then crosses
+        </div>
       </div>
     );
   if (step === 1)
@@ -116,7 +119,8 @@ function Picture({ step, reduced }: { step: number; reduced: boolean }) {
   );
 }
 
-export function HowItWorksV2() {
+/** windowMs: one auction window at the slot time measured when the page was built. */
+export function HowItWorksV2({ windowMs }: { windowMs: number | null }) {
   const reduced = usePrefersReducedMotion();
   const ref = useRef<HTMLOListElement>(null);
   const [active, setActive] = useState(0);
@@ -152,7 +156,7 @@ export function HowItWorksV2() {
                 <p className="mt-2 max-w-[38ch] text-[15.5px] text-text-2">{s.p}</p>
                 {/* Phone width: the picture under its step. */}
                 <div className="mt-5 rounded-xl border border-line bg-surface p-5 lg:hidden">
-                  <Picture step={i} reduced={reduced} />
+                  <Picture step={i} reduced={reduced} windowMs={windowMs} />
                 </div>
               </li>
             );
@@ -162,7 +166,7 @@ export function HowItWorksV2() {
         <div className="hidden lg:block">
           <div className="sticky top-24">
             <div className="min-h-[360px] rounded-2xl border border-line bg-surface p-7 shadow-[0_24px_80px_-40px_rgba(11,14,20,0.3)]">
-              <Picture step={active} reduced={reduced} />
+              <Picture step={active} reduced={reduced} windowMs={windowMs} />
             </div>
           </div>
         </div>

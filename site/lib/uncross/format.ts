@@ -30,6 +30,18 @@ const etDay = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", w
 const etShort = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" });
 const localDT = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
+/** A length of time worked out from slots, for prose; slot time drifts, so always "about". */
+export function fmtApproxDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "—";
+  const mins = ms / 60_000;
+  if (mins < 1.5) return "about a minute";
+  if (mins < 90) return `about ${Math.round(mins)} minutes`;
+  return `about ${Math.round(mins / 30) / 2} hours`;
+}
+
+/** The same, as a recurrence: "about every 27 minutes". */
+export const fmtApproxEvery = (ms: number) => fmtApproxDuration(ms).replace(/^about (a )?/, "about every ");
+
 export const fmtEt = (ms: number) => `${etTime.format(ms)} ET`;
 export const fmtEtDay = (ms: number) => etDay.format(ms);
 export const fmtEtShort = (ms: number) => `${etShort.format(ms)} ET`;

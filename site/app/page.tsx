@@ -30,7 +30,7 @@ export default async function Page() {
       <HeroV2 snapshot={snapshot} />
       <TickerStrip />
       <ProblemV2 />
-      <HowItWorksV2 />
+      <HowItWorksV2 windowMs={snapshot.window?.ms ?? null} />
       <PythSectionV2 oracle={snapshot.oracle} builtAt={snapshot.builtAt} />
       <LiveSectionV2 />
       <FaqV2 />

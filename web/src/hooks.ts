@@ -40,10 +40,16 @@ export function useNow(ms = 1000): number {
   return now;
 }
 
-/** Current slot (interpolated between polls) and average slot time. */
+/**
+ * Current slot (interpolated between polls) and average slot time over the
+ * cluster's last ten minutes. `slotMeasured` is false until that first
+ * measurement lands; until then slotMs is only devnet's nominal 400 ms, which
+ * is no basis for telling anyone how long something takes.
+ */
 export function useSlotClock(conn: Connection, now: number) {
   const [base, setBase] = useState<{ slot: number; t: number } | null>(null);
   const [slotMs, setSlotMs] = useState(400);
+  const [slotMeasured, setSlotMeasured] = useState(false);
   usePoll(
     async () => {
       try {
@@ -62,7 +68,10 @@ export function useSlotClock(conn: Connection, now: number) {
         const samples = await conn.getRecentPerformanceSamples(10);
         const slots = samples.reduce((s, x) => s + x.numSlots, 0);
         const secs = samples.reduce((s, x) => s + x.samplePeriodSecs, 0);
-        if (slots > 0) setSlotMs((secs * 1000) / slots);
+        if (slots > 0) {
+          setSlotMs((secs * 1000) / slots);
+          setSlotMeasured(true);
+        }
       } catch {
         /* keep default */
       }
@@ -71,7 +80,7 @@ export function useSlotClock(conn: Connection, now: number) {
     [conn],
   );
   const slot = base ? base.slot + Math.floor((now - base.t) / slotMs) : null;
-  return { slot, slotMs };
+  return { slot, slotMs, slotMeasured };
 }
 
 export function useMultiplier(conn: Connection, mint: PublicKey | null) {

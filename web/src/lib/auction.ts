@@ -203,4 +203,33 @@ export function auctionPhase(a: Auction, slot: number): Phase {
   return "open";
 }
 
+/**
+ * The window the venue is running auctions on, in slots.
+ *
+ * Read from chain, not assumed: each auction stores its cadence. Taken from
+ * each ticker's newest auction, counting only tickers still cycling (their
+ * newest auction closed within one window of now), so a ticker abandoned on an
+ * old cadence does not set it. Of those, the longest — so one short special
+ * round (an event auction) does not make a normal window look overdue. If no
+ * ticker is cycling, the newest auction's own window.
+ */
+export function venueWindow(all: Auction[], slot: number | null): { slots: number; freezeSlots: number } | null {
+  const windowOf = (a: Auction) => ({ slots: a.cadenceSlots || a.closeSlot - a.openSlot, freezeSlots: a.freezeSlots });
+  const newest = new Map<string, Auction>();
+  for (const a of all) {
+    const k = a.tickerMint.toBase58();
+    const cur = newest.get(k);
+    if (!cur || a.openSlot > cur.openSlot) newest.set(k, a);
+  }
+  let best: { slots: number; freezeSlots: number } | null = null;
+  for (const a of newest.values()) {
+    const w = windowOf(a);
+    if (w.slots <= 0 || (slot != null && a.closeSlot < slot - w.slots)) continue;
+    if (!best || w.slots > best.slots) best = w;
+  }
+  if (best) return best;
+  const latest = all.reduce<Auction | null>((m, a) => (!m || a.openSlot > m.openSlot ? a : m), null);
+  return latest && windowOf(latest).slots > 0 ? windowOf(latest) : null;
+}
+
 export const liveOrders = (a: Auction) => a.orders.filter((o) => o.active && !o.cancelled);

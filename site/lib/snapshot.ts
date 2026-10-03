@@ -44,17 +44,31 @@ export interface OracleSnapshot {
 const AAPL_SCHEDULE_FALLBACK =
   "America/New_York;0930-1600,0930-1600,0930-1600,0930-1600,0930-1600,C,C;0907/C,1126/C,1127/0930-1300,1224/0930-1300,1225/C,0101/C,0118/C,0215/C,0326/C,0531/C,0618/C,0705/C";
 
+/** How long an auction takes orders, from its window in slots and the slot time just measured. */
+export interface WindowSnapshot {
+  slots: number;
+  /** Average slot time over devnet's last ten minutes, ms. */
+  slotMs: number;
+  ms: number;
+}
+
 export interface Snapshot {
   builtAt: number;
   crosses: Cross[];
+  /** Null when either the window or the slot time could not be read. */
+  window: WindowSnapshot | null;
   oracle: OracleSnapshot | null;
   error: string | null;
 }
 
 const PROGRAM = new PublicKey(PROGRAM_ID);
 
-/** Auctions that actually traded, newest first, dated by their last transaction. */
-async function readCrosses(conn: Connection, perTicker: number): Promise<Cross[]> {
+/**
+ * Auctions that actually traded, newest first, dated by their last
+ * transaction; and the window the keeper runs them on, in slots — the longest
+ * cadence among each ticker's newest auction, as stored on chain.
+ */
+async function readCrosses(conn: Connection, perTicker: number): Promise<{ crosses: Cross[]; windowSlots: number | null }> {
   let all = await listRecentAuctions(conn, PROGRAM, 24);
   if (!all) {
     let known = [...SEED_AUCTIONS];
@@ -66,6 +80,14 @@ async function readCrosses(conn: Connection, perTicker: number): Promise<Cross[]
     all = await readAuctions(conn, known, PROGRAM);
   }
   const auctions = all.filter((a) => a.executableVolume > 0n);
+  const newest = new Map<string, (typeof all)[number]>();
+  for (const a of all) {
+    const t = tickerOf(a);
+    if (!t) continue; // a test mint outside the listing
+    const cur = newest.get(t);
+    if (!cur || a.openSlot > cur.openSlot) newest.set(t, a);
+  }
+  const windowSlots = Math.max(0, ...[...newest.values()].map((a) => a.cadenceSlots || a.closeSlot - a.openSlot)) || null;
 
   const picked: Cross[] = [];
   for (const ticker of ["AAPLx", "IBMx"] as TickerSymbol[]) {
@@ -87,7 +109,15 @@ async function readCrosses(conn: Connection, perTicker: number): Promise<Cross[]
       });
     }
   }
-  return picked.sort((a, b) => (b.at ?? 0) - (a.at ?? 0));
+  return { crosses: picked.sort((a, b) => (b.at ?? 0) - (a.at ?? 0)), windowSlots };
+}
+
+/** Devnet's average slot time over its last ten minutes, ms. */
+async function readSlotMs(conn: Connection): Promise<number | null> {
+  const samples = await conn.getRecentPerformanceSamples(10);
+  const slots = samples.reduce((s, x) => s + x.numSlots, 0);
+  const secs = samples.reduce((s, x) => s + x.samplePeriodSecs, 0);
+  return slots > 0 ? (secs * 1000) / slots : null;
 }
 
 async function readOracle(): Promise<OracleSnapshot | null> {
@@ -118,16 +148,20 @@ export async function getSnapshot(): Promise<Snapshot> {
   // Each read stands on its own. A devnet rate-limit must not blank the
   // mainnet oracle panel, and a mainnet hiccup must not blank the cross —
   // different networks, different failures.
-  const [crosses, oracle] = await Promise.all([
+  const [read, oracle, slotMs] = await Promise.all([
     readCrosses(conn, 4).catch(() => null),
     readOracle().catch(() => null),
+    readSlotMs(conn).catch(() => null),
   ]);
+  const crosses = read?.crosses ?? null;
+  const windowSlots = read?.windowSlots ?? null;
 
   const failed = [crosses === null && "devnet auctions", oracle === null && "Pyth"].filter(Boolean);
 
   return {
     builtAt: Date.now(),
     crosses: crosses ?? [],
+    window: windowSlots && slotMs ? { slots: windowSlots, slotMs, ms: windowSlots * slotMs } : null,
     oracle,
     error: failed.length ? `could not read: ${failed.join(", ")}` : null,
   };

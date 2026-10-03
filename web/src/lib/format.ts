@@ -28,6 +28,25 @@ export function fmtDuration(ms: number): string {
   return `${sec}s`;
 }
 
+/**
+ * A length of time worked out from slots, for prose. Slot time drifts (devnet
+ * has run anywhere from 0.23 to 0.4 s a slot), so this is always "about".
+ */
+export function fmtApproxDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "—";
+  const mins = ms / 60_000;
+  if (mins < 1.5) return "about a minute";
+  if (mins < 90) return `about ${Math.round(mins)} minutes`;
+  const hours = Math.round(mins / 30) / 2;
+  return `about ${hours} hours`;
+}
+
+/** A configured wait in whole minutes, as a person says it: "3 hours", "45 minutes". */
+export function fmtMinutes(mins: number): string {
+  if (mins % 60 === 0) return mins === 60 ? "hour" : `${mins / 60} hours`;
+  return `${mins} minutes`;
+}
+
 const etTime = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" });
 const etDay = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" });
 const etShort = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" });

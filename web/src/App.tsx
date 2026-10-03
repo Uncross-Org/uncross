@@ -17,7 +17,7 @@ import { Sidebar } from "./components/Sidebar";
 import { CountdownSkeleton } from "./components/Skeletons";
 import { DOCS_URL, explorerAddr, explorerTx, PROGRAM_ID, tickerFromUrl, type ClusterConfig, type TickerSymbol } from "./config";
 import { useBalances, useMultiplier, useNow, useOrders, usePyth, useSlotClock, useTheme, useVenue, useVenueAll } from "./hooks";
-import { auctionPhase } from "./lib/auction";
+import { auctionPhase, venueWindow } from "./lib/auction";
 import { bestBidAsk, bookOrders } from "./lib/book";
 import { fmtDuration, shortAddr } from "./lib/format";
 import { referenceState } from "./lib/reference";
@@ -28,6 +28,7 @@ import { OrdersPage } from "./components/OrdersPage";
 import { PortfolioPage } from "./components/PortfolioPage";
 import { AuctionPage } from "./components/AuctionPage";
 import { useVenueStatus, VenueBanner, VenueStatusLine } from "./components/VenueStatus";
+import { useFaucetHealth } from "./lib/faucet";
 import { toConfig, useUniverse } from "./lib/universe";
 import { programToPerShare, rawToShares } from "./lib/units";
 
@@ -137,12 +138,13 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
   const readOnly = !!linkedWallet && linkedWallet !== wallet.publicKey?.toBase58();
 
   const now = useNow(1000);
-  const { slot, slotMs } = useSlotClock(connection, now);
+  const { slot, slotMs, slotMeasured } = useSlotClock(connection, now);
   const m = useMultiplier(connection, mint);
   const venue = useVenue(connection, mint);
   const all = useVenueAll();
   const pyth = usePyth(tk);
-  const venueStatus = useVenueStatus(all.auctions, slot, slotMs);
+  const faucetHealth = useFaucetHealth();
+  const venueStatus = useVenueStatus(all.auctions, slot, slotMs, slotMeasured, faucetHealth);
   const ref = referenceState(pyth, now);
   const [refreshKey, setRefreshKey] = useState(0);
   const refresh = useCallback(() => {
@@ -289,7 +291,16 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
         {/* A dormant ticker: listed, nothing running. The way to start a book is
             the first thing on the page, not a disabled button further down. */}
         {view === "trade" && !onCadence && tk.mint && venue.auctions !== null && !(current && slot != null && current.status === "open" && slot < current.closeSlot) && (
-          <OpenAuction tk={tk} halted={!!listed?.halted} notify={notify} onOpened={(a) => void venue.adopt(a)} />
+          <OpenAuction
+            tk={tk}
+            halted={!!listed?.halted}
+            health={faucetHealth}
+            fallbackWindowSlots={venueWindow(all.auctions, slot)?.slots ?? null}
+            slotMs={slotMs}
+            slotMeasured={slotMeasured}
+            notify={notify}
+            onOpened={(a) => void venue.adopt(a)}
+          />
         )}
 
         {/* Two groups that never mix: what this book says, and the one number from outside. */}
@@ -398,6 +409,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
               sol={balances.sol}
               tickerRaw={balances.tickerRaw}
               quoteRaw={balances.quoteRaw}
+              health={faucetHealth}
               notify={notify}
               onFunded={refresh}
             />

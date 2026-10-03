@@ -17,6 +17,7 @@ import { DepthChart } from "@/components/landing/depth-chart";
 import { useVenue } from "@/lib/use-venue";
 import { fmtPrice, fmtShares } from "@/lib/uncross/format";
 import type { Snapshot } from "@/lib/snapshot";
+import { fmtApproxEvery } from "@/lib/uncross/format";
 
 const PHASE: Record<string, string> = {
   upcoming: "Opening",
@@ -119,7 +120,8 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
           <StaggerItem>
             <span className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-medium text-accent">
               <span className="pulse-dot size-[7px] rounded-full bg-accent" aria-hidden="true" />
-              Live on Solana devnet · ten tickers · a cross every twenty minutes
+              Live on Solana devnet · ten tickers ·{" "}
+              {snapshot.window ? `a cross ${fmtApproxEvery(snapshot.window.ms)}` : "a cross every few minutes"}
             </span>
           </StaggerItem>
           <StaggerItem>
