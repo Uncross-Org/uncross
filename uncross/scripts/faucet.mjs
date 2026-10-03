@@ -276,10 +276,29 @@ const PROGRAM_ID = program.programId;
 const QUOTE = new PublicKey(fx.quoteMint);
 const openedAt = new Map(); // pubkey -> ms
 const openIpHits = new Map(); // ip -> [ms, ...]
-const opened = []; // { auction, closeSlot }
 const openStats = { opened: 0, refused: {} };
-let lastSlot = 0;
-const liveOpens = () => opened.filter((o) => o.closeSlot > lastSlot).length;
+
+// How many on-demand auctions are live, counted from chain: auctions on a
+// ticker outside the keeper's cadence set whose window has not closed. It was
+// a list in this process's memory, so every restart reset it to zero and the
+// cap stopped meaning anything. One slim scan of the program (open slot,
+// close slot and mint only), cached briefly because /health asks too.
+const ACTIVE_MINTS = new Set(tickers.tickers.map((t) => t.devnetMint));
+let liveCache = { at: 0, n: null };
+async function liveOpens({ fresh = false } = {}) {
+  if (!fresh && liveCache.n != null && Date.now() - liveCache.at < 15_000) return liveCache.n;
+  const [slot, accs] = await Promise.all([
+    connection.getSlot("confirmed"),
+    connection.getProgramAccounts(PROGRAM_ID, { commitment: "confirmed", dataSlice: { offset: 8, length: 104 }, filters: [{ dataSize: AUCTION_SIZE }] }),
+  ]);
+  const n = accs.filter(({ account: { data } }) => {
+    const closeSlot = Number(data.readBigUInt64LE(8));
+    const mint = new PublicKey(data.subarray(72, 104)).toBase58();
+    return closeSlot > slot && !ACTIVE_MINTS.has(mint);
+  }).length;
+  liveCache = { at: Date.now(), n };
+  return n;
+}
 const mintLocks = new Map();
 const refuseOpen = (why) => { openStats.refused[why] = (openStats.refused[why] ?? 0) + 1; };
 
@@ -300,7 +319,6 @@ async function liveAuctionFor(mint, slot) {
 async function openFor(tk) {
   const mint = new PublicKey(tk.devnetMint);
   const slot = await connection.getSlot("confirmed");
-  lastSlot = slot;
   const existing = await liveAuctionFor(mint, slot);
   if (existing) return { ...existing, existing: true };
   const need = await openLamports();
@@ -327,7 +345,7 @@ async function openFor(tk) {
     if (isInsufficientFunds(e)) throw new CannotPay("opener", have, need);
     throw e;
   });
-  opened.push({ auction: auction.toBase58(), closeSlot: slot + CADENCE });
+  liveCache = { at: 0, n: null };
   return { auction: auction.toBase58(), openSlot: slot, closeSlot: slot + CADENCE, sig: r.sig, existing: false };
 }
 
@@ -372,8 +390,19 @@ async function openRoute(req, res, origin) {
     refuseOpen("ip limit");
     return json(res, 429, { error: "too many auctions opened from this address — try again later" }, origin);
   }
-  lastSlot = await connection.getSlot("confirmed").catch(() => lastSlot);
-  if (liveOpens() >= OPEN_MAX_LIVE) {
+  // xStocks marks some tickers trading-halted. The card already hides the
+  // button for them; the server refuses as well, so a direct request cannot
+  // open a book nobody should trade in.
+  if (tk.halted) {
+    refuseOpen("halted");
+    return json(res, 409, { error: `xStocks has marked ${ticker} trading-halted, so no auction can be opened for it` }, origin);
+  }
+  const live = await liveOpens({ fresh: true }).catch(() => null);
+  if (live == null) {
+    refuseOpen("live count unreadable");
+    return json(res, 503, { error: "could not check how many auctions are running — try again in a moment" }, origin);
+  }
+  if (live >= OPEN_MAX_LIVE) {
     refuseOpen("live cap");
     return json(res, 503, { error: "the maximum number of on-demand auctions is running — try again when one closes" }, origin);
   }
@@ -465,7 +494,7 @@ const server = http.createServer(async (req, res) => {
       cooldownMins: PUBKEY_COOLDOWN_MS / 60_000,
       tickers: tickers.tickers.map((t) => t.symbol),
       listed: BY_SYMBOL.size,
-      opens: { opened: openStats.opened, live: liveOpens(), capLive: OPEN_MAX_LIVE, refused: openStats.refused },
+      opens: { opened: openStats.opened, live: await liveOpens().catch(() => null), capLive: OPEN_MAX_LIVE, refused: openStats.refused },
     }, origin);
   }
 
