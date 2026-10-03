@@ -17,6 +17,8 @@ cp ../uncross/scripts/event.json ../site/lib/uncross/event.json
 # dashboard fetches it on demand for search, so it never enters the app bundle.
 cp ../uncross/scripts/universe.json ../site/lib/uncross/universe.json
 npx tsc --noEmit -p .
-npx vite build --base=/app/ --outDir ../site/public/app --emptyOutDir
+# VITE_UNIVERSE=1: search across every listed xStock and open an auction on a
+# dormant one. Held off until the faucet's /auction/open was live; on since 3 Oct.
+VITE_UNIVERSE=1 npx vite build --base=/app/ --outDir ../site/public/app --emptyOutDir
 # After the build: --emptyOutDir clears this folder first.
 cp ../uncross/scripts/universe.json ../site/public/app/universe.json

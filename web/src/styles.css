@@ -1696,6 +1696,15 @@ input {
   flex-direction: column;
   gap: 10px;
 }
+.dormant-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-color: var(--border);
+}
+.dormant-note h2 {
+  font-size: 15px;
+}
 .faucet-head {
   display: flex;
   align-items: center;

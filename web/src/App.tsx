@@ -413,6 +413,21 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
               notify={notify}
               onFunded={refresh}
             />
+            {/* A book opened on demand has no bot in it. Said before the visitor
+                places anything, so an unfilled order reads as expected, not broken. */}
+            {!onCadence && current && (phase === "open" || phase === "freeze") && (
+              <section className="card dormant-note" role="note" aria-label="Opened on demand">
+                <h2>You&apos;ll probably be the only order</h2>
+                <p className="fine">
+                  {tk.symbol} isn&apos;t on the venue&apos;s schedule and no bot trades in books opened on demand, so unless
+                  someone else joins before the cross, nobody will be on the other side.{" "}
+                  {book.length > 0 ? `${book.length} live order${book.length === 1 ? "" : "s"} in the book so far.` : "The book is empty so far."}
+                </p>
+                <p className="fine muted">
+                  An order with nothing to match doesn&apos;t fill. At the cross its funds come back to you in full.
+                </p>
+              </section>
+            )}
             <OrderForm
               tk={tk}
               auction={current}
