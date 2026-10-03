@@ -244,7 +244,14 @@ async function seed(tk) {
   const open = (await listAuctionsIndexed(connection, ID, tk.mint)).find(
     (a) => a.status === "open" && slot < a.closeSlot - a.freezeSlots - 60 && slot >= a.openSlot,
   );
-  if (!open || open.orderCount >= ORDERS_MAX) return;
+  if (!open) return;
+  // Each book gets a fixed number of orders, chosen once from its address, and
+  // a pass only tops it up to that. Drawing a fresh count every pass and
+  // seeding whenever the book held fewer than the maximum gave a book seeded
+  // with 2 another 2-3 on the next pass: 32 orders an hour against ~22
+  // intended, and each order locks 0.0012 SOL of rent that never comes back.
+  const target = ORDERS_MIN + (open.pubkey.toBytes()[0] % (ORDERS_MAX - ORDERS_MIN + 1));
+  if (open.orderCount >= target) return;
   if (SKIP_AUCTIONS.has(open.pubkey.toBase58())) {
     return log(`${tk.symbol}: leaving ${open.pubkey.toBase58()} to real participants`);
   }
@@ -252,7 +259,7 @@ async function seed(tk) {
   const ref = await tk.ref();
   if (!ref) return log(`${tk.symbol}: no reference price, skipping`);
   const m = await multiplier(tk.mint);
-  const n = ORDERS_MIN + Math.floor(Math.random() * (ORDERS_MAX - ORDERS_MIN + 1));
+  const n = target - open.orderCount;
   log(`${tk.symbol}: seeding ${n} orders into ${open.pubkey.toBase58()} around $${ref.toFixed(2)}/share`);
 
   for (let k = 0; k < n; k++) {
