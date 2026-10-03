@@ -16,6 +16,11 @@
 // limits stop it being drained: one grant per wallet per cooldown, a per-IP
 // hourly count, and hard global caps on both grants and SOL paid out. When a
 // cap is hit the service refuses rather than degrading quietly.
+//
+// The caps are counters; they say nothing about whether the wallet paying out
+// still holds anything. So /health also reads the funder's and the opener's
+// real balances and sets them against what one request costs, and a request
+// the funder cannot pay is refused up front with that reason, in words.
 
 import http from "node:http";
 import anchor from "@coral-xyz/anchor";
@@ -40,6 +45,9 @@ import {
   quoteAta,
   sendV0,
   rpcHosts,
+  tokenAccountRent,
+  isInsufficientFunds,
+  FEE_ALLOWANCE_LAMPORTS,
   TICKER_PROGRAM,
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
@@ -162,8 +170,88 @@ async function grant(owner, requested) {
     ixs.push(createMintToCheckedInstruction(quoteMint, quoteAta(owner, quoteMint), deploy.publicKey, quoteRaw, 6, [], QUOTE_PROGRAM));
   }
 
-  const r = await sendV0(connection, funder, [deploy], ixs, { cuLimit: 400_000 });
+  // What this request costs the funder, exactly: the SOL it sends, rent for
+  // each token account it has to create, and the fee. Checked against the
+  // funder's balance now, before anything is sent, so an empty wallet is a
+  // refusal with a reason rather than a failed transaction.
+  let cost = (solNeeded ? lamports : 0) + FEE_ALLOWANCE_LAMPORTS;
+  if (!q) cost += await tokenAccountRent(connection, quoteMint, QUOTE_PROGRAM);
+  for (let i = 0; i < tks.length; i++) {
+    if (!tokenAccounts[i]) cost += await tokenAccountRent(connection, new PublicKey(tks[i].devnetMint), TICKER_PROGRAM);
+  }
+  const balance = await readBalance(funder.publicKey, { fresh: true });
+  if (balance < cost) throw new CannotPay("funder", balance, cost);
+
+  const r = await sendV0(connection, funder, [deploy], ixs, { cuLimit: 400_000 }).catch((e) => {
+    if (isInsufficientFunds(e)) throw new CannotPay("funder", balance, cost);
+    throw e;
+  });
   return { sig: r.sig, sol: solNeeded ? SOL_PER_GRANT : 0, funded };
+}
+
+// ---------------------------------------------------------------- what it costs, and what's there
+
+/** A wallet the faucet pays from cannot cover a request. */
+class CannotPay extends Error {
+  constructor(who, haveLamports, needLamports) {
+    super(`${who} holds ${haveLamports / LAMPORTS_PER_SOL} SOL, needs ${needLamports / LAMPORTS_PER_SOL}`);
+    this.who = who;
+    this.have = haveLamports;
+    this.need = needLamports;
+  }
+}
+const sol = (lamports) => Number((lamports / LAMPORTS_PER_SOL).toFixed(6));
+const cannotPayMessage = (e) =>
+  e.who === "funder"
+    ? `the faucet's funding wallet is out of devnet SOL — it holds ${sol(e.have)} SOL and this request needs ${sol(e.need)} SOL. Ask in the chat and we will fund you by hand.`
+    : `the venue wallet that pays an auction's rent is out of devnet SOL — it holds ${sol(e.have)} SOL and an auction needs ${sol(e.need)} SOL. Try again once it is topped up.`;
+
+// Balances, read from chain. Cached briefly because every visitor's page asks
+// /health once a minute; a request that is about to spend reads fresh.
+const balanceCache = new Map(); // base58 -> { lamports, at }
+async function readBalance(pubkey, { fresh = false } = {}) {
+  const key = pubkey.toBase58();
+  const hit = balanceCache.get(key);
+  if (!fresh && hit && Date.now() - hit.at < 15_000) return hit.lamports;
+  const lamports = await connection.getBalance(pubkey, "confirmed");
+  balanceCache.set(key, { lamports, at: Date.now() });
+  return lamports;
+}
+
+/**
+ * The most one grant can cost the funder: a wallet with nothing, so the SOL
+ * goes out and every token account is created — the quote account, the
+ * requested ticker's and each event ticker's. Taken over the tickers on
+ * cadence, whose mints carry the same extensions as every other listed one.
+ */
+async function worstGrantLamports() {
+  const tickerRents = await Promise.all(
+    [...new Set([...EVENT_TICKERS, ...tickers.tickers.map((t) => t.symbol)])]
+      .map(lookup)
+      .filter((t) => t?.devnetMint)
+      .map((t) => tokenAccountRent(connection, new PublicKey(t.devnetMint), TICKER_PROGRAM)),
+  );
+  const quoteRent = await tokenAccountRent(connection, new PublicKey(fx.quoteMint), QUOTE_PROGRAM);
+  return Math.round(SOL_PER_GRANT * LAMPORTS_PER_SOL) + quoteRent + (EVENT_TICKERS.length + 1) * Math.max(0, ...tickerRents) + FEE_ALLOWANCE_LAMPORTS;
+}
+
+/** What opening one auction costs its payer: the auction account, both vaults, the fee. */
+const AUCTION_SIZE = 2880;
+async function openLamports() {
+  const mint = new PublicKey(tickers.tickers[0].devnetMint);
+  const [auctionRent, vaultTicker, vaultQuote] = await Promise.all([
+    connection.getMinimumBalanceForRentExemption(AUCTION_SIZE),
+    tokenAccountRent(connection, mint, TICKER_PROGRAM),
+    tokenAccountRent(connection, new PublicKey(fx.quoteMint), QUOTE_PROGRAM),
+  ]);
+  return auctionRent + vaultTicker + vaultQuote + FEE_ALLOWANCE_LAMPORTS;
+}
+
+/** A paying wallet's state for /health: balance against the cost of one request. */
+async function payerHealth(kp, perRequestLamports) {
+  const lamports = await readBalance(kp.publicKey);
+  const requestsLeft = Math.floor(lamports / perRequestLamports);
+  return { address: kp.publicKey.toBase58(), sol: sol(lamports), perRequestSol: sol(perRequestLamports), requestsLeft, canPay: requestsLeft > 0 };
 }
 
 // ---------------------------------------------------------------- open an auction
@@ -215,6 +303,9 @@ async function openFor(tk) {
   lastSlot = slot;
   const existing = await liveAuctionFor(mint, slot);
   if (existing) return { ...existing, existing: true };
+  const need = await openLamports();
+  const have = await readBalance(deploy.publicKey, { fresh: true });
+  if (have < need) throw new CannotPay("opener", have, need);
   const feed = tk.pythFeedId ? Buffer.from(tk.pythFeedId.replace(/^0x/, ""), "hex") : Buffer.alloc(32);
   const auction = auctionPda(PROGRAM_ID, mint, slot);
   const ix = await program.methods
@@ -232,7 +323,10 @@ async function openFor(tk) {
       systemProgram: SystemProgram.programId,
     })
     .instruction();
-  const r = await sendV0(connection, deploy, [], [ix]);
+  const r = await sendV0(connection, deploy, [], [ix]).catch((e) => {
+    if (isInsufficientFunds(e)) throw new CannotPay("opener", have, need);
+    throw e;
+  });
   opened.push({ auction: auction.toBase58(), closeSlot: slot + CADENCE });
   return { auction: auction.toBase58(), openSlot: slot, closeSlot: slot + CADENCE, sig: r.sig, existing: false };
 }
@@ -305,6 +399,10 @@ async function openRoute(req, res, origin) {
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     log(`open failed for ${ticker}: ${message}`);
+    if (e instanceof CannotPay) {
+      refuseOpen("opener out of SOL");
+      return json(res, 503, { error: cannotPayMessage(e), reason: "opener-out-of-sol" }, origin);
+    }
     return json(res, 502, { error: "could not open that auction just now — try again in a moment" }, origin);
   } finally {
     mintLocks.delete(key);
@@ -340,6 +438,13 @@ const server = http.createServer(async (req, res) => {
     // rewrite the hop chain matters: if every participant arrived as the same
     // proxy address, the per-IP limit would refuse the event at that count.
     const seenIp = String(req.headers["x-forwarded-for"] ?? "").split(",")[0].trim() || req.socket.remoteAddress || "?";
+    // A failed read is reported as unknown, never as capacity.
+    const [funderH, openerH] = await Promise.all([
+      worstGrantLamports().then((c) => payerHealth(funder, c)).catch(() => null),
+      openLamports().then((c) => payerHealth(deploy, c)).catch(() => null),
+    ]);
+    const capGrants = MAX_GRANTS - stats.grants;
+    const capSol = MAX_SOL - stats.solPaid;
     return json(res, 200, {
       ok: true,
       youLookLike: seenIp,
@@ -349,7 +454,15 @@ const server = http.createServer(async (req, res) => {
       solPaid: Number(stats.solPaid.toFixed(4)),
       failed: stats.failed,
       refused: stats.refused,
-      capacityLeft: { grants: MAX_GRANTS - stats.grants, sol: Number((MAX_SOL - stats.solPaid).toFixed(4)) },
+      // What can actually be paid out: the caps, and the funder's balance.
+      capacityLeft: funderH
+        ? { grants: Math.max(0, Math.min(capGrants, funderH.requestsLeft)), sol: Math.max(0, Number(Math.min(capSol, funderH.sol).toFixed(4))) }
+        : null,
+      caps: { grants: capGrants, sol: Number(capSol.toFixed(4)) },
+      funder: funderH,
+      opener: openerH,
+      window: { slots: CADENCE, freezeSlots: FREEZE },
+      cooldownMins: PUBKEY_COOLDOWN_MS / 60_000,
       tickers: tickers.tickers.map((t) => t.symbol),
       listed: BY_SYMBOL.size,
       opens: { opened: openStats.opened, live: liveOpens(), capLive: OPEN_MAX_LIVE, refused: openStats.refused },
@@ -433,8 +546,13 @@ const server = http.createServer(async (req, res) => {
   } catch (e) {
     // Let them retry: the reservation is only meaningful if the grant landed.
     grantedAt.delete(pubkey);
-    stats.failed++;
     const message = e instanceof Error ? e.message : String(e);
+    if (e instanceof CannotPay) {
+      refuse("funder out of SOL");
+      log(`refused ${pubkey.slice(0, 8)}… — FUNDER OUT OF SOL: ${funder.publicKey.toBase58()} ${message}`);
+      return json(res, 503, { error: cannotPayMessage(e), reason: "funder-out-of-sol" }, origin);
+    }
+    stats.failed++;
     log(`failed ${pubkey.slice(0, 8)}…: ${message}`);
     return json(res, 502, { error: "the faucet could not fund that wallet just now — try again in a moment" }, origin);
   }

@@ -32,6 +32,9 @@ import {
   QUOTE_PROGRAM,
   ASSOCIATED_TOKEN_PROGRAM,
   rpcStatsLine,
+  tokenAccountRent,
+  isInsufficientFunds,
+  FEE_ALLOWANCE_LAMPORTS,
 } from "./lib.mjs";
 import { listAuctions as listAuctionsIndexed } from "./auction-index.mjs";
 
@@ -149,14 +152,74 @@ async function multiplier(mint) {
   return Date.now() / 1000 >= cfg.newMultiplierEffectiveTimestamp ? Number(cfg.newMultiplier) : Number(cfg.multiplier);
 }
 
+// ---------------------------------------------------------------- can it pay?
+//
+// Two wallets pay for every seeded order: wallet2 (the funder) tops up the
+// owner's SOL and creates its token accounts, and deploy pays the order's
+// transaction fee. When wallet2 ran dry the bot kept going, every order failed
+// in simulation with InsufficientFundsForRent, and the log said only
+// "simulation failed" once per ticker — every book sat empty with nothing to
+// say why. Now each wallet's real balance is read before a pass and before each
+// order, against what that order costs, and an empty wallet pauses seeding
+// with one line naming the wallet, its balance and what it needs.
+
+/** SOL sent to an owner that is running low, so it can pay its order's rent. */
+const OWNER_TOPUP_LAMPORTS = 0.01 * LAMPORTS_PER_SOL;
+const OWNER_LOW_LAMPORTS = 0.003 * LAMPORTS_PER_SOL;
+
+class CannotPay extends Error {
+  constructor(who, kp, have, need) {
+    super(`${who} ${kp.publicKey.toBase58()} holds ${have / LAMPORTS_PER_SOL} SOL; one order needs up to ${need / LAMPORTS_PER_SOL} SOL`);
+    this.who = who;
+  }
+}
+
+/** The most one order can cost the funder: a top-up, both token accounts, the fee. */
+async function worstOrderLamports(mint) {
+  const [t, q] = await Promise.all([tokenAccountRent(connection, mint, TICKER_PROGRAM), tokenAccountRent(connection, fx.quoteMint, QUOTE_PROGRAM)]);
+  return OWNER_TOPUP_LAMPORTS + t + q + FEE_ALLOWANCE_LAMPORTS;
+}
+
+let paused = null; // the reason seeding is paused, or null
+let pausedPasses = 0;
+function pause(reason) {
+  // Said when it starts and then every tenth pass (~10 minutes), so it is in
+  // any recent window of the logs, without repeating every minute.
+  if (paused !== reason || pausedPasses % 10 === 0) log(`PAUSED — not seeding: ${reason}. Every book stays empty until it is topped up.`);
+  paused = reason;
+  pausedPasses++;
+}
+function resume() {
+  if (paused) log("resumed — the paying wallets can cover an order again");
+  paused = null;
+  pausedPasses = 0;
+}
+
+/** Can both paying wallets cover one more order on the costliest ticker? Null if so, else why not. */
+async function cannotPayReason() {
+  const worst = Math.max(...(await Promise.all(TICKERS.map((t) => worstOrderLamports(t.mint)))));
+  const [f, d] = await Promise.all([withRetry(() => connection.getBalance(funder.publicKey, "confirmed")), withRetry(() => connection.getBalance(deploy.publicKey, "confirmed"))]);
+  if (f < worst) return new CannotPay("funder wallet2", funder, f, worst).message;
+  if (d < FEE_ALLOWANCE_LAMPORTS) return new CannotPay("fee payer deploy", deploy, d, FEE_ALLOWANCE_LAMPORTS).message;
+  return null;
+}
+
 const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
 
 async function fundOwner(owner, mint, side, rawQty, escrow) {
   const [sol, t, q] = await getAccountsBatched(connection, [owner.publicKey, tickerAta(owner.publicKey, mint), quoteAta(owner.publicKey, fx.quoteMint)]);
   const ixs = [];
-  if ((sol?.lamports ?? 0) < 0.003 * LAMPORTS_PER_SOL) {
-    ixs.push(SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: owner.publicKey, lamports: 0.01 * LAMPORTS_PER_SOL }));
+  // What this order costs the funder, exactly, so an empty funder is caught
+  // here with a reason instead of in simulation as InsufficientFundsForRent.
+  let cost = FEE_ALLOWANCE_LAMPORTS;
+  if ((sol?.lamports ?? 0) < OWNER_LOW_LAMPORTS) {
+    ixs.push(SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: owner.publicKey, lamports: OWNER_TOPUP_LAMPORTS }));
+    cost += OWNER_TOPUP_LAMPORTS;
   }
+  if (!t) cost += await tokenAccountRent(connection, mint, TICKER_PROGRAM);
+  if (!q) cost += await tokenAccountRent(connection, fx.quoteMint, QUOTE_PROGRAM);
+  const have = await withRetry(() => connection.getBalance(funder.publicKey, "confirmed"));
+  if (have < cost) throw new CannotPay("funder wallet2", funder, have, cost);
   ixs.push(
     createAssociatedTokenAccountIdempotentInstruction(funder.publicKey, tickerAta(owner.publicKey, mint), owner.publicKey, mint, TICKER_PROGRAM, ASSOCIATED_TOKEN_PROGRAM),
     createAssociatedTokenAccountIdempotentInstruction(funder.publicKey, quoteAta(owner.publicKey, fx.quoteMint), owner.publicKey, fx.quoteMint, QUOTE_PROGRAM, ASSOCIATED_TOKEN_PROGRAM),
@@ -167,7 +230,10 @@ async function fundOwner(owner, mint, side, rawQty, escrow) {
   if (side === "buy" && tokenAmountOf(q) < escrow) {
     ixs.push(createMintToCheckedInstruction(fx.quoteMint, quoteAta(owner.publicKey, fx.quoteMint), deploy.publicKey, escrow * 2n, 6, [], QUOTE_PROGRAM));
   }
-  await sendV0(connection, funder, [deploy], ixs, { cuLimit: 200_000 });
+  await sendV0(connection, funder, [deploy], ixs, { cuLimit: 200_000 }).catch((e) => {
+    if (isInsufficientFunds(e)) throw new CannotPay("funder wallet2", funder, have, cost);
+    throw e;
+  });
 }
 
 async function seed(tk) {
@@ -221,6 +287,9 @@ async function seed(tk) {
       await sendV0(connection, deploy, [owner], [ix]);
       log(`  ${side} ${shares} @ $${perShare.toFixed(2)}`);
     } catch (e) {
+      if (isInsufficientFunds(e)) {
+        throw new Error(`order failed for want of SOL (owner ${owner.publicKey.toBase58()} or fee payer deploy ${deploy.publicKey.toBase58()}): ${e.message}`);
+      }
       log(`  order failed: ${(e.logs ?? []).find((l) => l.includes("Error Code")) ?? e.message}`);
     }
   }
@@ -231,11 +300,24 @@ async function seed(tk) {
 // deployed logs.
 let pass = 0;
 do {
-  for (const tk of TICKERS) {
-    try {
-      await seed(tk);
-    } catch (e) {
-      log(`${tk.symbol}: ${e.message}`);
+  const why = await cannotPayReason().catch((e) => {
+    log(`could not read the paying wallets' balances: ${e.message}`);
+    return null;
+  });
+  if (why) pause(why);
+  else {
+    resume();
+    for (const tk of TICKERS) {
+      try {
+        await seed(tk);
+      } catch (e) {
+        if (e instanceof CannotPay) {
+          // The rest of the pass would fail the same way.
+          pause(e.message);
+          break;
+        }
+        log(`${tk.symbol}: ${e.message}`);
+      }
     }
   }
   pass++;

@@ -5,7 +5,9 @@ import anchor from "@coral-xyz/anchor";
 import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  getAccountLenForMint,
   getAssociatedTokenAddressSync,
+  getMint,
 } from "@solana/spl-token";
 
 const { AnchorProvider, Program, Wallet, BN } = anchor;
@@ -305,6 +307,40 @@ export const tokenAmountOf = (info) =>
 export async function tokenAmount(connection, ata) {
   const [info] = await getAccountsBatched(connection, [ata]);
   return tokenAmountOf(info);
+}
+
+// What creating a token account for a mint costs in rent, in lamports. A
+// Token-2022 account carries the extensions its mint requires, so its size —
+// and rent — depends on the mint; read it rather than assume the base 165
+// bytes. Cached for the life of the process: a mint's extensions are fixed.
+const ataRentCache = new Map();
+export async function tokenAccountRent(connection, mint, programId) {
+  const key = mint.toBase58();
+  if (!ataRentCache.has(key)) {
+    ataRentCache.set(
+      key,
+      (async () => {
+        const m = await withRetry(() => getMint(connection, mint, "confirmed", programId));
+        return withRetry(() => connection.getMinimumBalanceForRentExemption(getAccountLenForMint(m)));
+      })().catch((e) => {
+        ataRentCache.delete(key);
+        throw e;
+      }),
+    );
+  }
+  return ataRentCache.get(key);
+}
+
+/** Lamports to allow for one transaction's fees: two signatures, no priority fee, with headroom. */
+export const FEE_ALLOWANCE_LAMPORTS = 20_000;
+
+/** Did this send fail because the payer could not cover a transfer, rent or the fee? */
+export function isInsufficientFunds(e) {
+  const text = `${e?.message ?? e} ${(e?.logs ?? []).join(" ")}`;
+  // InsufficientFundsForRent / InsufficientFundsForFee from the runtime;
+  // "insufficient lamports" from a system transfer; AccountNotFound or "no
+  // record of a prior credit" when the fee payer holds nothing at all.
+  return /InsufficientFunds|insufficient lamports|"AccountNotFound"|no record of a prior credit/i.test(text);
 }
 
 // Sends instructions as a v0 transaction, simulating first so every call
