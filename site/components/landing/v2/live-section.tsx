@@ -149,7 +149,7 @@ export function LiveSectionV2() {
       )}
       {!stale && error && (
         <p className="mt-6 max-w-[68ch] rounded-lg border border-line bg-raise px-4 py-3 text-sm text-text-2">
-          Could not read devnet just now ({error}).
+          Couldn&apos;t read devnet just now. Retrying automatically.
         </p>
       )}
 

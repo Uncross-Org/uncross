@@ -14,9 +14,7 @@ import { PythGate } from "@/components/landing/pyth-gate";
 import { BentoGrid } from "@/components/ui/bento-grid";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { useVenueAll } from "@/lib/use-venue";
-import { GATE_REASONS } from "@/lib/uncross/auction";
 import { explorerAddr } from "@/lib/uncross/config";
-import { fmtEt } from "@/lib/uncross/format";
 import type { OracleSnapshot } from "@/lib/snapshot";
 
 function usePrefersReducedMotion() {
@@ -53,7 +51,12 @@ function RecordedVerdicts() {
   );
   const counts = useMemo(() => {
     const m = new Map<number, number>();
-    for (const a of recent) m.set(a.oracleGate, (m.get(a.oracleGate) ?? 0) + 1);
+    // Every outcome but "passed" means the same for the auction: no live Pyth
+    // price, so the book alone set the clearing price. Counted as one.
+    for (const a of recent) {
+      const k = a.oracleGate === 1 ? 1 : 0;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
     return [...m.entries()].sort((x, y) => y[1] - x[1]);
   }, [recent]);
   const latest = recent[0];
@@ -71,7 +74,7 @@ function RecordedVerdicts() {
             {counts.map(([code, n]) => (
               <div key={code} className="flex items-baseline justify-between gap-3 border-t border-line py-2 text-[13px] first:border-t-0">
                 <span className={code === 1 ? "font-semibold text-bid" : "text-text-2"}>
-                  {code === 1 ? "passed" : `refused · ${GATE_REASONS[code] ?? "unknown reason"}`}
+                  {code === 1 ? "a fresh Pyth price was available" : "no live Pyth price · cleared on the book alone"}
                 </span>
                 <span className="num text-muted">
                   {n} of {recent.length}
@@ -86,7 +89,7 @@ function RecordedVerdicts() {
               rel="noreferrer"
               className="num mt-auto pt-4 text-[12px] text-muted underline decoration-line underline-offset-4 hover:text-text"
             >
-              latest: {latest.ticker}, print of {latest.oraclePublishTime ? fmtEt(latest.oraclePublishTime * 1000) : "no print"} →
+              latest: {latest.ticker} auction on chain →
             </a>
           )}
         </>
@@ -102,7 +105,7 @@ export function PythSectionV2({ oracle, builtAt }: { oracle: OracleSnapshot | nu
       <SectionHead
         eyebrow="Pyth"
         title="A reference price is welcome. It never sets the price."
-        lede="The program reads Pyth's AAPL/USD account at every cross and writes down what it decided. Here is the gate applied to the print on mainnet right now, and what it has recorded so far."
+        lede="At every cross the program looks for a fresh Pyth price and writes down what it found. None of the venue's tickers has a live Pyth price on Solana, so every cross clears on the book alone."
       />
 
       <BentoGrid className="mt-10 max-w-none md:auto-rows-auto md:grid-cols-3">

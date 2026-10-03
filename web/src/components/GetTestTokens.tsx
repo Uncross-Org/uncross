@@ -66,7 +66,7 @@ export function GetTestTokens({ tk, sol, tickerRaw, quoteRaw, health, notify, on
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const why = body?.error ?? `the faucet returned ${res.status}`;
+        const why = body?.error ?? "the faucet couldn't be reached just now — try again in a moment";
         if (res.status === 503) setRefused(why);
         throw new Error(why);
       }

@@ -321,7 +321,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
             m={m}
           />
         )}
-        {view === "trade" && venue.error && <div className="banner err">Couldn't load auctions: {venue.error}. Retrying automatically.</div>}
+        {view === "trade" && venue.error && <div className="banner err">Couldn't load the auctions just now. Retrying automatically.</div>}
 
         {view === "orders" && (
           <OrdersPage
@@ -505,7 +505,7 @@ export default function App({ cluster }: { cluster: ClusterConfig }) {
               </a>
             </span>
           )}
-          <span>Auctions settle on Solana devnet · reference prices are read from Pyth on Solana mainnet</span>
+          <span>Auctions settle on Solana devnet · each clearing price comes from the book alone</span>
           <a href="/#how">How it works ↗</a>
           <a href={DOCS_URL} target="_blank" rel="noreferrer">
             Docs ↗

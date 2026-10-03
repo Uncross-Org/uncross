@@ -45,7 +45,7 @@ export function OpenAuction({ tk, halted, health, fallbackWindowSlots, slotMs, s
         body: JSON.stringify({ pubkey: wallet.publicKey.toBase58(), ticker: tk.symbol }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body.auction) throw new Error(body?.error ?? `could not open an auction (${res.status})`);
+      if (!res.ok || !body.auction) throw new Error(body?.error ?? "Couldn't open an auction just now. Try again in a moment.");
       const took = lasts(body.closeSlot - body.openSlot, slotMs, slotMeasured);
       notify(
         "ok",

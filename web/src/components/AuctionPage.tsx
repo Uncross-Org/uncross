@@ -1,5 +1,5 @@
 // One auction, in full: every order, the curves at the cross, the clearing
-// rule replayed step by step, the Pyth check the program recorded, and every
+// rule replayed step by step, whether a live Pyth price existed at the cross, and every
 // transaction. The answer to "how do I check this price?" — each figure is read
 // from the auction's own account, and the replayed price is compared with the
 // one the program recorded.
@@ -134,7 +134,12 @@ export function AuctionPage({ cluster, address, slot, slotMs, now, multipliers, 
   const opened = at(auction.openSlot), closed = at(auction.closeSlot);
   const price = trace && trace.volume > 0n ? programToPerShare(trace.price, m) : null;
   const matches = !crossed || (trace && trace.price === auction.clearingPrice && trace.volume === auction.executableVolume);
+  // The gate's verdict, in words. Every outcome but "passed" means the same
+  // thing for this auction: there was no live Pyth price, so the book alone
+  // set the clearing price. The technical reason stays available on hover.
   const gate = GATE_REASONS[auction.oracleGate] ?? "not recorded";
+  const passed = gate === "passed" && auction.referencePriceSet;
+  const age = auction.oraclePublishTime && closed != null ? Math.round(closed / 1000 - auction.oraclePublishTime) : null;
   const tied = trace?.tiedOnBalance.length ? trace.tiedOnBalance : trace?.tiedOnVolume ?? [];
   const list = (ps: bigint[]) => ps.map((p) => usd(programToPerShare(p, m))).join(" and ");
 
@@ -148,7 +153,7 @@ export function AuctionPage({ cluster, address, slot, slotMs, now, multipliers, 
     else if (trace.decidedBy === "nearest the oracle")
       why = `${list(trace.tiedOnBalance)} tie on volume and on balance. A fresh Pyth price of ${usd(programToPerShare(auction.referencePrice, m))} passed the program's check, so the tied price nearest to it, ${usd(price!)}, is chosen.`;
     else
-      why = `${list(trace.tiedOnBalance)} tie on volume and on balance. ${crossed ? `The program's Pyth check recorded "${gate}", so no oracle broke the tie` : "Before the cross no oracle is consulted"}, and the midpoint of the tied range sets the price: ${usd(price!)}.`;
+      why = `${list(trace.tiedOnBalance)} tie on volume and on balance. ${crossed ? "There was no live Pyth price to break the tie" : "Before the cross no oracle is consulted"}, so the midpoint of the tied range sets the price: ${usd(price!)}.`;
   }
 
   return (
@@ -229,13 +234,13 @@ export function AuctionPage({ cluster, address, slot, slotMs, now, multipliers, 
         </div>
 
         <div className="card">
-          <h3 className="auction-h">The Pyth check</h3>
-          <p className="auction-why">
-            {auction.pythFeedId === "0".repeat(64)
-              ? "This auction has no Pyth feed configured: no oracle price exists for it on this cluster."
-              : crossed
-                ? `Recorded at the cross: ${gate}.${auction.oraclePublishTime ? ` The price it examined was published ${fmtLocal(auction.oraclePublishTime * 1000)}.` : ""}${auction.referencePriceSet ? ` A price of ${usd(programToPerShare(auction.referencePrice, m))} passed and was available to break a tie.` : " No oracle price was available to break a tie."}`
-                : "Runs at the cross. It only ever breaks a tie between equally good prices; it never sets the price."}
+          <h3 className="auction-h">Pyth</h3>
+          <p className="auction-why" title={crossed ? `Recorded by the program at the cross: ${gate}` : undefined}>
+            {!crossed
+              ? "No live Pyth price for this ticker. The book alone sets the clearing price."
+              : passed
+                ? `A fresh Pyth price of ${usd(programToPerShare(auction.referencePrice, m))} was available at the cross${age != null ? `, published about ${age}s before it` : ""}. It is used only to break a tie between equally good prices; it never sets the price.`
+                : "No live Pyth price for this ticker at the cross. The book alone set the clearing price."}
           </p>
         </div>
       </div>

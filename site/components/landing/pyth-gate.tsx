@@ -136,6 +136,24 @@ export function PythGate({ initial, builtAt }: { initial: OracleSnapshot | null;
   const scheduleOpen = initial?.schedule ? marketState(parseSchedule(initial.schedule), now).open : null;
   const publishing = age <= ORACLE_MAX_AGE_SECS;
 
+  // No live print: say so in one calm, true line. A days-old price, its age
+  // and a checklist failing in red read as a broken feed; the honest state is
+  // simpler than that — there is no live Pyth price, so the book alone sets
+  // every clearing price.
+  if (!publishing) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="display-tight text-[26px] font-semibold md:text-[32px]">No live Pyth price for this ticker.</div>
+        <p className="max-w-[52ch] text-[15px] leading-relaxed text-text-2">The book alone sets the clearing price.</p>
+        <p className="max-w-[52ch] text-[12.5px] leading-relaxed text-muted">
+          At the cross the program accepts a Pyth price only if it is fresh, fully verified and for the right feed, and
+          even then uses it only to choose between prices the book already supports equally well. Pyth never sets the
+          price.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {/* Two independent facts, side by side: whether the feed is printing, and
@@ -171,9 +189,8 @@ export function PythGate({ initial, builtAt }: { initial: OracleSnapshot | null;
 
       <p className="max-w-[52ch] text-[12.5px] leading-relaxed text-muted">
         Pyth never sets the price. It only chooses between prices the book already supports equally well, and only
-        when a print passes. When the gate fails, the auction still clears on its own book, and a tie goes to the
-        middle of the tied range. On this devnet venue Pyth&apos;s AAPL account is a stale devnet copy, so the gate
-        fails at every cross.
+        when a print passes. When none passes, the auction clears on its own book, and a tie goes to the middle of the
+        tied range.
       </p>
     </div>
   );

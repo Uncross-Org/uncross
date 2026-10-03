@@ -10,7 +10,7 @@
 // Where each value comes from and how often it refreshes: docs/numbers.md.
 
 import type { TickerConfig } from "../config";
-import { GATE_REASONS, type Auction, type Phase } from "../lib/auction";
+import type { Auction, Phase } from "../lib/auction";
 import type { BookOrder } from "../lib/book";
 import { fmtDuration, fmtPct, fmtPrice, fmtShares } from "../lib/format";
 import type { RefState } from "../lib/reference";
@@ -46,8 +46,6 @@ export function AuctionStats({ tk, phase, auction, indicative, bid, ask, book, r
   else if (phase === "awaiting-cross") timing = { value: "now", sub: "The window has closed; the cross runs in the next few seconds." };
   else if (phase === "upcoming") timing = { value: "soon", sub: "This auction has not opened yet." };
   else timing = { value: phase === "settled" ? "Settled" : "Crossed", sub: "The next auction opens right after this one crosses." };
-
-  const gate = lastCrossed ? (GATE_REASONS[lastCrossed.oracleGate] ?? "not recorded") : null;
 
   return (
     <div className="stat-groups num">
@@ -106,25 +104,25 @@ export function AuctionStats({ tk, phase, auction, indicative, bid, ask, book, r
         </div>
         <div className="stat">
           <span className="stat-l">Pyth · {tk.underlying}/USD</span>
-          <span className={`stat-v${ref_.fresh ? "" : " muted"}`}>
-            {ref_.price != null ? fmtPrice(ref_.price) : ref_.kind === "none" ? "No feed" : "—"}
-          </span>
-          <span className="stat-s">
-            {ref_.kind === "none"
-              ? `Pyth publishes no ${tk.underlying} price on Solana. This book is the only price.`
-              : ref_.kind === "stale"
-                ? `Last published ${fmtDuration(ref_.ageMs ?? 0)} ago: too old to use.`
-                : ref_.fresh
-                  ? `Published ${Math.round((ref_.ageMs ?? 0) / 1000)}s ago on Solana mainnet${ref_.kind === "extended" ? ", extended hours" : ""}.${vsRef != null ? ` The book would clear ${fmtPct(vsRef)} from it.` : ""}`
-                  : "Reading Pyth…"}
-          </span>
+          {ref_.fresh && ref_.price != null ? (
+            <>
+              <span className="stat-v">{fmtPrice(ref_.price)}</span>
+              <span className="stat-s">
+                Published {Math.round((ref_.ageMs ?? 0) / 1000)}s ago on Solana mainnet{ref_.kind === "extended" ? ", extended hours" : ""}.
+                {vsRef != null ? ` The book would clear ${fmtPct(vsRef)} from it.` : ""}
+              </span>
+            </>
+          ) : ref_.kind === "loading" ? (
+            <span className="stat-v muted">—</span>
+          ) : (
+            <>
+              <span className="stat-v muted">None</span>
+              <span className="stat-s">No live Pyth price for this ticker. The book alone sets the clearing price.</span>
+            </>
+          )}
         </div>
-        {tk.pythAccount && (
-          <p className="stat-note">
-            {gate
-              ? `The program checks Pyth itself at the cross, on devnet, and uses it only to break a tie between equally good prices. Last check: ${gate === "passed" ? "passed" : `${gate}, not used`}.`
-              : "The program checks Pyth itself at the cross, on devnet, and uses it only to break a tie between equally good prices."}
-          </p>
+        {lastCrossed && lastCrossed.referencePriceSet && (
+          <p className="stat-note">The last cross had a fresh Pyth price, and used it only to break a tie between equally good prices.</p>
         )}
       </section>
     </div>

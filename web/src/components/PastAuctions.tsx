@@ -46,7 +46,7 @@ export function PastAuctions({ auctions, m, slot, slotMs, now, cluster, onOpenAu
                   <th>Clearing price</th>
                   <th>Volume</th>
                   <th>Orders</th>
-                  <th>Pyth anchor</th>
+                  <th>Pyth price</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -81,7 +81,7 @@ export function PastAuctions({ auctions, m, slot, slotMs, now, cluster, onOpenAu
                         {a.referencePriceSet ? (
                           <span title="A live Pyth price was used to break a tie">Yes · {fmtPrice(programToPerShare(a.referencePrice, m))}</span>
                         ) : (
-                          <span className="muted">No</span>
+                          <span className="muted">None</span>
                         )}
                       </td>
                       <td>{a.status === "settled" ? (a.settlePath === "refund" ? "Refunded" : "Settled") : "Settling"}</td>

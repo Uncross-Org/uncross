@@ -15,9 +15,9 @@ export function HowItWorks() {
           in, but nobody can pull theirs to game the price.
         </li>
         <li>
-          <b>Outside NASDAQ hours the reference gets thin.</b> Pyth keeps publishing extended-hours prices, but those come from light
-          trading, and when no fresh print arrives there's no reference at all. That's when a thin market most needs a fair price, and the
-          auction book itself becomes that price. A fresh Pyth price, when there is one, is only used to break ties.
+          <b>The book sets the price.</b> An outside price could only ever break a tie between equally good clearing prices, and only
+          if a fresh Pyth price were on chain at the cross. There is no live Pyth price for these tickers, so every cross clears on
+          the book alone.
         </li>
         <li>
           <b>Anyone can finish an auction.</b> Running the cross and settling are open to every wallet; unfilled funds always come back.

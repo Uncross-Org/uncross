@@ -22,7 +22,7 @@ const FAQ = [
   },
   {
     q: "Does Uncross use Pyth to set the price?",
-    a: "No. The price is the one that trades the most shares. Pyth only breaks an exact tie, and only when its price is fresh. On devnet there is no live Pyth price, so that rule has run only in unit tests built from the real mainnet account's bytes.",
+    a: "No. The price is the one that trades the most shares. Pyth only breaks an exact tie, and only when its price is fresh. None of the venue's tickers has a live Pyth price on Solana, so every cross clears on the book alone.",
   },
   {
     q: "What can the token issuer do to my escrow?",
@@ -34,7 +34,7 @@ const FAQ = [
   },
   {
     q: "Does the Pyth feed stop after the 4pm close?",
-    a: "Not in the window measured. Checked every five minutes for 10h38m, through the close and the overnight, the AAPL feed's latest print was at most 14 seconds old at all 80 checks — while its own schedule called the market closed. Weekends were not measured.",
+    a: "Not in the window measured. Checked every five minutes for 10h38m, through the close and the overnight, the AAPL feed's latest print was at most 14 seconds old at all 80 checks — while its own schedule called the market closed. Weekends were not measured. Pyth's sponsored price accounts for these equities have since stopped updating on Solana.",
   },
 ];
 

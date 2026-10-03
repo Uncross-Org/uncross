@@ -136,7 +136,7 @@ const COLUMNS: { head: string; links: [string, string, boolean?][] }[] = [
     head: "Evidence",
     links: [
       ["#problem", "Liquidity, measured on mainnet"],
-      ["#pyth", "The Pyth gate, applied live"],
+      ["#pyth", "Pyth, and why the book sets the price"],
       [`${GITHUB}/blob/main/docs/pyth.md`, "docs/pyth.md", true],
       [`${GITHUB}/blob/main/docs/data/pyth-aapl-watch-2026-09-15.log`, "the 80-check log", true],
     ],

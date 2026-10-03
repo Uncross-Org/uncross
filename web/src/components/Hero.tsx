@@ -1,7 +1,7 @@
 import type { TickerConfig } from "../config";
 import type { Auction, Phase } from "../lib/auction";
 import { bestBidAsk, type BookOrder } from "../lib/book";
-import { fmtDuration, fmtEt, fmtEtDay, fmtEtShort, fmtPct, fmtPrice, fmtShares, fmtUsd } from "../lib/format";
+import { fmtPct, fmtPrice, fmtShares, fmtUsd } from "../lib/format";
 import type { RefState } from "../lib/reference";
 import { programToPerShare, rawToShares } from "../lib/units";
 import { Flash } from "./Flash";
@@ -17,60 +17,38 @@ interface Props {
   loadingAuction: boolean;
 }
 
-const refLabel = (tk: TickerConfig) => `Pyth · ${tk.underlying}/USD · read from Solana mainnet`;
+const refLabel = (tk: TickerConfig) => `Pyth · ${tk.underlying}/USD`;
 
-function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: number }) {
-  const reopen = r.market?.nextOpen ? (
-    <div className="ref-sub">
-      NASDAQ reopens {fmtEtShort(r.market.nextOpen)} · in {fmtDuration(r.market.nextOpen - now)}
-    </div>
-  ) : null;
-
-  if (r.kind === "none") {
-    return (
-      <div className="hero-side ref">
-        <div className="hero-label">
-          <span className="dot dot-off" /> {refLabel(tk)}
-        </div>
-        <div className="hero-none">No Pyth price on Solana for {tk.underlying}</div>
-        <div className="ref-sub strong">The auction book is the only on-chain price.</div>
-        {r.market && (r.market.open ? <div className="ref-sub">NASDAQ regular session is open.</div> : reopen)}
+/**
+ * The reference side when there is no live Pyth price — no feed on Solana, a
+ * print too old to use, or a read that failed. All three mean the same thing
+ * for this auction, so they read the same: one calm, true line, no last
+ * print, no age, no error text. Pyth's sponsored price accounts for these
+ * equities stopped updating; every cross records "stale" and clears on the
+ * book alone, and that is what this says.
+ */
+function NoLivePrice({ tk }: { tk: TickerConfig }) {
+  return (
+    <div className="hero-side ref">
+      <div className="hero-label">
+        <span className="dot dot-off" /> {refLabel(tk)}
       </div>
-    );
-  }
+      <div className="hero-none">No live Pyth price for this ticker.</div>
+      <div className="ref-sub">The book alone sets the clearing price.</div>
+    </div>
+  );
+}
+
+function ReferenceSide({ tk, r }: { tk: TickerConfig; r: RefState }) {
   if (r.kind === "loading") {
     return (
       <div className="hero-side ref">
         <div className="hero-label">{refLabel(tk)}</div>
         <div className="hero-price skeleton">&nbsp;</div>
-        <div className="ref-sub">Reading Pyth on Solana mainnet…</div>
       </div>
     );
   }
-  if (r.kind === "error" || r.price == null) {
-    return (
-      <div className="hero-side ref">
-        <div className="hero-label">{refLabel(tk)}</div>
-        <div className="hero-none">Reference price unavailable</div>
-        <div className="ref-sub">Couldn't reach Solana mainnet. Retrying.</div>
-      </div>
-    );
-  }
-  if (r.kind === "stale") {
-    return (
-      <div className="hero-side ref">
-        <div className="hero-label">
-          <span className="dot dot-warn" /> {refLabel(tk)}
-        </div>
-        <div className="hero-none warn">No reference price for {fmtDuration(r.ageMs!)}</div>
-        <div className="ref-stale num">
-          last print {fmtPrice(r.price)} at {fmtEt(r.publishMs!)}
-          {now - r.publishMs! > 20 * 3600_000 ? ` · ${fmtEtDay(r.publishMs!)}` : ""} <span className="tag">stale</span>
-        </div>
-        {r.market && !r.market.open ? reopen : null}
-      </div>
-    );
-  }
+  if (r.kind === "none" || r.kind === "error" || r.kind === "stale" || r.price == null || !r.fresh) return <NoLivePrice tk={tk} />;
   const regular = r.kind === "regular";
   return (
     <div className="hero-side ref">
@@ -93,7 +71,7 @@ function ReferenceSide({ tk, r, now }: { tk: TickerConfig; r: RefState; now: num
   );
 }
 
-export function Hero({ tk, ref_, auction, phase, book, m, now, loadingAuction }: Props) {
+export function Hero({ tk, ref_, auction, phase, book, m, loadingAuction }: Props) {
   const crossed = phase === "cleared" || phase === "settled";
   let right: JSX.Element;
   if (!tk.mint) {
@@ -171,7 +149,7 @@ export function Hero({ tk, ref_, auction, phase, book, m, now, loadingAuction }:
 
   return (
     <section className="hero card" aria-label="Reference price versus auction price">
-      <ReferenceSide tk={tk} r={ref_} now={now} />
+      <ReferenceSide tk={tk} r={ref_} />
       <div className="hero-vs" aria-hidden>
         vs
       </div>
