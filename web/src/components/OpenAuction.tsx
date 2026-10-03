@@ -11,7 +11,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useState } from "react";
 import { FAUCET_URL, type TickerConfig } from "../config";
 import type { FaucetHealth } from "../lib/faucet";
-import { fmtApproxDuration, fmtInt } from "../lib/format";
+import { fmtApproxDuration, fmtInt, fmtSol } from "../lib/format";
 
 interface Props {
   tk: TickerConfig;
@@ -85,8 +85,8 @@ export function OpenAuction({ tk, halted, health, fallbackWindowSlots, slotMs, s
         <p className="fine warn-text">xStocks has marked {tk.symbol} trading-halted, so no auction can be opened for it.</p>
       ) : cannotPay && health?.opener ? (
         <p className="fine warn-text" role="status">
-          Opening is unavailable right now: the venue wallet that pays an auction&apos;s rent holds {health.opener.sol.toFixed(4)} SOL
-          and one auction needs {health.opener.perRequestSol.toFixed(4)} SOL. It needs a devnet SOL top-up.
+          Opening is unavailable right now: the venue wallet that pays an auction&apos;s rent holds {fmtSol(health.opener.sol)} SOL
+          and one auction needs {fmtSol(health.opener.perRequestSol)} SOL. It needs a devnet SOL top-up.
         </p>
       ) : (
         <>

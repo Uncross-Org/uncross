@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { FAUCET_URL } from "../config";
+import { fmtSol } from "./format";
 
 /** A wallet the faucet spends from, measured against what one request costs it. */
 export interface PayerHealth {
@@ -72,7 +73,7 @@ export const refreshFaucetHealth = load;
 export function faucetBlocked(h: FaucetHealth | null): string | null {
   if (!h) return null;
   if (h.funder && !h.funder.canPay) {
-    return `The faucet's funding wallet is out of devnet SOL: it holds ${h.funder.sol.toFixed(4)} SOL and one request needs up to ${h.funder.perRequestSol.toFixed(4)} SOL. It can't fund wallets until it is topped up.`;
+    return `The faucet's funding wallet is out of devnet SOL: it holds ${fmtSol(h.funder.sol)} SOL and one request needs up to ${fmtSol(h.funder.perRequestSol)} SOL. It can't fund wallets until it is topped up.`;
   }
   const cap = h.capacityLeft;
   if (cap && (cap.grants <= 0 || cap.sol <= 0)) return "The faucet has reached its limit for now, so it can't fund new wallets.";

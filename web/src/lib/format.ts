@@ -41,6 +41,9 @@ export function fmtApproxDuration(ms: number): string {
   return `about ${hours} hours`;
 }
 
+/** SOL for a sentence: small balances keep enough digits to read (0.00065, not 0.0006). */
+export const fmtSol = (n: number) => (n === 0 ? "0" : n < 0.01 ? n.toPrecision(2).replace(/0+$/, "") : n.toFixed(4));
+
 /** A configured wait in whole minutes, as a person says it: "3 hours", "45 minutes". */
 export function fmtMinutes(mins: number): string {
   if (mins % 60 === 0) return mins === 60 ? "hour" : `${mins / 60} hours`;
