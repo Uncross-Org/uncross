@@ -16,6 +16,7 @@ import { ShimmerText } from "@/components/ui/shimmer-text";
 import { PROGRAM_ID } from "@/lib/uncross/config";
 
 const GITHUB = "https://github.com/Uncross-Org/uncross";
+const DEMO = "https://x.com/uncrossfi/status/2106601021174931466";
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -81,6 +82,14 @@ export function CtaV2() {
               className={`${primary} rounded-full border border-line bg-surface text-text transition hover:bg-raise`}
             >
               Read the code ↗
+            </a>
+            <a
+              href={DEMO}
+              target="_blank"
+              rel="noreferrer"
+              className={`${primary} rounded-full border border-line bg-surface text-text transition hover:bg-raise`}
+            >
+              Watch the demo ↗
             </a>
           </div>
         </div>

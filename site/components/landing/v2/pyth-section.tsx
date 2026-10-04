@@ -130,10 +130,10 @@ export function PythSectionV2({ oracle, builtAt }: { oracle: OracleSnapshot | nu
         <Tile reduced={reduced} className="md:col-span-3">
           <div className="eyebrow">Measured, not assumed</div>
           <p className="mt-3 max-w-[78ch] text-[14.5px] leading-relaxed text-text-2">
-            Checked every five minutes for 10h38m, straight through the 4pm close and deep into the overnight: at all 80
-            checks the latest print was at most 14 seconds old. Its schedule called the market closed the whole time.
-            The account carries no session field, so on-chain a thin after-hours print and a liquid midday one look the
-            same.
+            On 15–16 September, before the accounts stopped updating, the AAPL feed was checked every five minutes for
+            10h38m, straight through the 4pm close and deep into the overnight: at all 80 checks the latest print was at
+            most 14 seconds old. Its schedule called the market closed the whole time. The account carries no session
+            field, so on-chain a thin after-hours print and a liquid midday one look the same.
           </p>
           <p className="num mt-3 text-[12px] text-muted">docs/data/pyth-aapl-watch-2026-09-15.log · docs/pyth.md</p>
         </Tile>

@@ -7,7 +7,7 @@ AAPLx and IBMx). It gathers everyone who wants to trade a thin tokenized stock
 into the same auction window and fills them all at one price, instead of
 leaving each person to walk an empty pool alone.
 
-- **Demo video:** _link to follow_
+- **Demo video:** https://x.com/uncrossfi/status/2106601021174931466
 - **Live app:** https://uncross.0xo.in — Solana devnet
 - **Docs:** https://docs.uncross.0xo.in
 - **Program:** [`Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP`](https://explorer.solana.com/address/Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP?cluster=devnet) on devnet

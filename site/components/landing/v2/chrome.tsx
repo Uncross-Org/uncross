@@ -127,6 +127,7 @@ const COLUMNS: { head: string; links: [string, string, boolean?][] }[] = [
     head: "Product",
     links: [
       ["/app", "Open the app"],
+      ["https://x.com/uncrossfi/status/2106601021174931466", "Watch the demo", true],
       ["#how", "How it works"],
       ["#live", "Live auction"],
       ["#faq", "What it does and doesn't"],
