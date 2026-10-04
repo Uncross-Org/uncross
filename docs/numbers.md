@@ -130,8 +130,12 @@ activity bot, so a participant's auction keeps its full on-chain record.
   For a buy that is dollars, for a sell shares, each listed with its order and
   when it crosses.
 - **Value:** total shares × the ticker's mainnet Pyth price, read every 30s, and
-  marked stale when older than 90s.
-- **Not valued:** a ticker with no Pyth feed, and SOL.
+  only while that price is live: published within the program's 90s limit.
+  Otherwise the reference column reads "no live Pyth price" and the value "not
+  valued", and the summary card says the shares are counted, not valued in
+  dollars. Today that is every ticker: the accounts last updated on 28 Sept 2026.
+- **Not valued:** a ticker without a live Pyth price, including those with no
+  Pyth price on Solana at all, and SOL.
 
 ## Units
 
