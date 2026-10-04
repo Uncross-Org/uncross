@@ -133,7 +133,7 @@ export function HowItWorksV2({ windowMs }: { windowMs: number | null }) {
     <Container as="section" id="how" className="py-16 md:py-24">
       <SectionHead
         eyebrow="How it works"
-        title="Collect, freeze, cross, settle. Every few minutes."
+        title="Collect, freeze, cross, settle. One window at a time."
         lede="Orders do not trade the moment they arrive. They wait for each other, and then they all trade at once."
       />
 

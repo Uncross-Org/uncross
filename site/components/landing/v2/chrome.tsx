@@ -160,7 +160,7 @@ export function FooterV2() {
             <Wordmark />
             <p className="mt-4 max-w-[34ch] text-[13.5px] leading-relaxed text-text-2">
               A periodic uniform-price call auction for thin tokenized stocks. Everyone who wants to trade in the same
-              few minutes fills at one price.
+              auction window fills at one price.
             </p>
             <div className="num mt-4 text-[12px] text-muted">
               program {PROGRAM_ID.slice(0, 4)}…{PROGRAM_ID.slice(-4)} · Solana devnet · Stocklana 2026

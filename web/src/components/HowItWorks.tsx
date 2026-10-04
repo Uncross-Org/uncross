@@ -4,7 +4,7 @@ export function HowItWorks() {
       <summary>How it works</summary>
       <ol>
         <li>
-          <b>Orders collect for a few minutes.</b> Your funds are locked in the auction's own account, not held by anyone.
+          <b>Orders collect over one auction window</b> (7,000 slots, roughly half an hour on devnet). Your funds are locked in the auction's own account, not held by anyone.
         </li>
         <li>
           <b>At the cross, everyone trades at one price</b> — the price where the most shares change hands. A buyer never pays above their

@@ -120,8 +120,8 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
           <StaggerItem>
             <span className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-medium text-accent">
               <span className="pulse-dot size-[7px] rounded-full bg-accent" aria-hidden="true" />
-              Live on Solana devnet · ten tickers ·{" "}
-              {snapshot.window ? `a cross ${fmtApproxEvery(snapshot.window.ms)}` : "a cross every few minutes"}
+              Live on Solana devnet · 120 xStocks listed ·{" "}
+              {snapshot.window ? `a cross ${fmtApproxEvery(snapshot.window.ms)}` : "a cross every 7,000 slots"}
             </span>
           </StaggerItem>
           <StaggerItem>
@@ -131,7 +131,7 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
           </StaggerItem>
           <StaggerItem>
             <p className="mt-6 max-w-[46ch] text-lg leading-relaxed text-text-2 md:text-xl">
-              Uncross gathers everyone who wants to trade a thin tokenized stock into the same few minutes, then fills
+              Uncross gathers everyone who wants to trade a thin tokenized stock into the same auction window, then fills
               them all at one price — instead of leaving each person to walk an empty pool alone.
             </p>
           </StaggerItem>
@@ -151,8 +151,8 @@ export function HeroV2({ snapshot }: { snapshot: Snapshot }) {
           </StaggerItem>
           <StaggerItem className="num mt-10 grid w-full max-w-[420px] grid-cols-3 gap-6 border-t border-line pt-6 text-[13px] text-muted">
             <div>
-              <div className="display-tight text-[28px] font-semibold text-text">10</div>
-              tickers, devnet mints matching the real xStocks
+              <div className="display-tight text-[28px] font-semibold text-text">120</div>
+              xStocks listed, 10 on a schedule, devnet mints matching the real ones
             </div>
             <div>
               <div className="display-tight text-[28px] font-semibold text-text">1</div>
