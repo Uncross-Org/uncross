@@ -10,7 +10,7 @@ Uncross is a **periodic call auction** for tokenized US stocks on Solana. Orders
 - **Unfilled orders** get everything they locked back.
 - **Nobody in an auction gets a worse price than anyone else in it.** There is one price.
 
-It is live at [uncross.0xo.in](https://uncross.0xo.in) on **Solana devnet**. There everything is a test token and nothing is worth money. It was built for the Stocklana hackathon (Solana Foundation), September 2026. The source is at [github.com/Uncross-Org/uncross](https://github.com/Uncross-Org/uncross).
+It is live at [uncross.0xo.in](https://uncross.0xo.in) on **Solana devnet**, and you can [watch the demo](https://x.com/uncrossfi/status/2106601021174931466) on X. There everything is a test token and nothing is worth money. It was built for the Stocklana hackathon (Solana Foundation), September 2026. The source is at [github.com/Uncross-Org/uncross](https://github.com/Uncross-Org/uncross).
 
 ## Why it exists
 
