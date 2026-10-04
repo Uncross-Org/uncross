@@ -4,11 +4,18 @@
 
 Uncross is a call auction on Solana for tokenized US equities (xStocks such as
 AAPLx and IBMx). It gathers everyone who wants to trade a thin tokenized stock
-into the same few minutes and fills them all at one price, instead of leaving
-each person to walk an empty pool alone.
+into the same auction window and fills them all at one price, instead of
+leaving each person to walk an empty pool alone.
 
+- **Demo video:** _link to follow_
 - **Live app:** https://uncross.0xo.in — Solana devnet
-- **Program:** `Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP` on devnet
+- **Docs:** https://docs.uncross.0xo.in
+- **Program:** [`Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP`](https://explorer.solana.com/address/Gk9ZUMqPcNuF3PduisUZXBffUP7cCrfnBSCAyTdpjYGP?cluster=devnet) on devnet
+- **Tickers:** 120 xStocks listed. 10 run on a schedule, a new auction as each
+  one crosses; any of the other 110 can be opened on demand from the app.
+- **Window:** 7,000 slots of orders, the last 700 a freeze. At devnet's current
+  slot time (about 0.23 s) that is roughly 27 minutes, but the program counts
+  slots, not minutes, so the length in minutes drifts with the network.
 - Built for the Stocklana hackathon (Solana Foundation), September 2026.
 
 ## The problem
@@ -22,14 +29,14 @@ Measured on mainnet on 16 September: Jupiter published $247.14 for IBMx, whose
 pool held $1,666, and found no route to buy it at $10,000, at $100, or at $1.
 JPMx filled a $100 buy 2.5% above its reference and had no route at $1,000.
 There is no Pyth price account for IBM on Solana at all. The full measurement,
-and why Pyth's AAPL price is a guard rather than a source of liquidity, is in
+and why a reference price is not the same as the ability to trade at it, is in
 [`docs/pyth.md`](docs/pyth.md).
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    A["<b>Auction opens</b><br/>a new one every few minutes"] --> B["<b>Orders arrive</b><br/>each says: buy or sell,<br/>how many, at what price.<br/>Funds are held in escrow."]
+    A["<b>Auction opens</b><br/>a window of 7,000 slots,<br/>about half an hour"] --> B["<b>Orders arrive</b><br/>each says: buy or sell,<br/>how many, at what price.<br/>Funds are held in escrow."]
     B --> C["<b>Freeze</b><br/>the final stretch:<br/>no more cancelling"]
     C --> D["<b>The cross</b><br/>one price is chosen:<br/>the one that lets the<br/>most shares change hands"]
     D --> E["<b>Settlement</b><br/>everyone fills at that price;<br/>unused escrow is returned"]
@@ -38,8 +45,10 @@ flowchart LR
 Every trade in an auction happens at **one price**, whatever each person bid or
 asked: the price at which the most shares can change hands. If several prices
 do that equally well, Uncross prefers the one where buying and selling interest
-is most balanced, then the one nearest a fresh Pyth price, then the middle of
-the range.
+is most balanced, then the one nearest a fresh Pyth price if one passes the
+program's gate at the cross, then the middle of the range. None of the venue's
+stock tickers has a live Pyth price today, so in practice that third rule is
+skipped and the book alone sets every price (see below).
 
 A real auction from testing, so the rule is concrete:
 
@@ -123,15 +132,28 @@ with a duplicate batch that paid nothing twice. Both vaults ended at exactly
 zero, and every wallet's balance change matched its fill to the unit. Details
 and every signature are in [`docs/phase2.md`](docs/phase2.md).
 
-**The reference price comes from mainnet, read-only.** The app shows Pyth's
-AAPL/USD price read directly from its account on Solana mainnet, and says so on
-screen; auctions clear on devnet. Pyth has no live AAPL price on devnet — the
-only devnet account is months stale — so the auction's Pyth tie-break (the third
-rule above) never runs on-chain here. It is covered by unit tests built from the
-real mainnet price account's bytes. There is no IBM price on either network, so
-for IBMx the auction book is the only price there is. Since 16 September every
-auction also records on-chain what the gate decided at its cross, and the
-publish time of the price it examined, so any cross can be audited afterwards.
+**Pyth: the gate is built, and the book sets the price.** The program has a
+Pyth gate: at the cross it accepts a price only if it is a fully
+Wormhole-verified `PriceUpdateV2` for the auction's own feed, under 90 seconds
+old, with confidence under 2%, and even then uses it only to break an exact tie.
+Pyth never sets the price. Every auction records on chain what the gate decided
+and the publish time of the price it examined, so any cross can be audited.
+
+The state today, stated plainly:
+
+- **No live Pyth price for the venue's stock tickers.** Pyth's sponsored price
+  accounts for these equities stopped updating: on devnet by 25 September (most
+  on 2 July), on mainnet on 28 September. Every cross records "stale", or "no
+  feed" for the tickers that never had a Solana account, and clears on the book
+  alone; the app says so instead of showing a reference price. There is no Pyth
+  account for IBM on either network.
+- **Pull updates pass the gate.** A Pyth update fetched from Hermes and posted
+  on devnet through the fully verified path is accepted by the program as it
+  stands: a real `compute_clearing` recorded "passed" with a print 21 seconds
+  old (commit `47a174e`, evidence in `uncross/scripts/pyth-cross-proof-result.json`).
+  That proof used the SOL/USD feed, because pulling equity feeds needs a paid
+  Pyth entitlement the project does not have, so it is not running for the
+  venue's tickers.
 
 ## What this doesn't solve
 
@@ -150,7 +172,8 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
   transfer-hook setting that is switched off today. Switching it on would add
   accounts to every settlement and shrink how many orders fit in each
   transaction.
-- **Pyth keeps publishing long after the 4pm ET close.** Checked every five
+- **Pyth kept publishing long after the 4pm ET close (measured before the
+  accounts stopped updating).** Checked every five
   minutes on 15–16 September, 80 times from 4:11 PM ET to 2:49 AM ET (10 hours
   38 minutes): at every check the AAPL price account's latest print was at most
   14 seconds old, and the price kept moving. Pyth's own schedule called the
@@ -184,7 +207,9 @@ settlement. That escrow sits under the token issuer's rules, not only ours.
 
 **Not yet tested:**
 
-- The Pyth tie-break on-chain (unit tests only, for the reason above).
+- The Pyth tie-break deciding a price on chain. The gate has passed on chain
+  with a pulled crypto feed, but no cross has had a tie for a passing price to
+  break; the tie-break itself is covered by unit tests.
 - A full order book. Capacity is 63 orders (down from 64, to make room for the
   rent payer); the largest tested had 42.
 - Nothing here has been audited.
@@ -197,10 +222,13 @@ Uncross is built on open-source software and uses it as-is:
   `anchor-spl`), which brings in the Solana program libraries and the SPL Token
   and Token-2022 crates; [bytemuck](https://github.com/Lokathor/bytemuck).
 - **Scripts and keeper:** `@coral-xyz/anchor`, `@solana/web3.js`, `@solana/spl-token`.
+  The Pyth pull-update test scripts also use the IDLs and VAA helpers from
+  `@pythnetwork/pyth-solana-receiver`; nothing deployed calls them.
 - **Web app:** React, Vite, the Solana wallet adapter, and the libraries listed
   in `web/package.json`.
-- **Prices:** [Pyth Network](https://pyth.network) price accounts are read
-  directly on-chain; no Pyth SDK is used.
+- **Prices:** [Pyth Network](https://pyth.network) `PriceUpdateV2` accounts are
+  checked by the program directly; the app reads Pyth's public market-hours
+  schedule.
 
 Everything else — the auction program, the clearing algorithm, the keeper, and
 the web app — was written for this project.
@@ -210,10 +238,14 @@ the web app — was written for this project.
 | Path | What it is |
 |---|---|
 | `uncross/programs/uncross/` | The on-chain program (Rust, Anchor) |
-| `uncross/scripts/keeper.mjs` | Opens auctions on a schedule and runs the cross and settlement |
+| `uncross/scripts/keeper.mjs` | Opens auctions on a schedule and runs the cross, settlement and close for every auction |
+| `uncross/scripts/faucet.mjs` | Test tokens for new wallets, and opening an auction on a dormant ticker |
+| `uncross/scripts/devnet-activity.mjs` | The test bot that places orders in four scheduled books |
 | `uncross/scripts/create-devnet-fixture.sh` | Builds the extension-identical fixture mints |
 | `uncross/scripts/devnet-*.mjs` | End-to-end tests against devnet |
-| `web/` | The web app |
+| `web/` | The web app, served at https://uncross.0xo.in/app |
+| `site/` | The landing page at https://uncross.0xo.in |
+| `docs-site/` | The docs at https://docs.uncross.0xo.in |
 | `docs/` | Research and test logs, with transaction signatures |
 
 The test logs in `docs/` back every claim above, including the accounting bugs
