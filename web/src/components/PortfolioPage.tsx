@@ -80,9 +80,12 @@ export function PortfolioPage({ cluster, tickers, quoteMint, quoteSymbol, wallet
       return { t, free, locked, total: free + locked, lk, p, fresh };
     })
     .filter((r) => r.total > 0 || r.lk.length);
-  const valued = rows.filter((r) => r.p);
+  // Shares are valued only at a live Pyth price. A print older than the
+  // program's 90 s limit is not a reference, and every equity print is days
+  // old now, so in practice nothing is valued and the page says why.
+  const valued = rows.filter((r) => r.p && r.fresh);
   const holdingsValue = valued.reduce((s, r) => s + r.total * r.p!.price, 0);
-  const unvalued = rows.filter((r) => !r.p);
+  const unvalued = rows.filter((r) => !(r.p && r.fresh));
   const lockText = (l: Lock, amount: string) =>
     `${amount} in your ${l.symbol} ${l.side}${l.settling ? ", settling" : l.msToCross != null ? `, crosses in ${fmtDuration(l.msToCross)}` : ""}`;
 
@@ -125,10 +128,10 @@ export function PortfolioPage({ cluster, tickers, quoteMint, quoteSymbol, wallet
         </div>
         <div className="card port-card">
           <span className="stat-l">Shares at the reference price</span>
-          <span className="port-big num">{usd(holdingsValue)}</span>
+          <span className="port-big num">{valued.length ? usd(holdingsValue) : "—"}</span>
           <span className="stat-s">
-            {valued.length ? `Valued at Pyth for ${valued.map((r) => r.t.symbol).join(", ")}.` : "No holdings with a reference price."}
-            {unvalued.length ? ` Not valued, no reference price: ${unvalued.map((r) => r.t.symbol).join(", ")}.` : ""}
+            {valued.length ? `Valued at a live Pyth price for ${valued.map((r) => r.t.symbol).join(", ")}.` : rows.length ? "No live Pyth price for these tickers, so shares are counted, not valued in dollars." : "No shares held."}
+            {valued.length && unvalued.length ? ` Not valued, no live Pyth price: ${unvalued.map((r) => r.t.symbol).join(", ")}.` : ""}
           </span>
         </div>
         <div className="card port-card">
@@ -172,15 +175,15 @@ export function PortfolioPage({ cluster, tickers, quoteMint, quoteSymbol, wallet
                   </td>
                   <td data-label="Total shares">{fmtShares(r.total)}</td>
                   <td data-label="Reference price">
-                    {r.p ? (
+                    {r.p && r.fresh ? (
                       <>
-                        {usd(r.p.price)} <span className="muted small">Pyth{r.fresh ? "" : ", stale"}</span>
+                        {usd(r.p.price)} <span className="muted small">Pyth</span>
                       </>
                     ) : (
-                      <span className="muted">no reference</span>
+                      <span className="muted">no live Pyth price</span>
                     )}
                   </td>
-                  <td data-label="Value">{r.p ? usd(r.total * r.p.price) : <span className="muted">not valued</span>}</td>
+                  <td data-label="Value">{r.p && r.fresh ? usd(r.total * r.p.price) : <span className="muted">not valued</span>}</td>
                 </tr>
               ))}
             </tbody>
